@@ -16,8 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.sportec.sporthub.data.model.EstadoReserva
-import com.sportec.sporthub.ui.components.EstadoCargando
+import com.sportec.sporthub.domain.EstadoReserva
 import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.Etiqueta
 import com.sportec.sporthub.ui.components.TarjetaHechos
@@ -39,7 +38,6 @@ fun DetalleReservaScreen(
 
     PantallaBase(titulo = "Reserva", onBack = onBack) { padding ->
         when {
-            estado.cargando -> EstadoCargando(modifier = Modifier.padding(padding))
             estado.reserva == null || estado.item == null -> EstadoError(
                 mensaje = estado.error ?: "No se pudo cargar la reserva.",
                 onReintentar = { viewModel.cargar(reservaId) },

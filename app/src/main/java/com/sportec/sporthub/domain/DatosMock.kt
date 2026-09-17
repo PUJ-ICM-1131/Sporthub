@@ -1,27 +1,4 @@
-package com.sportec.sporthub.data.mock
-
-import com.sportec.sporthub.data.model.Actividad
-import com.sportec.sporthub.data.model.Categoria
-import com.sportec.sporthub.data.model.Chat
-import com.sportec.sporthub.data.model.Comunidad
-import com.sportec.sporthub.data.model.Cuenta
-import com.sportec.sporthub.data.model.EstadoNegocio
-import com.sportec.sporthub.data.model.EstadoPago
-import com.sportec.sporthub.data.model.EstadoReserva
-import com.sportec.sporthub.data.model.EstadoSolicitud
-import com.sportec.sporthub.data.model.Mensaje
-import com.sportec.sporthub.data.model.Negocio
-import com.sportec.sporthub.data.model.Notificacion
-import com.sportec.sporthub.data.model.Pago
-import com.sportec.sporthub.data.model.Politica
-import com.sportec.sporthub.data.model.Reporte
-import com.sportec.sporthub.data.model.Reserva
-import com.sportec.sporthub.data.model.Rol
-import com.sportec.sporthub.data.model.Segmento
-import com.sportec.sporthub.data.model.Solicitud
-import com.sportec.sporthub.data.model.EstadoTransferencia
-import com.sportec.sporthub.data.model.TipoActividad
-import com.sportec.sporthub.data.model.Transferencia
+package com.sportec.sporthub.domain
 
 object DatosMock {
 

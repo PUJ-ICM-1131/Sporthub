@@ -1,7 +1,7 @@
 package com.sportec.sporthub.ui
 
 import androidx.lifecycle.ViewModel
-import com.sportec.sporthub.data.model.Cuenta
+import com.sportec.sporthub.domain.Cuenta
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

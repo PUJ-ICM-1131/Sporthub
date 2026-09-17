@@ -1,4 +1,4 @@
-package com.sportec.sporthub.data.model
+package com.sportec.sporthub.domain
 
 enum class Rol(val etiqueta: String) {
     DEPORTISTA("Deportista"),

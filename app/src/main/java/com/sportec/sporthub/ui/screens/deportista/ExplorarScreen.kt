@@ -36,8 +36,6 @@ import com.sportec.sporthub.navigation.DetalleActividad
 import com.sportec.sporthub.navigation.Mapa
 import com.sportec.sporthub.navigation.Notificaciones
 import com.sportec.sporthub.navigation.Transferencias
-import com.sportec.sporthub.ui.components.EstadoCargando
-import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.ui.components.TarjetaActividad
@@ -103,16 +101,10 @@ fun ExplorarScreen(
                     }
                 }
             }
-            val mensajeError = estado.error
-            when {
-                estado.cargando -> item { EstadoCargando() }
-                mensajeError != null -> item {
-                    EstadoError(mensaje = mensajeError, onReintentar = viewModel::cargar)
-                }
-                estado.actividades.isEmpty() -> item {
-                    EstadoVacio(mensaje = "No hay servicios publicados en esta categoría.")
-                }
-                else -> items(estado.actividades, key = { it.actividad.id }) { item ->
+            if (estado.actividades.isEmpty()) {
+                item { EstadoVacio(mensaje = "No hay servicios publicados en esta categoría.") }
+            } else {
+                items(estado.actividades, key = { it.actividad.id }) { item ->
                     TarjetaActividad(
                         item = item,
                         onClick = { onNavegar(DetalleActividad(item.actividad.id)) }

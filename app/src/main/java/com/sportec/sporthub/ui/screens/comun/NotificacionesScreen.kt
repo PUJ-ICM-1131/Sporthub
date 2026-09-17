@@ -23,8 +23,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
-import com.sportec.sporthub.data.mock.RepositorioReservasMock
-import com.sportec.sporthub.data.model.Notificacion
+import com.sportec.sporthub.domain.Reservas
+import com.sportec.sporthub.domain.Notificacion
 import com.sportec.sporthub.navigation.DetalleReserva
 import com.sportec.sporthub.navigation.DetalleSolicitud
 import com.sportec.sporthub.navigation.DetalleTransferencia
@@ -37,7 +37,7 @@ fun NotificacionesScreen(
     onBack: () -> Unit,
     onNavegar: (NavKey) -> Unit
 ) {
-    val notificaciones by RepositorioReservasMock.notificaciones.collectAsState()
+    val notificaciones by Reservas.notificaciones.collectAsState()
     val propias = notificaciones.filter { it.usuarioId == usuarioId }
 
     PantallaBase(titulo = "Notificaciones", onBack = onBack) { padding ->
@@ -52,7 +52,7 @@ fun NotificacionesScreen(
             ) {
                 items(propias, key = { it.id }) { notificacion ->
                     ItemNotificacion(notificacion) {
-                        RepositorioReservasMock.marcarNotificacionLeida(notificacion.id)
+                        Reservas.marcarNotificacionLeida(notificacion.id)
                         val destino = when (notificacion.ruta) {
                             "request" -> notificacion.argumento?.let { DetalleSolicitud(it) }
                             "reservation" -> notificacion.argumento?.let { DetalleReserva(it) }

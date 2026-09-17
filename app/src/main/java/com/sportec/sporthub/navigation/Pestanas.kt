@@ -11,7 +11,7 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation3.runtime.NavKey
-import com.sportec.sporthub.data.model.Rol
+import com.sportec.sporthub.domain.Rol
 
 data class Pestana(
     val ruta: NavKey,

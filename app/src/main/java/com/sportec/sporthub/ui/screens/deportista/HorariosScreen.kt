@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.sportec.sporthub.ui.components.EstadoCargando
 import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.utils.formatoDiaCorto
@@ -39,7 +38,6 @@ fun HorariosScreen(
 
     PantallaBase(titulo = "Horarios y cupos", onBack = onBack) { padding ->
         when {
-            estado.cargando -> EstadoCargando(modifier = Modifier.padding(padding))
             estado.error != null -> EstadoError(
                 mensaje = estado.error ?: "",
                 onReintentar = { viewModel.cargar(actividadId) },

@@ -24,9 +24,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
-import com.sportec.sporthub.data.mock.DatosMock
-import com.sportec.sporthub.data.model.Reserva
-import com.sportec.sporthub.data.model.Solicitud
+import com.sportec.sporthub.domain.DatosMock
+import com.sportec.sporthub.domain.Reserva
+import com.sportec.sporthub.domain.Solicitud
 import com.sportec.sporthub.navigation.DetalleReserva
 import com.sportec.sporthub.navigation.DetalleSolicitud
 import com.sportec.sporthub.ui.components.EstadoVacio

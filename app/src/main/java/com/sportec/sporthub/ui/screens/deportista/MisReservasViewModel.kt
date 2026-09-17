@@ -2,10 +2,10 @@ package com.sportec.sporthub.ui.screens.deportista
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sportec.sporthub.data.mock.RepositorioReservasMock
-import com.sportec.sporthub.data.model.EstadoReserva
-import com.sportec.sporthub.data.model.Reserva
-import com.sportec.sporthub.data.model.Solicitud
+import com.sportec.sporthub.domain.Reservas
+import com.sportec.sporthub.domain.EstadoReserva
+import com.sportec.sporthub.domain.Reserva
+import com.sportec.sporthub.domain.Solicitud
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -27,7 +27,7 @@ class MisReservasViewModel : ViewModel() {
     private val _pestana = MutableStateFlow(PestanaReservas.SOLICITUDES)
 
     val uiState: StateFlow<MisReservasUiState> = combine(
-        _usuarioId, _pestana, RepositorioReservasMock.solicitudes, RepositorioReservasMock.reservas
+        _usuarioId, _pestana, Reservas.solicitudes, Reservas.reservas
     ) { usuarioId, pestana, solicitudes, reservas ->
         MisReservasUiState(
             pestana = pestana,

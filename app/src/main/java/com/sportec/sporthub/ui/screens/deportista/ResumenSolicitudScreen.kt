@@ -5,11 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,7 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.sportec.sporthub.ui.components.EstadoCargando
 import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.ui.components.TarjetaHechos
@@ -41,50 +38,43 @@ fun ResumenSolicitudScreen(
     LaunchedEffect(actividadId) { viewModel.cargar(actividadId) }
 
     PantallaBase(titulo = "Resumen de la solicitud", onBack = onBack) { padding ->
-        when {
-            estado.cargando -> EstadoCargando(modifier = Modifier.padding(padding))
-            estado.item == null -> EstadoError(
+        val item = estado.item
+        if (item == null) {
+            EstadoError(
                 mensaje = estado.error ?: "No se pudo cargar el servicio.",
                 onReintentar = { viewModel.cargar(actividadId) },
                 modifier = Modifier.padding(padding)
             )
-            else -> {
-                val item = estado.item!!
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .verticalScroll(rememberScrollState())
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                TarjetaHechos(
+                    pares = listOf(
+                        "Servicio" to item.actividad.nombre,
+                        "Establecimiento" to item.negocio.nombre,
+                        "Horario" to formatoIntervalo(fecha, hora, item.actividad.duracionMinutos / 60),
+                        "Total a pagar" to formatoPesos(item.actividad.precio)
+                    )
+                )
+                Text(
+                    text = "Esta solicitud entra a revisión del establecimiento. Si hay cupo, la verás como \"En revisión\"; si no, quedará en fila.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (estado.error != null) {
+                    Text(text = estado.error ?: "", color = MaterialTheme.colorScheme.error)
+                }
+                Button(
+                    onClick = { viewModel.enviar(usuarioId, fecha, hora, onSolicitudEnviada) },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    TarjetaHechos(
-                        pares = listOf(
-                            "Servicio" to item.actividad.nombre,
-                            "Establecimiento" to item.negocio.nombre,
-                            "Horario" to formatoIntervalo(fecha, hora, item.actividad.duracionMinutos / 60),
-                            "Total a pagar" to formatoPesos(item.actividad.precio)
-                        )
-                    )
-                    Text(
-                        text = "Esta solicitud entra a revisión del establecimiento. Si hay cupo, la verás como \"En revisión\"; si no, quedará en fila.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (estado.error != null) {
-                        Text(text = estado.error ?: "", color = MaterialTheme.colorScheme.error)
-                    }
-                    Button(
-                        onClick = { viewModel.enviar(usuarioId, fecha, hora, onSolicitudEnviada) },
-                        enabled = !estado.enviando,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        if (estado.enviando) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                        } else {
-                            Text("Enviar solicitud")
-                        }
-                    }
+                    Text("Enviar solicitud")
                 }
             }
         }

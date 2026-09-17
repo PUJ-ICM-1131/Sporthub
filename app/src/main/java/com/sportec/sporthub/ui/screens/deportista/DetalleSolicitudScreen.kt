@@ -24,10 +24,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.sportec.sporthub.data.model.Cuenta
-import com.sportec.sporthub.data.model.EstadoSolicitud
-import com.sportec.sporthub.data.model.Rol
-import com.sportec.sporthub.ui.components.EstadoCargando
+import com.sportec.sporthub.domain.Cuenta
+import com.sportec.sporthub.domain.EstadoSolicitud
+import com.sportec.sporthub.domain.Rol
 import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.Etiqueta
 import com.sportec.sporthub.ui.components.PantallaBase
@@ -54,7 +53,6 @@ fun DetalleSolicitudScreen(
 
     PantallaBase(titulo = "Solicitud", onBack = onBack) { padding ->
         when {
-            estado.cargando -> EstadoCargando(modifier = Modifier.padding(padding))
             estado.solicitud == null || estado.item == null -> EstadoError(
                 mensaje = estado.error ?: "No se pudo cargar la solicitud.",
                 onReintentar = { viewModel.cargar(solicitudId) },
@@ -97,7 +95,6 @@ fun DetalleSolicitudScreen(
                         if (solicitud.estado in ACTIVOS) {
                             OutlinedButton(
                                 onClick = { motivo = ""; dialogoAbierto = "retirar" },
-                                enabled = !estado.procesando,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text("Retirar solicitud")
@@ -109,7 +106,6 @@ fun DetalleSolicitudScreen(
                         if (solicitud.estado == EstadoSolicitud.REVISION) {
                             Button(
                                 onClick = { viewModel.aprobar(cuenta.id) },
-                                enabled = !estado.procesando,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text("Aprobar y habilitar pago")
@@ -118,7 +114,6 @@ fun DetalleSolicitudScreen(
                         if (solicitud.estado == EstadoSolicitud.FILA || solicitud.estado == EstadoSolicitud.REVISION) {
                             OutlinedButton(
                                 onClick = { motivo = ""; dialogoAbierto = "rechazar" },
-                                enabled = !estado.procesando,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text("Rechazar con motivo")

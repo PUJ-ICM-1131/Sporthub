@@ -74,7 +74,6 @@ fun CancelarReservaScreen(
                 }
                 Button(
                     onClick = { viewModel.confirmar(motivo, usuarioId) },
-                    enabled = !estado.enviando,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Confirmar cancelación")

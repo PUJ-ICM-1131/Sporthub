@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.sportec.sporthub.ui.components.EstadoCargando
 import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.Etiqueta
 import com.sportec.sporthub.ui.components.PantallaBase
@@ -41,7 +40,6 @@ fun DetalleActividadScreen(
 
     PantallaBase(titulo = estado.item?.actividad?.nombre ?: "Detalle del servicio", onBack = onBack) { padding ->
         when {
-            estado.cargando -> EstadoCargando(modifier = Modifier.padding(padding))
             estado.error != null -> EstadoError(
                 mensaje = estado.error ?: "",
                 onReintentar = { viewModel.cargar(actividadId) },

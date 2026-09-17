@@ -39,8 +39,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
-import com.sportec.sporthub.data.model.Cuenta
-import com.sportec.sporthub.data.model.Rol
+import com.sportec.sporthub.domain.Cuenta
+import com.sportec.sporthub.domain.Rol
 import com.sportec.sporthub.navigation.Notificaciones
 import com.sportec.sporthub.navigation.opcionesPerfil
 import com.sportec.sporthub.ui.components.Etiqueta

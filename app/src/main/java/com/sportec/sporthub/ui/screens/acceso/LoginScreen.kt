@@ -8,13 +8,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -40,8 +38,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.sportec.sporthub.data.mock.DatosMock
-import com.sportec.sporthub.data.model.Cuenta
+import com.sportec.sporthub.domain.Cuenta
+import com.sportec.sporthub.domain.DatosMock
 import com.sportec.sporthub.ui.components.PantallaBase
 
 @Composable
@@ -86,7 +84,6 @@ fun LoginScreen(
                 onValueChange = viewModel::onUsuarioCambiado,
                 label = { Text("Correo o usuario") },
                 singleLine = true,
-                enabled = !estado.cargando,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
@@ -98,7 +95,6 @@ fun LoginScreen(
                 onValueChange = viewModel::onContrasenaCambiada,
                 label = { Text("Contraseña") },
                 singleLine = true,
-                enabled = !estado.cargando,
                 visualTransformation = if (mostrarContrasena) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
@@ -122,23 +118,14 @@ fun LoginScreen(
             }
             Button(
                 onClick = viewModel::iniciarSesion,
-                enabled = !estado.cargando,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
             ) {
-                if (estado.cargando) {
-                    CircularProgressIndicator(
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(22.dp)
-                    )
-                } else {
-                    Text("Ingresar")
-                }
+                Text("Ingresar")
             }
             TextButton(
                 onClick = onRecuperar,
-                enabled = !estado.cargando,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Text("¿Olvidaste tu contraseña?")
@@ -160,9 +147,7 @@ fun LoginScreen(
                         headlineContent = { Text(cuenta.nombre) },
                         supportingContent = { Text("${cuenta.id} · ${cuenta.rol.etiqueta}") },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.clickable(enabled = !estado.cargando) {
-                            viewModel.usarCuentaDemo(cuenta)
-                        }
+                        modifier = Modifier.clickable { viewModel.usarCuentaDemo(cuenta) }
                     )
                 }
             }

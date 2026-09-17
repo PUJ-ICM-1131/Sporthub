@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.sportec.sporthub.data.model.ActividadConNegocio
+import com.sportec.sporthub.domain.ActividadConNegocio
 import com.sportec.sporthub.utils.formatoDuracion
 import com.sportec.sporthub.utils.formatoPesos
 

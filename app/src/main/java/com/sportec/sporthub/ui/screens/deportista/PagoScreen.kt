@@ -6,9 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -23,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.sportec.sporthub.ui.components.EstadoCargando
 import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.ui.components.TarjetaHechos
@@ -45,40 +42,37 @@ fun PagoScreen(
     LaunchedEffect(solicitudId) { viewModel.cargar(solicitudId) }
 
     PantallaBase(titulo = "Pago simulado", onBack = onBack) { padding ->
-        when {
-            estado.cargando -> EstadoCargando(modifier = Modifier.padding(padding))
-            estado.solicitud == null -> EstadoError(
+        val solicitud = estado.solicitud
+        if (solicitud == null) {
+            EstadoError(
                 mensaje = estado.error ?: "No se pudo cargar la solicitud.",
                 onReintentar = { viewModel.cargar(solicitudId) },
                 modifier = Modifier.padding(padding)
             )
-            else -> {
-                val solicitud = estado.solicitud!!
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                TarjetaHechos(pares = listOf("Total a pagar" to formatoPesos(solicitud.precio)))
+                Text(text = "Medio de pago (simulado)", style = MaterialTheme.typography.labelLarge)
+                MEDIOS_DEMO.forEach { opcion ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = medio == opcion, onClick = { medio = opcion })
+                        Text(text = opcion)
+                    }
+                }
+                if (estado.error != null) {
+                    Text(text = estado.error ?: "", color = MaterialTheme.colorScheme.error)
+                }
+                Button(
+                    onClick = { viewModel.pagar(usuarioId, medio, onPagoExitoso) },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    TarjetaHechos(pares = listOf("Total a pagar" to formatoPesos(solicitud.precio)))
-                    Text(text = "Medio de pago (simulado)", style = MaterialTheme.typography.labelLarge)
-                    MEDIOS_DEMO.forEach { opcion ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(selected = medio == opcion, onClick = { medio = opcion })
-                            Text(text = opcion)
-                        }
-                    }
-                    if (estado.error != null) {
-                        Text(text = estado.error ?: "", color = MaterialTheme.colorScheme.error)
-                    }
-                    Button(
-                        onClick = { viewModel.pagar(usuarioId, medio, onPagoExitoso) },
-                        enabled = !estado.pagando,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        if (estado.pagando) CircularProgressIndicator(modifier = Modifier.size(20.dp)) else Text("Pagar")
-                    }
+                    Text("Pagar")
                 }
             }
         }

@@ -1,7 +1,7 @@
 package com.sportec.sporthub.navigation
 
 import androidx.navigation3.runtime.NavKey
-import com.sportec.sporthub.data.model.Rol
+import com.sportec.sporthub.domain.Rol
 
 data class Destino(
     val etiqueta: String,
