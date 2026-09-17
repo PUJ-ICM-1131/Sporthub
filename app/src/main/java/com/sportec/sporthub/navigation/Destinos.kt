@@ -16,24 +16,22 @@ data class InfoPantalla(
 
 fun opcionesPerfil(rol: Rol?): List<Destino> = when (rol) {
     Rol.DEPORTISTA -> listOf(
-        Destino("Editar perfil", EditarPerfil),
         Destino("Notificaciones", Notificaciones),
         Destino("Reservas transferibles", Transferencias),
-        Destino("Mis transferencias", MisTransferencias),
+        Destino("Mis transferencias", MisReservas),
         Destino("Reembolsos", Reembolsos),
         Destino("Reportar una incidencia", Reportar("general"))
     )
     Rol.ESTABLECIMIENTO -> listOf(
+        Destino("Ver ingresos", Gestion),
         Destino("Estado de validación", ValidacionNegocio),
         Destino("Editar ficha del negocio", EditarNegocio),
         Destino("Agenda", Agenda),
         Destino("Reseñas", ResenasNegocio),
         Destino("Reembolsos", Reembolsos),
-        Destino("Editar perfil", EditarPerfil),
         Destino("Notificaciones", Notificaciones)
     )
     Rol.ADMINISTRADOR -> listOf(
-        Destino("Editar perfil", EditarPerfil),
         Destino("Notificaciones", Notificaciones)
     )
     null -> emptyList()
@@ -51,18 +49,7 @@ fun infoDe(ruta: NavKey): InfoPantalla = when (ruta) {
         "Registro de establecimiento", listOf("HU-C02"),
         listOf(Destino("Ir a iniciar sesión", Login))
     )
-    Recuperar -> InfoPantalla(
-        "Recuperar acceso", listOf("HU-C04"),
-        listOf(Destino("Abrir enlace de recuperación", EnlaceRecuperacion))
-    )
-    EnlaceRecuperacion -> InfoPantalla(
-        "Enlace de recuperación", listOf("HU-C04"),
-        listOf(Destino("Definir nueva contraseña", NuevaContrasena), Destino("Solicitar otro enlace", Recuperar))
-    )
-    NuevaContrasena -> InfoPantalla(
-        "Nueva contraseña", listOf("HU-C04"),
-        listOf(Destino("Volver a iniciar sesión", Login))
-    )
+    Recuperar -> InfoPantalla("Recuperar acceso", listOf("HU-C04"))
 
     Explorar -> InfoPantalla("Explorar", listOf("HU-D01"))
     Buscar -> InfoPantalla(

@@ -19,6 +19,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sportec.sporthub.domain.Resenas
+import com.sportec.sporthub.ui.components.Aviso
+import com.sportec.sporthub.ui.components.TipoAviso
 import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.PantallaBase
 
@@ -53,7 +55,7 @@ fun ResponderResenaScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (error != null) {
-                    Text(text = error ?: "", color = MaterialTheme.colorScheme.error)
+                    Aviso(texto = error ?: "", tipo = TipoAviso.ERROR)
                 }
                 Button(
                     onClick = {

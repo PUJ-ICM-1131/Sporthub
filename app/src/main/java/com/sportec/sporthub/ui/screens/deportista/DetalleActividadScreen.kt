@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.Etiqueta
+import com.sportec.sporthub.ui.components.IlustracionActividad
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.ui.components.TarjetaHechos
 import com.sportec.sporthub.utils.formatoDuracion
@@ -32,6 +34,7 @@ fun DetalleActividadScreen(
     actividadId: String,
     onBack: () -> Unit,
     onVerHorarios: () -> Unit,
+    onVerEstablecimiento: () -> Unit,
     viewModel: DetalleActividadViewModel = viewModel()
 ) {
     val estado by viewModel.uiState.collectAsState()
@@ -55,6 +58,7 @@ fun DetalleActividadScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    IlustracionActividad(item.actividad)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Etiqueta(texto = item.actividad.categoria)
                         Etiqueta(
@@ -88,6 +92,9 @@ fun DetalleActividadScreen(
                     )
                     Button(onClick = onVerHorarios, modifier = Modifier.fillMaxWidth()) {
                         Text("Ver horarios")
+                    }
+                    OutlinedButton(onClick = onVerEstablecimiento, modifier = Modifier.fillMaxWidth()) {
+                        Text("Ver establecimiento")
                     }
                 }
             }

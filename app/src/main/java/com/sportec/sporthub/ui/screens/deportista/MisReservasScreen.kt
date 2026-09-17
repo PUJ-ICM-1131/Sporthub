@@ -26,9 +26,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
 import com.sportec.sporthub.domain.Negocios
 import com.sportec.sporthub.domain.Reserva
+import com.sportec.sporthub.domain.Reservas
 import com.sportec.sporthub.domain.Solicitud
+import com.sportec.sporthub.domain.Transferencia
 import com.sportec.sporthub.navigation.DetalleReserva
 import com.sportec.sporthub.navigation.DetalleSolicitud
+import com.sportec.sporthub.navigation.DetalleTransferencia
 import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.Etiqueta
 import com.sportec.sporthub.ui.components.TonoEtiqueta
@@ -69,6 +72,7 @@ fun MisReservasScreen(
                                 PestanaReservas.SOLICITUDES -> "Solicitudes"
                                 PestanaReservas.PROXIMAS -> "Próximas"
                                 PestanaReservas.HISTORIAL -> "Historial"
+                                PestanaReservas.TRANSFERENCIAS -> "Transferencias"
                             }
                         )
                     }
@@ -99,6 +103,13 @@ fun MisReservasScreen(
                     } else {
                         items(estado.historial, key = { it.id }) { reserva ->
                             TarjetaReserva(reserva) { onNavegar(DetalleReserva(reserva.id)) }
+                        }
+                    }
+                    PestanaReservas.TRANSFERENCIAS -> if (estado.transferencias.isEmpty()) {
+                        item { EstadoVacio(mensaje = "Aquí verás las transferencias que publiques o en las que participes.") }
+                    } else {
+                        items(estado.transferencias, key = { it.id }) { transferencia ->
+                            TarjetaTransferenciaReserva(transferencia) { onNavegar(DetalleTransferencia(transferencia.id)) }
                         }
                     }
                 }
@@ -151,6 +162,33 @@ private fun TarjetaReserva(reserva: Reserva, onClick: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(text = formatoPesos(reserva.precio), style = MaterialTheme.typography.titleSmall)
+        }
+    }
+}
+
+@Composable
+private fun TarjetaTransferenciaReserva(transferencia: Transferencia, onClick: () -> Unit) {
+    val reserva = Reservas.obtenerReserva(transferencia.reservaId)
+    val actividad = reserva?.let { Negocios.actividadDe(it.actividadId) }
+    ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = actividad?.nombre.orEmpty(),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
+                )
+                Etiqueta(texto = transferencia.estado.etiqueta, tono = transferencia.estado.tono)
+            }
+            if (reserva != null) {
+                Text(
+                    text = formatoIntervalo(reserva.fecha, reserva.hora, reserva.duracionHoras),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(text = formatoPesos(reserva.precio), style = MaterialTheme.typography.titleSmall)
+            }
         }
     }
 }

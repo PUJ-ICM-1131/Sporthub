@@ -24,27 +24,48 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.sportec.sporthub.domain.Mensajes as MensajesDominio
+import com.sportec.sporthub.domain.Negocios
 import com.sportec.sporthub.ui.SesionViewModel
 import com.sportec.sporthub.ui.screens.acceso.BienvenidaScreen
+import com.sportec.sporthub.ui.screens.acceso.EnlaceRecuperacionScreen
 import com.sportec.sporthub.ui.screens.acceso.LoginScreen
+import com.sportec.sporthub.ui.screens.acceso.NuevaContrasenaScreen
+import com.sportec.sporthub.ui.screens.acceso.RecuperarScreen
+import com.sportec.sporthub.ui.screens.acceso.RegistroDeportistaScreen
+import com.sportec.sporthub.ui.screens.acceso.RegistroEstablecimientoScreen
 import com.sportec.sporthub.ui.screens.acceso.RegistroScreen
+import com.sportec.sporthub.ui.screens.admin.DetalleReporteScreen
+import com.sportec.sporthub.ui.screens.admin.DetalleValidacionScreen
+import com.sportec.sporthub.ui.screens.admin.ReportesScreen
+import com.sportec.sporthub.ui.screens.admin.ValidacionesScreen
 import com.sportec.sporthub.ui.screens.comun.ChatScreen
+import com.sportec.sporthub.ui.screens.comun.CrearComunidadScreen
+import com.sportec.sporthub.ui.screens.comun.EditarPerfilScreen
 import com.sportec.sporthub.ui.screens.comun.MensajesScreen
 import com.sportec.sporthub.ui.screens.comun.NotificacionesScreen
 import com.sportec.sporthub.ui.screens.comun.PantallaPendiente
 import com.sportec.sporthub.ui.screens.comun.PerfilScreen
+import com.sportec.sporthub.ui.screens.comun.ReportarScreen
+import com.sportec.sporthub.ui.screens.deportista.BrujulaScreen
+import com.sportec.sporthub.ui.screens.deportista.BuscarScreen
 import com.sportec.sporthub.ui.screens.deportista.CancelarReservaScreen
 import com.sportec.sporthub.ui.screens.deportista.DetalleActividadScreen
+import com.sportec.sporthub.ui.screens.deportista.DetalleEstablecimientoScreen
 import com.sportec.sporthub.ui.screens.deportista.DetalleReservaScreen
 import com.sportec.sporthub.ui.screens.deportista.DetalleSolicitudScreen
 import com.sportec.sporthub.ui.screens.deportista.DetalleTransferenciaScreen
 import com.sportec.sporthub.ui.screens.deportista.ExplorarScreen
 import com.sportec.sporthub.ui.screens.deportista.HorariosScreen
+import com.sportec.sporthub.ui.screens.deportista.MapaScreen
 import com.sportec.sporthub.ui.screens.deportista.MisReservasScreen
+import com.sportec.sporthub.ui.screens.deportista.OrigenScreen
 import com.sportec.sporthub.ui.screens.deportista.PagoExitosoScreen
 import com.sportec.sporthub.ui.screens.deportista.PagoScreen
 import com.sportec.sporthub.ui.screens.deportista.PublicarTransferenciaScreen
+import com.sportec.sporthub.ui.screens.deportista.ResenaScreen
 import com.sportec.sporthub.ui.screens.deportista.ResumenSolicitudScreen
+import com.sportec.sporthub.ui.screens.deportista.TransferenciasScreen
 import com.sportec.sporthub.ui.screens.establecimiento.AgendaScreen
 import com.sportec.sporthub.ui.screens.establecimiento.CondicionesScreen
 import com.sportec.sporthub.ui.screens.establecimiento.EditarNegocioScreen
@@ -68,7 +89,7 @@ fun SportHubApp(
 
     val pestanas = cuenta?.let { pestanasDe(it.rol) }.orEmpty()
     val rutaActual = backStack.lastOrNull()
-    val mostrarBarra = pestanas.any { it.ruta == rutaActual }
+    val mostrarBarra = cuenta != null && pestanas.isNotEmpty()
 
     fun irA(ruta: NavKey) {
         val indice = backStack.indexOf(ruta)
@@ -177,6 +198,38 @@ fun SportHubApp(
                         onIniciarSesion = { irA(Login) }
                     )
                 }
+                entry<Recuperar> {
+                    RecuperarScreen(
+                        onBack = { volver() },
+                        onEnlaceEnviado = { email -> irA(EnlaceRecuperacion(email)) }
+                    )
+                }
+                entry<EnlaceRecuperacion> { ruta ->
+                    EnlaceRecuperacionScreen(
+                        email = ruta.email,
+                        onBack = { volver() },
+                        onAbrirEnlace = { irA(NuevaContrasena(ruta.email)) }
+                    )
+                }
+                entry<NuevaContrasena> { ruta ->
+                    NuevaContrasenaScreen(
+                        email = ruta.email,
+                        onBack = { volver() },
+                        onListo = { reiniciarEn(Login) }
+                    )
+                }
+                entry<RegistroDeportista> {
+                    RegistroDeportistaScreen(
+                        onBack = { volver() },
+                        onRegistrado = { reiniciarEn(Login) }
+                    )
+                }
+                entry<RegistroEstablecimiento> {
+                    RegistroEstablecimientoScreen(
+                        onBack = { volver() },
+                        onRegistrado = { reiniciarEn(Login) }
+                    )
+                }
                 entry<Explorar> {
                     ExplorarScreen(
                         nombre = cuenta?.nombre?.substringBefore(" ").orEmpty(),
@@ -193,6 +246,13 @@ fun SportHubApp(
                         }
                     )
                 }
+                entry<EditarPerfil> {
+                    EditarPerfilScreen(
+                        cuenta = cuenta,
+                        onBack = { volver() },
+                        onGuardado = { actualizada -> sesionViewModel.actualizar(actualizada) }
+                    )
+                }
                 entry<Notificaciones> {
                     NotificacionesScreen(
                         usuarioId = cuenta?.id.orEmpty(),
@@ -204,7 +264,22 @@ fun SportHubApp(
                     DetalleActividadScreen(
                         actividadId = ruta.id,
                         onBack = { volver() },
-                        onVerHorarios = { irA(Horarios(ruta.id)) }
+                        onVerHorarios = { irA(Horarios(ruta.id)) },
+                        onVerEstablecimiento = {
+                            Negocios.actividadDe(ruta.id)?.negocioId?.let { irA(DetalleEstablecimiento(it)) }
+                        }
+                    )
+                }
+                entry<DetalleEstablecimiento> { ruta ->
+                    DetalleEstablecimientoScreen(
+                        negocioId = ruta.id,
+                        onBack = { volver() },
+                        onVerServicio = { id -> irA(DetalleActividad(id)) },
+                        onEnviarMensaje = {
+                            val chat = MensajesDominio.chatConNegocio(cuenta?.id.orEmpty(), ruta.id)
+                            irA(Chat(chat.id))
+                        },
+                        onComoLlegar = { irA(Ruta(ruta.id)) }
                     )
                 }
                 entry<Horarios> { ruta ->
@@ -258,7 +333,16 @@ fun SportHubApp(
                         usuarioId = cuenta?.id.orEmpty(),
                         onBack = { volver() },
                         onCancelar = { id -> irA(CancelarReserva(id)) },
-                        onPublicarTransferencia = { id -> irA(PublicarTransferencia(id)) }
+                        onPublicarTransferencia = { id -> irA(PublicarTransferencia(id)) },
+                        onVerTransferencia = { id -> irA(DetalleTransferencia(id)) },
+                        onCalificar = { id -> irA(Resena(id)) }
+                    )
+                }
+                entry<Resena> { ruta ->
+                    ResenaScreen(
+                        reservaId = ruta.reservaId,
+                        usuarioId = cuenta?.id.orEmpty(),
+                        onBack = { volver() }
                     )
                 }
                 entry<CancelarReserva> { ruta ->
@@ -277,6 +361,35 @@ fun SportHubApp(
                         onPublicada = { id -> reiniciarEn(DetalleTransferencia(id)) }
                     )
                 }
+                entry<Buscar> {
+                    BuscarScreen(
+                        onBack = { volver() },
+                        onVerEnMapa = { irA(Mapa) },
+                        onVerActividad = { id -> irA(DetalleActividad(id)) }
+                    )
+                }
+                entry<Mapa> {
+                    MapaScreen(
+                        onBack = { volver() },
+                        onVerServicios = { id -> irA(DetalleEstablecimiento(id)) },
+                        onElegirOrigen = { irA(Origen) }
+                    )
+                }
+                entry<Origen> {
+                    OrigenScreen(onBack = { volver() })
+                }
+                entry<Brujula> { ruta ->
+                    BrujulaScreen(
+                        negocioId = ruta.negocioId,
+                        onBack = { volver() }
+                    )
+                }
+                entry<Transferencias> {
+                    TransferenciasScreen(
+                        onBack = { volver() },
+                        onAbrir = { id -> irA(DetalleTransferencia(id)) }
+                    )
+                }
                 entry<DetalleTransferencia> { ruta ->
                     DetalleTransferenciaScreen(
                         transferenciaId = ruta.id,
@@ -288,15 +401,44 @@ fun SportHubApp(
                 entry<Mensajes> {
                     MensajesScreen(
                         usuarioId = cuenta?.id.orEmpty(),
-                        onAbrirChat = { id -> irA(Chat(id)) }
+                        onAbrirChat = { id -> irA(Chat(id)) },
+                        onCrearComunidad = { irA(CrearComunidad) }
+                    )
+                }
+                entry<CrearComunidad> {
+                    CrearComunidadScreen(
+                        creadorId = cuenta?.id.orEmpty(),
+                        onBack = { volver() },
+                        onCreada = { id -> reiniciarEn(Chat(id)) }
                     )
                 }
                 entry<Chat> { ruta ->
                     ChatScreen(
                         chatId = ruta.id,
                         usuarioId = cuenta?.id.orEmpty(),
-                        onBack = { volver() }
+                        onBack = { volver() },
+                        onReportar = { irA(Reportar("mensaje")) }
                     )
+                }
+                entry<Reportar> { ruta ->
+                    ReportarScreen(
+                        objetivo = ruta.objetivo,
+                        autorId = cuenta?.id.orEmpty(),
+                        onBack = { volver() },
+                        onEnviado = { volver() }
+                    )
+                }
+                entry<Validaciones> {
+                    ValidacionesScreen(onAbrir = { id -> irA(DetalleValidacion(id)) })
+                }
+                entry<DetalleValidacion> { ruta ->
+                    DetalleValidacionScreen(negocioId = ruta.negocioId, onBack = { volver() })
+                }
+                entry<Reportes> {
+                    ReportesScreen(onAbrir = { id -> irA(DetalleReporte(id)) })
+                }
+                entry<DetalleReporte> { ruta ->
+                    DetalleReporteScreen(reporteId = ruta.id, onBack = { volver() })
                 }
                 entry<Reembolsos> {
                     ReembolsosScreen(cuenta = cuenta)

@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sportec.sporthub.domain.EstadoNegocio
 import com.sportec.sporthub.domain.Negocios
+import com.sportec.sporthub.ui.components.Aviso
+import com.sportec.sporthub.ui.components.TipoAviso
 import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.Etiqueta
 import com.sportec.sporthub.ui.components.tono
@@ -50,7 +52,7 @@ fun ValidacionNegocioScreen(negocioId: String, operadorId: String) {
                         style = MaterialTheme.typography.bodyMedium
                     )
                     if (error != null) {
-                        Text(text = error ?: "", color = MaterialTheme.colorScheme.error)
+                        Aviso(texto = error ?: "", tipo = TipoAviso.ERROR)
                     }
                     Button(
                         onClick = {

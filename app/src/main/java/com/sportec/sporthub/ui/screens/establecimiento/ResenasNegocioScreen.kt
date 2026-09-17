@@ -20,7 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.sportec.sporthub.domain.DatosMock
+import com.sportec.sporthub.domain.Cuentas
 import com.sportec.sporthub.domain.Resenas
 import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.PantallaBase
@@ -42,7 +42,7 @@ fun ResenasNegocioScreen(negocioId: String, onResponder: (String) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(propias, key = { it.id }) { resena ->
-                    val autor = DatosMock.cuentas.firstOrNull { it.id == resena.usuarioId }?.nombre ?: "Deportista"
+                    val autor = Cuentas.porId(resena.usuarioId)?.nombre ?: "Deportista"
                     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(text = "$autor · ${resena.puntaje} / 5", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)

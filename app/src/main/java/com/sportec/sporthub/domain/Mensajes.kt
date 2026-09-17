@@ -15,7 +15,16 @@ object Mensajes {
 
     fun chatDe(id: String): Chat? = _chats.value.firstOrNull { it.id == id }
 
-    fun listarDe(usuarioId: String): List<Chat> = _chats.value.filter { it.miembros.contains(usuarioId) }
+    fun esMiembro(chat: Chat, usuarioId: String): Boolean =
+        chat.comunidadId?.let { Comunidades.esMiembro(it, usuarioId) } ?: chat.miembros.contains(usuarioId)
+
+    fun listarDe(usuarioId: String): List<Chat> = _chats.value.filter { esMiembro(it, usuarioId) }
+
+    fun crearGrupo(comunidadId: String): Chat {
+        val nuevo = Chat(comunidadId, comunidadId = comunidadId, mensajes = emptyList())
+        _chats.value = _chats.value + nuevo
+        return nuevo
+    }
 
     fun chatConNegocio(usuarioId: String, negocioId: String): Chat {
         val operadorId = Negocios.operadorDe(negocioId)
@@ -30,7 +39,7 @@ object Mensajes {
     fun enviar(chatId: String, autorId: String, texto: String): Chat {
         if (texto.isBlank()) throw IllegalArgumentException("El mensaje no puede estar vacío.")
         val chat = chatDe(chatId) ?: throw IllegalArgumentException("La conversación ya no existe.")
-        if (!chat.miembros.contains(autorId)) throw IllegalStateException("No tienes acceso a esta conversación.")
+        if (!esMiembro(chat, autorId)) throw IllegalStateException("No tienes acceso a esta conversación.")
         val actualizado = chat.copy(mensajes = chat.mensajes + Mensaje(uid("m"), autorId, texto))
         _chats.value = _chats.value.map { if (it.id == chatId) actualizado else it }
         return actualizado

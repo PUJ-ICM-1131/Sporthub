@@ -29,7 +29,19 @@ object Negocios {
 
     fun actividadesDe(negocioId: String): List<Actividad> = _actividades.value.filter { it.negocioId == negocioId }
 
-    fun operadorDe(negocioId: String): String? = DatosMock.cuentas.firstOrNull { it.negocioId == negocioId }?.id
+    fun operadorDe(negocioId: String): String? = Cuentas.todas().firstOrNull { it.negocioId == negocioId }?.id
+
+    fun crear(nombre: String, nit: String, contacto: String, direccion: String): Negocio {
+        if (nombre.isBlank()) throw IllegalArgumentException("El nombre del negocio es obligatorio.")
+        if (direccion.isBlank()) throw IllegalArgumentException("La dirección es obligatoria.")
+        val negocio = Negocio(
+            id = uid("b"), nombre = nombre.trim(), nit = nit.trim(), contacto = contacto.trim(),
+            direccion = direccion.trim(), descripcion = "", estado = EstadoNegocio.PENDIENTE,
+            latitud = 4.6486, longitud = -74.0813
+        )
+        _negocios.value = _negocios.value + negocio
+        return negocio
+    }
 
     private fun exigirOperador(negocioId: String, operadorId: String) {
         if (operadorDe(negocioId) != operadorId) throw IllegalStateException("Esta ficha corresponde a otra cuenta de negocio.")
@@ -41,6 +53,23 @@ object Negocios {
         val nuevoEstado = if (negocio.nombre.isNotBlank() && negocio.nit.isNotBlank()) EstadoNegocio.VALIDADO else EstadoNegocio.PENDIENTE
         val actualizado = negocio.copy(estado = nuevoEstado)
         _negocios.value = _negocios.value.map { if (it.id == negocioId) actualizado else it }
+        return actualizado
+    }
+
+    fun validar(negocioId: String, aprobado: Boolean): Negocio {
+        val negocio = negocioDe(negocioId) ?: throw IllegalArgumentException("El negocio no existe.")
+        if (negocio.estado != EstadoNegocio.PENDIENTE) throw IllegalStateException("Este negocio ya fue revisado.")
+        val actualizado = negocio.copy(estado = if (aprobado) EstadoNegocio.VALIDADO else EstadoNegocio.RECHAZADO)
+        _negocios.value = _negocios.value.map { if (it.id == negocioId) actualizado else it }
+        operadorDe(negocioId)?.let {
+            Notificaciones.enviar(
+                it,
+                if (aprobado) "Negocio validado" else "Negocio rechazado",
+                if (aprobado) "Tu negocio ya está visible para deportistas." else "Revisa los datos de tu ficha y vuelve a intentarlo.",
+                "business",
+                negocioId
+            )
+        }
         return actualizado
     }
 
@@ -63,7 +92,8 @@ object Negocios {
         precio: Int,
         duracionMinutos: Int,
         capacidad: Int,
-        descripcion: String
+        descripcion: String,
+        fotoUri: String? = null
     ): Actividad {
         exigirOperador(negocioId, operadorId)
         if (negocioDe(negocioId)?.estado != EstadoNegocio.VALIDADO) throw IllegalStateException("El negocio debe estar validado para publicar servicios.")
@@ -80,14 +110,16 @@ object Negocios {
             }
             val actualizada = existente.copy(
                 nombre = nombre, categoria = categoria, tipo = tipo, precio = precio,
-                duracionMinutos = duracionMinutos, capacidad = capacidad, descripcion = descripcion
+                duracionMinutos = duracionMinutos, capacidad = capacidad, descripcion = descripcion,
+                fotoUri = fotoUri ?: existente.fotoUri
             )
             _actividades.value = _actividades.value.map { if (it.id == existente.id) actualizada else it }
             return actualizada
         }
         val nueva = Actividad(
             id = uid("a"), negocioId = negocioId, nombre = nombre, categoria = categoria, tipo = tipo,
-            precio = precio, duracionMinutos = duracionMinutos, capacidad = capacidad, descripcion = descripcion
+            precio = precio, duracionMinutos = duracionMinutos, capacidad = capacidad, descripcion = descripcion,
+            fotoUri = fotoUri
         )
         _actividades.value = _actividades.value + nueva
         return nueva

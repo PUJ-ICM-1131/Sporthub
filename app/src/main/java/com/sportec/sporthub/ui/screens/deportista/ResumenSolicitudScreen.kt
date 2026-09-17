@@ -17,6 +17,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sportec.sporthub.ui.components.Aviso
+import com.sportec.sporthub.ui.components.TipoAviso
 import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.ui.components.TarjetaHechos
@@ -68,7 +70,7 @@ fun ResumenSolicitudScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 if (estado.error != null) {
-                    Text(text = estado.error ?: "", color = MaterialTheme.colorScheme.error)
+                    Aviso(texto = estado.error ?: "", tipo = TipoAviso.ERROR)
                 }
                 Button(
                     onClick = { viewModel.enviar(usuarioId, fecha, hora, onSolicitudEnviada) },

@@ -1,31 +1,28 @@
 package com.sportec.sporthub.ui.screens.comun
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,17 +32,28 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
+import coil3.compose.AsyncImage
 import com.sportec.sporthub.domain.Cuenta
 import com.sportec.sporthub.domain.Rol
+import com.sportec.sporthub.navigation.EditarPerfil
 import com.sportec.sporthub.navigation.Notificaciones
 import com.sportec.sporthub.navigation.opcionesPerfil
 import com.sportec.sporthub.ui.components.Etiqueta
 import com.sportec.sporthub.ui.components.PantallaBase
+import com.sportec.sporthub.ui.components.TarjetaHechos
 import com.sportec.sporthub.utils.iniciales
+
+private val PortadaInicio = Color(0xFF064D36)
+private val PortadaFin = Color(0xFF187848)
+private val AvatarFondo = Color(0xFFE1F3DB)
+private val AvatarTexto = Color(0xFF205D3A)
 
 @Composable
 fun PerfilScreen(
@@ -68,64 +76,89 @@ fun PerfilScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(bottom = 16.dp)
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(64.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = iniciales(cuenta?.nombre.orEmpty()),
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .fillMaxWidth()
+                            .height(90.dp)
+                            .background(
+                                Brush.linearGradient(listOf(PortadaInicio, PortadaFin)),
+                                RoundedCornerShape(23.dp)
                             )
+                    )
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .fillMaxWidth()
+                            .padding(top = 40.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(104.dp)
+                                .border(5.dp, MaterialTheme.colorScheme.surface, CircleShape)
+                                .background(AvatarFondo, CircleShape)
+                                .clip(CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (cuenta?.fotoUri != null) {
+                                AsyncImage(
+                                    model = cuenta.fotoUri,
+                                    contentDescription = "Foto de perfil",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Text(
+                                    text = iniciales(cuenta?.nombre.orEmpty()),
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AvatarTexto
+                                )
+                            }
                         }
-                    }
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
                             text = cuenta?.nombre.orEmpty(),
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = cuenta?.email.orEmpty(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            fontWeight = FontWeight.Bold
                         )
                         Etiqueta(texto = cuenta?.rol?.etiqueta.orEmpty())
                     }
                 }
-                HorizontalDivider()
             }
-            items(opcionesPerfil(cuenta?.rol)) { destino ->
-                ListItem(
-                    headlineContent = { Text(destino.etiqueta) },
-                    trailingContent = {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
-                    },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    modifier = Modifier.clickable { onNavegar(destino.ruta) }
+            item {
+                TarjetaHechos(
+                    pares = buildList {
+                        add("Correo electrónico" to cuenta?.email.orEmpty())
+                        add("Teléfono" to (cuenta?.telefono ?: "Sin agregar"))
+                    }
                 )
             }
             item {
-                OutlinedButton(
-                    onClick = { confirmarSalida = true },
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Text("Cerrar sesión")
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(onClick = { onNavegar(EditarPerfil) }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Editar mis datos")
+                    }
+                    opcionesPerfil(cuenta?.rol).forEach { destino ->
+                        OutlinedButton(onClick = { onNavegar(destino.ruta) }, modifier = Modifier.fillMaxWidth()) {
+                            Text(destino.etiqueta)
+                        }
+                    }
+                    OutlinedButton(
+                        onClick = { confirmarSalida = true },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Cerrar sesión")
+                    }
                 }
             }
         }

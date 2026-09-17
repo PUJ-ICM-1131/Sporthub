@@ -18,6 +18,11 @@ object Transferencias {
 
     fun obtener(id: String): Transferencia? = _transferencias.value.firstOrNull { it.id == id }
 
+    fun deReserva(reservaId: String): Transferencia? {
+        val propias = _transferencias.value.filter { it.reservaId == reservaId }
+        return propias.firstOrNull { it.estado in VIGENTE } ?: propias.lastOrNull()
+    }
+
     fun listarPublicadas(): List<Transferencia> = _transferencias.value.filter { it.estado in VIGENTE }
 
     fun listarDeUsuario(usuarioId: String): List<Transferencia> =

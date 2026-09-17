@@ -28,6 +28,8 @@ import com.sportec.sporthub.domain.Cuenta
 import com.sportec.sporthub.domain.EstadoPostulante
 import com.sportec.sporthub.domain.EstadoTransferencia
 import com.sportec.sporthub.domain.Rol
+import com.sportec.sporthub.ui.components.Aviso
+import com.sportec.sporthub.ui.components.TipoAviso
 import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.Etiqueta
 import com.sportec.sporthub.ui.components.PantallaBase
@@ -84,7 +86,7 @@ fun DetalleTransferenciaScreen(
                     )
                 )
                 if (estado.error != null) {
-                    Text(text = estado.error ?: "", color = MaterialTheme.colorScheme.error)
+                    Aviso(texto = estado.error ?: "", tipo = TipoAviso.ERROR)
                 }
 
                 if (esOperador) {

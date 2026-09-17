@@ -20,6 +20,7 @@ data class EditarServicioUiState(
     val duracionMinutos: String = "120",
     val capacidad: String = "1",
     val descripcion: String = "",
+    val fotoUri: String? = null,
     val error: String? = null,
     val guardado: Actividad? = null
 )
@@ -49,7 +50,8 @@ class EditarServicioViewModel : ViewModel() {
             precio = actividad.precio.toString(),
             duracionMinutos = actividad.duracionMinutos.toString(),
             capacidad = actividad.capacidad.toString(),
-            descripcion = actividad.descripcion
+            descripcion = actividad.descripcion,
+            fotoUri = actividad.fotoUri
         )
     }
 
@@ -60,6 +62,7 @@ class EditarServicioViewModel : ViewModel() {
     fun onDuracionCambiada(v: String) = _uiState.update { it.copy(duracionMinutos = v.filter(Char::isDigit), error = null) }
     fun onCapacidadCambiada(v: String) = _uiState.update { it.copy(capacidad = v.filter(Char::isDigit), error = null) }
     fun onDescripcionCambiada(v: String) = _uiState.update { it.copy(descripcion = v) }
+    fun onFotoCambiada(v: String) = _uiState.update { it.copy(fotoUri = v) }
 
     fun guardar(negocioId: String, operadorId: String) {
         val estado = _uiState.value
@@ -74,7 +77,8 @@ class EditarServicioViewModel : ViewModel() {
                 precio = estado.precio.toIntOrNull() ?: 0,
                 duracionMinutos = estado.duracionMinutos.toIntOrNull() ?: 0,
                 capacidad = estado.capacidad.toIntOrNull() ?: 0,
-                descripcion = estado.descripcion.trim()
+                descripcion = estado.descripcion.trim(),
+                fotoUri = estado.fotoUri
             )
             actividadId = actividad.id
             _uiState.update { it.copy(esNuevo = false, guardado = actividad) }

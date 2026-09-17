@@ -14,6 +14,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -27,7 +28,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.sportec.sporthub.domain.DatosMock
+import com.sportec.sporthub.domain.Comunidades
+import com.sportec.sporthub.domain.Cuentas
 import com.sportec.sporthub.domain.Mensaje
 import com.sportec.sporthub.domain.Mensajes
 import com.sportec.sporthub.ui.components.EstadoError
@@ -37,17 +39,30 @@ import com.sportec.sporthub.ui.components.PantallaBase
 fun ChatScreen(
     chatId: String,
     usuarioId: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onReportar: () -> Unit
 ) {
     val chats by Mensajes.chats.collectAsState()
     val chat = chats.firstOrNull { it.id == chatId }
     var texto by rememberSaveable { mutableStateOf("") }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val otroId = chat?.miembros?.firstOrNull { it != usuarioId }
-    val titulo = DatosMock.cuentas.firstOrNull { it.id == otroId }?.nombre ?: "Conversación"
+    val titulo = if (chat?.comunidadId != null) {
+        Comunidades.comunidadDe(chat.comunidadId)?.nombre ?: "Comunidad"
+    } else {
+        val otroId = chat?.miembros?.firstOrNull { it != usuarioId }
+        Cuentas.porId(otroId.orEmpty())?.let { Cuentas.nombreParaMostrar(it) } ?: "Conversación"
+    }
 
-    PantallaBase(titulo = titulo, onBack = onBack) { padding ->
+    PantallaBase(
+        titulo = titulo,
+        onBack = onBack,
+        acciones = {
+            IconButton(onClick = onReportar) {
+                Icon(Icons.Filled.Flag, contentDescription = "Reportar")
+            }
+        }
+    ) { padding ->
         if (chat == null) {
             EstadoError(mensaje = "La conversación ya no existe.", onReintentar = {}, modifier = Modifier.padding(padding))
         } else {

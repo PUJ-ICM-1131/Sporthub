@@ -2,6 +2,7 @@ package com.sportec.sporthub.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -151,6 +152,7 @@ fun TarjetaActividad(
         onClick = onClick,
         modifier = modifier.fillMaxWidth()
     ) {
+        IlustracionActividad(item.actividad)
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -172,14 +174,28 @@ fun TarjetaActividad(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Etiqueta(texto = item.actividad.categoria)
-                Etiqueta(
-                    texto = item.actividad.tipo.etiqueta,
-                    contenedor = MaterialTheme.colorScheme.secondaryContainer,
-                    contenido = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            }
+            Etiqueta(texto = item.actividad.categoria)
         }
+    }
+}
+
+private val VerdeTinte = Color(0xFFEDF8EB)
+
+/** Tarjeta tenue verde, igual a .card.tint del prototipo (avisos y teasers destacados). */
+@Composable
+fun TarjetaTint(
+    modifier: Modifier = Modifier,
+    contenido: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        color = VerdeTinte,
+        shape = RoundedCornerShape(17.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            content = contenido
+        )
     }
 }

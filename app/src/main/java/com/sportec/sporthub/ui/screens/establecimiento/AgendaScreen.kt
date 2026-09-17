@@ -25,6 +25,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sportec.sporthub.domain.Negocios
 import com.sportec.sporthub.domain.Reserva
 import com.sportec.sporthub.domain.Reservas
+import com.sportec.sporthub.ui.components.Aviso
+import com.sportec.sporthub.ui.components.TipoAviso
 import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.Etiqueta
 import com.sportec.sporthub.ui.components.TonoEtiqueta
@@ -54,7 +56,7 @@ fun AgendaScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 if (error != null) {
-                    item { Text(text = error ?: "", color = MaterialTheme.colorScheme.error) }
+                    item { Aviso(texto = error ?: "", tipo = TipoAviso.ERROR) }
                 }
                 items(reservas, key = { it.id }) { reserva ->
                     TarjetaAgenda(reserva, operadorId, viewModel)

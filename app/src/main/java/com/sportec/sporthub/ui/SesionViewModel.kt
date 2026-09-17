@@ -2,6 +2,7 @@ package com.sportec.sporthub.ui
 
 import androidx.lifecycle.ViewModel
 import com.sportec.sporthub.domain.Cuenta
+import com.sportec.sporthub.domain.Cuentas
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,6 +13,11 @@ class SesionViewModel : ViewModel() {
     val cuenta: StateFlow<Cuenta?> = _cuenta.asStateFlow()
 
     fun iniciar(cuenta: Cuenta) {
+        _cuenta.value = cuenta
+    }
+
+    fun actualizar(cuenta: Cuenta) {
+        Cuentas.actualizar(cuenta)
         _cuenta.value = cuenta
     }
 

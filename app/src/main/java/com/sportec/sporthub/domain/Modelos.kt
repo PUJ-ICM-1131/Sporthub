@@ -14,7 +14,8 @@ data class Cuenta(
     val rol: Rol,
     val telefono: String? = null,
     val negocioId: String? = null,
-    val activa: Boolean = true
+    val activa: Boolean = true,
+    val fotoUri: String? = null
 )
 
 enum class EstadoNegocio(val etiqueta: String) {
@@ -69,7 +70,8 @@ data class Actividad(
     val duracionMinutos: Int,
     val capacidad: Int,
     val descripcion: String,
-    val politica: Politica = Politica()
+    val politica: Politica = Politica(),
+    val fotoUri: String? = null
 )
 
 data class ActividadConNegocio(

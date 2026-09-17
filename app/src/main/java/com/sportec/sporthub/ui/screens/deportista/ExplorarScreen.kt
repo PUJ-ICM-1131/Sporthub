@@ -1,32 +1,28 @@
 package com.sportec.sporthub.ui.screens.deportista
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -40,6 +36,7 @@ import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.ui.components.TarjetaActividad
 import com.sportec.sporthub.ui.components.TarjetaHero
+import com.sportec.sporthub.ui.components.TarjetaTint
 
 @Composable
 fun ExplorarScreen(
@@ -86,10 +83,15 @@ fun ExplorarScreen(
                 )
             }
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AccesoRapido("Buscar", Icons.Filled.Search) { onNavegar(Buscar) }
-                    AccesoRapido("Mapa", Icons.Filled.Place) { onNavegar(Mapa) }
-                    AccesoRapido("Transferencias", Icons.Filled.Refresh) { onNavegar(Transferencias) }
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Encuentra tu actividad",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    TextButton(onClick = { onNavegar(Buscar) }) { Text("Ver todas") }
                 }
             }
             item {
@@ -110,35 +112,49 @@ fun ExplorarScreen(
                     }
                 }
             }
+            item {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Planes para esta semana",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    TextButton(onClick = { onNavegar(Mapa) }) { Text("Mapa") }
+                }
+            }
             if (estado.actividades.isEmpty()) {
                 item { EstadoVacio(mensaje = "No hay servicios publicados en esta categoría.") }
             } else {
-                items(estado.actividades, key = { it.actividad.id }) { item ->
-                    TarjetaActividad(
-                        item = item,
-                        onClick = { onNavegar(DetalleActividad(item.actividad.id)) }
+                item {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(13.dp)) {
+                        items(estado.actividades, key = { it.actividad.id }) { item ->
+                            Box(modifier = Modifier.width(254.dp)) {
+                                TarjetaActividad(
+                                    item = item,
+                                    onClick = { onNavegar(DetalleActividad(item.actividad.id)) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            item {
+                TarjetaTint {
+                    Text(
+                        text = "Un plan que cambia de manos",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
                     )
+                    Text(
+                        text = "Encuentra reservas publicadas para transferencia. El negocio debe aprobarte antes del pago.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    TextButton(onClick = { onNavegar(Transferencias) }) { Text("Explorar transferencias") }
                 }
             }
         }
     }
-}
-
-@Composable
-private fun AccesoRapido(
-    etiqueta: String,
-    icono: ImageVector,
-    onClick: () -> Unit
-) {
-    AssistChip(
-        onClick = onClick,
-        label = { Text(etiqueta) },
-        leadingIcon = {
-            Icon(
-                imageVector = icono,
-                contentDescription = null,
-                modifier = Modifier.size(AssistChipDefaults.IconSize)
-            )
-        }
-    )
 }

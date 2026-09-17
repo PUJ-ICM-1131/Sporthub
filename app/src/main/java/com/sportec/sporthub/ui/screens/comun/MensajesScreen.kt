@@ -5,7 +5,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.Text
@@ -17,7 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.sportec.sporthub.domain.Chat
-import com.sportec.sporthub.domain.DatosMock
+import com.sportec.sporthub.domain.Comunidades
+import com.sportec.sporthub.domain.Cuentas
 import com.sportec.sporthub.domain.Mensajes
 import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.PantallaBase
@@ -25,12 +30,20 @@ import com.sportec.sporthub.ui.components.PantallaBase
 @Composable
 fun MensajesScreen(
     usuarioId: String,
-    onAbrirChat: (String) -> Unit
+    onAbrirChat: (String) -> Unit,
+    onCrearComunidad: () -> Unit
 ) {
     val chats by Mensajes.chats.collectAsState()
-    val propios = chats.filter { it.miembros.contains(usuarioId) }
+    val propios = chats.filter { Mensajes.esMiembro(it, usuarioId) }
 
-    PantallaBase(titulo = "Mensajes") { padding ->
+    PantallaBase(
+        titulo = "Mensajes",
+        acciones = {
+            IconButton(onClick = onCrearComunidad) {
+                Icon(Icons.Filled.GroupAdd, contentDescription = "Crear comunidad")
+            }
+        }
+    ) { padding ->
         if (propios.isEmpty()) {
             EstadoVacio(mensaje = "Todavía no tienes conversaciones.", modifier = Modifier.padding(padding))
         } else {
@@ -51,8 +64,12 @@ fun MensajesScreen(
 
 @Composable
 private fun ItemChat(chat: Chat, usuarioId: String, onClick: () -> Unit) {
-    val otroId = chat.miembros.firstOrNull { it != usuarioId }
-    val nombre = DatosMock.cuentas.firstOrNull { it.id == otroId }?.nombre ?: "Conversación"
+    val nombre = if (chat.comunidadId != null) {
+        Comunidades.comunidadDe(chat.comunidadId)?.nombre ?: "Comunidad"
+    } else {
+        val otroId = chat.miembros.firstOrNull { it != usuarioId }
+        Cuentas.porId(otroId.orEmpty())?.let { Cuentas.nombreParaMostrar(it) } ?: "Conversación"
+    }
     val ultimo = chat.mensajes.lastOrNull()?.texto ?: "Sin mensajes todavía"
     ListItem(
         headlineContent = { Text(nombre) },

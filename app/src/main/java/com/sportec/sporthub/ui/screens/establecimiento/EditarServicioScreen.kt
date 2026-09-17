@@ -33,7 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sportec.sporthub.domain.Cuenta
 import com.sportec.sporthub.domain.TipoActividad
+import com.sportec.sporthub.ui.components.Aviso
+import com.sportec.sporthub.ui.components.TipoAviso
 import com.sportec.sporthub.ui.components.PantallaBase
+import com.sportec.sporthub.ui.components.SelectorFoto
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,6 +62,7 @@ fun EditarServicioScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            SelectorFoto(fotoUri = estado.fotoUri, onFotoSeleccionada = viewModel::onFotoCambiada)
             OutlinedTextField(
                 value = estado.nombre,
                 onValueChange = viewModel::onNombreCambiado,
@@ -130,7 +134,7 @@ fun EditarServicioScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             if (estado.error != null) {
-                Text(text = estado.error ?: "", color = MaterialTheme.colorScheme.error)
+                Aviso(texto = estado.error ?: "", tipo = TipoAviso.ERROR)
             }
             Button(
                 onClick = { viewModel.guardar(cuenta?.negocioId.orEmpty(), cuenta?.id.orEmpty()) },
