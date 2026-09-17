@@ -1,0 +1,24 @@
+package com.sportec.sporthub.ui.theme
+
+import androidx.compose.ui.graphics.Color
+
+val VerdeSportHub = Color(0xFF08734E)
+val Menta = Color(0xFFD4F1DF)
+val Papel = Color(0xFFEDF5EF)
+val Blanco = Color(0xFFFFFFFF)
+val Tinta = Color(0xFF153D2D)
+val Tenue = Color(0xFF587364)
+val Linea = Color(0xFFD7E6DC)
+val Calido = Color(0xFFFFF0D6)
+val CalidoTexto = Color(0xFF7A4B00)
+val Rojo = Color(0xFFA83139)
+
+val VerdeClaro = Color(0xFF7DD9A8)
+val VerdeProfundo = Color(0xFF0B4F37)
+val FondoOscuro = Color(0xFF0F1A15)
+val SuperficieOscura = Color(0xFF17241E)
+val LineaOscura = Color(0xFF2C3D35)
+val TextoOscuro = Color(0xFFDDEAE2)
+val TenueOscuro = Color(0xFFA3B8AC)
+val CalidoOscuro = Color(0xFF4A3510)
+val RojoClaro = Color(0xFFFFB3B0)
