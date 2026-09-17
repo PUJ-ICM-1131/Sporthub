@@ -27,6 +27,7 @@ import com.sportec.sporthub.domain.Reserva
 import com.sportec.sporthub.domain.Reservas
 import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.Etiqueta
+import com.sportec.sporthub.ui.components.TonoEtiqueta
 import com.sportec.sporthub.utils.formatoIntervalo
 import com.sportec.sporthub.ui.components.PantallaBase
 
@@ -69,11 +70,13 @@ private fun TarjetaAgenda(reserva: Reserva, operadorId: String, viewModel: Agend
     val ahora = Reservas.ahora()
     val inicio = Reservas.inicioMillis(reserva.fecha, reserva.hora)
     val fin = Reservas.finMillis(reserva.fecha, reserva.hora, reserva.duracionHoras)
-    val fase = when {
-        reserva.cerrada -> "Cerrada por el establecimiento"
-        ahora < inicio -> "Programada"
-        ahora < fin -> "En horario"
-        else -> "Horario finalizado · pendiente de cierre"
+    val fase: String
+    val tonoFase: TonoEtiqueta
+    when {
+        reserva.cerrada -> { fase = "Cerrada por el establecimiento"; tonoFase = TonoEtiqueta.GRIS }
+        ahora < inicio -> { fase = "Programada"; tonoFase = TonoEtiqueta.VERDE }
+        ahora < fin -> { fase = "En horario"; tonoFase = TonoEtiqueta.VERDE }
+        else -> { fase = "Horario finalizado · pendiente de cierre"; tonoFase = TonoEtiqueta.AMBAR }
     }
 
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -85,7 +88,7 @@ private fun TarjetaAgenda(reserva: Reserva, operadorId: String, viewModel: Agend
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f)
                 )
-                Etiqueta(texto = fase)
+                Etiqueta(texto = fase, tono = tonoFase)
             }
             Text(
                 text = formatoIntervalo(reserva.fecha, reserva.hora, reserva.duracionHoras),

@@ -19,6 +19,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sportec.sporthub.domain.EstadoReserva
 import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.Etiqueta
+import com.sportec.sporthub.ui.components.TonoEtiqueta
+import com.sportec.sporthub.ui.components.tono
 import com.sportec.sporthub.ui.components.TarjetaHechos
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.utils.formatoIntervalo
@@ -58,7 +60,7 @@ fun DetalleReservaScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Etiqueta(texto = if (reserva.cerrada) "Cerrada por el establecimiento" else reserva.estado.etiqueta)
+                    Etiqueta(texto = if (reserva.cerrada) "Cerrada por el establecimiento" else reserva.estado.etiqueta, tono = if (reserva.cerrada) TonoEtiqueta.GRIS else reserva.estado.tono)
                     TarjetaHechos(
                         pares = listOf(
                             "Servicio" to item.actividad.nombre,

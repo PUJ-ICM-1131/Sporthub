@@ -1,11 +1,23 @@
 package com.sportec.sporthub.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+
+/** Radios de esquina calcados de los tokens CSS del prototipo: .slot/input 12px, .primary/.card button 13px, .card 17px, .hero 23px. */
+private val SportHubShapes = Shapes(
+    extraSmall = RoundedCornerShape(10.dp),
+    small = RoundedCornerShape(13.dp),
+    medium = RoundedCornerShape(17.dp),
+    large = RoundedCornerShape(23.dp),
+    extraLarge = RoundedCornerShape(22.dp)
+)
 
 private val EsquemaClaro = lightColorScheme(
     primary = VerdeSportHub,
@@ -75,6 +87,7 @@ fun SportHubTheme(
     MaterialTheme(
         colorScheme = if (darkTheme) EsquemaOscuro else EsquemaClaro,
         typography = SportHubTypography,
+        shapes = SportHubShapes,
         content = content
     )
 }

@@ -21,6 +21,7 @@ import com.sportec.sporthub.domain.EstadoNegocio
 import com.sportec.sporthub.domain.Negocios
 import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.Etiqueta
+import com.sportec.sporthub.ui.components.tono
 import com.sportec.sporthub.ui.components.PantallaBase
 
 @Composable
@@ -40,7 +41,7 @@ fun ValidacionNegocioScreen(negocioId: String, operadorId: String) {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Etiqueta(texto = negocio.estado.etiqueta)
+                Etiqueta(texto = negocio.estado.etiqueta, tono = negocio.estado.tono)
                 Text(text = negocio.nombre, style = MaterialTheme.typography.titleMedium)
                 Text(text = "NIT ${negocio.nit}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (negocio.estado != EstadoNegocio.VALIDADO) {

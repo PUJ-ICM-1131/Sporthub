@@ -39,9 +39,11 @@ import com.sportec.sporthub.navigation.Transferencias
 import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.ui.components.TarjetaActividad
+import com.sportec.sporthub.ui.components.TarjetaHero
 
 @Composable
 fun ExplorarScreen(
+    nombre: String,
     onNavegar: (NavKey) -> Unit,
     viewModel: ExplorarViewModel = viewModel()
 ) {
@@ -63,18 +65,25 @@ fun ExplorarScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        text = "Tu ciudad. Tu próximo plan.",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = "Deporte, bienestar y personas con quienes compartirlos.",
+                        text = "Hola, $nombre",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Text(
+                        text = "¿Cómo quieres\nmoverte hoy?",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
+            }
+            item {
+                TarjetaHero(
+                    titulo = "Menos rutina.\nMás movimiento.",
+                    subtitulo = "Encuentra tu espacio o tu próxima clase.",
+                    pillTexto = "TIEMPO PARA TI"
+                )
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

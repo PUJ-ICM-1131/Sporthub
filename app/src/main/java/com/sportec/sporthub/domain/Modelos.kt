@@ -155,7 +155,13 @@ data class Postulante(
     val deadline: Long? = null
 )
 
-enum class EstadoTransferencia { PUBLICADA, TRAMITE, COMPLETADA, RETIRADA, VENCIDA }
+enum class EstadoTransferencia(val etiqueta: String) {
+    PUBLICADA("Publicada"),
+    TRAMITE("En trámite"),
+    COMPLETADA("Completada"),
+    RETIRADA("Retirada"),
+    VENCIDA("Vencida")
+}
 
 data class Transferencia(
     val id: String,

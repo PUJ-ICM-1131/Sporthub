@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -21,6 +23,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sportec.sporthub.R
+import com.sportec.sporthub.ui.components.TarjetaHero
 
 @Composable
 fun BienvenidaScreen(
@@ -35,24 +38,30 @@ fun BienvenidaScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .systemBarsPadding()
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Image(
                 painter = painterResource(R.drawable.logo_sporthub),
                 contentDescription = "SportHub",
                 modifier = Modifier
-                    .padding(top = 24.dp)
-                    .size(96.dp)
+                    .padding(top = 8.dp)
+                    .size(88.dp)
+                    .align(Alignment.CenterHorizontally)
+            )
+            TarjetaHero(
+                titulo = "Encuentra tu\npróximo movimiento.",
+                subtitulo = "Deporte y bienestar en Bogotá, a tu ritmo."
             )
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Tu ciudad.\nTu próximo plan.",
+                    text = "Tu tiempo libre\nempieza aquí.",
                     style = MaterialTheme.typography.displaySmall,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Reserva canchas y clases, organiza planes con tu comunidad y descubre deporte y bienestar en Bogotá.",
+                    text = "Reserva espacios, encuentra clases y comparte planes con tu comunidad.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -75,7 +84,7 @@ fun BienvenidaScreen(
                     Text("Crear cuenta")
                 }
                 Text(
-                    text = "Prototipo de la Entrega 1 · datos simulados",
+                    text = "Esta es una demostración. Usa los datos ficticios del panel de cuentas.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.align(Alignment.CenterHorizontally)

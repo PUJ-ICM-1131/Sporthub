@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
@@ -19,8 +20,69 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sportec.sporthub.domain.ActividadConNegocio
+import com.sportec.sporthub.domain.EstadoNegocio
+import com.sportec.sporthub.domain.EstadoPago
+import com.sportec.sporthub.domain.EstadoPostulante
+import com.sportec.sporthub.domain.EstadoReembolso
+import com.sportec.sporthub.domain.EstadoReserva
+import com.sportec.sporthub.domain.EstadoSolicitud
+import com.sportec.sporthub.domain.EstadoTransferencia
+import com.sportec.sporthub.ui.theme.Calido
+import com.sportec.sporthub.ui.theme.CalidoOscuro
+import com.sportec.sporthub.ui.theme.CalidoTexto
+import com.sportec.sporthub.ui.theme.GrisTenue
+import com.sportec.sporthub.ui.theme.GrisTenueOscuro
+import com.sportec.sporthub.ui.theme.GrisTenueTexto
+import com.sportec.sporthub.ui.theme.RojoTenue
+import com.sportec.sporthub.ui.theme.RojoTenueOscuro
+import com.sportec.sporthub.ui.theme.RojoTenueTexto
+import com.sportec.sporthub.ui.theme.RojoClaro
+import com.sportec.sporthub.ui.theme.TenueOscuro
 import com.sportec.sporthub.utils.formatoDuracion
 import com.sportec.sporthub.utils.formatoPesos
+
+/** Tono semántico de una etiqueta de estado, igual a .pill/.pill.amber/.pill.red/.pill.gray del prototipo. */
+enum class TonoEtiqueta { VERDE, AMBAR, ROJO, GRIS }
+
+val EstadoSolicitud.tono: TonoEtiqueta get() = when (this) {
+    EstadoSolicitud.FILA, EstadoSolicitud.REVISION, EstadoSolicitud.PAGO -> TonoEtiqueta.AMBAR
+    EstadoSolicitud.ATENDIDA -> TonoEtiqueta.VERDE
+    EstadoSolicitud.VENCIDA, EstadoSolicitud.RECHAZADA, EstadoSolicitud.RETIRADA, EstadoSolicitud.INCOMPATIBLE -> TonoEtiqueta.ROJO
+}
+
+val EstadoReserva.tono: TonoEtiqueta get() = when (this) {
+    EstadoReserva.CONFIRMADA -> TonoEtiqueta.VERDE
+    EstadoReserva.CANCELADA -> TonoEtiqueta.ROJO
+}
+
+val EstadoTransferencia.tono: TonoEtiqueta get() = when (this) {
+    EstadoTransferencia.PUBLICADA, EstadoTransferencia.TRAMITE -> TonoEtiqueta.AMBAR
+    EstadoTransferencia.COMPLETADA -> TonoEtiqueta.VERDE
+    EstadoTransferencia.RETIRADA, EstadoTransferencia.VENCIDA -> TonoEtiqueta.ROJO
+}
+
+val EstadoPostulante.tono: TonoEtiqueta get() = when (this) {
+    EstadoPostulante.FILA, EstadoPostulante.REVISION, EstadoPostulante.PAGO -> TonoEtiqueta.AMBAR
+    EstadoPostulante.ATENDIDA -> TonoEtiqueta.VERDE
+    EstadoPostulante.VENCIDA, EstadoPostulante.INCOMPATIBLE, EstadoPostulante.RETIRADA -> TonoEtiqueta.ROJO
+}
+
+val EstadoReembolso.tono: TonoEtiqueta get() = when (this) {
+    EstadoReembolso.PENDIENTE -> TonoEtiqueta.AMBAR
+    EstadoReembolso.REALIZADO -> TonoEtiqueta.VERDE
+    EstadoReembolso.FALLIDO -> TonoEtiqueta.ROJO
+}
+
+val EstadoNegocio.tono: TonoEtiqueta get() = when (this) {
+    EstadoNegocio.VALIDADO -> TonoEtiqueta.VERDE
+    EstadoNegocio.PENDIENTE -> TonoEtiqueta.AMBAR
+    EstadoNegocio.RECHAZADO -> TonoEtiqueta.ROJO
+}
+
+val EstadoPago.tono: TonoEtiqueta get() = when (this) {
+    EstadoPago.EXITOSO -> TonoEtiqueta.VERDE
+    EstadoPago.FALLIDO -> TonoEtiqueta.ROJO
+}
 
 @Composable
 fun Etiqueta(
@@ -41,6 +103,18 @@ fun Etiqueta(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
         )
     }
+}
+
+@Composable
+fun Etiqueta(texto: String, tono: TonoEtiqueta, modifier: Modifier = Modifier) {
+    val oscuro = isSystemInDarkTheme()
+    val (contenedor, contenido) = when (tono) {
+        TonoEtiqueta.VERDE -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+        TonoEtiqueta.AMBAR -> (if (oscuro) CalidoOscuro else Calido) to CalidoTexto
+        TonoEtiqueta.ROJO -> (if (oscuro) RojoTenueOscuro else RojoTenue) to (if (oscuro) RojoClaro else RojoTenueTexto)
+        TonoEtiqueta.GRIS -> (if (oscuro) GrisTenueOscuro else GrisTenue) to (if (oscuro) TenueOscuro else GrisTenueTexto)
+    }
+    Etiqueta(texto = texto, modifier = modifier, contenedor = contenedor, contenido = contenido)
 }
 
 @Composable

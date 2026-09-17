@@ -28,6 +28,7 @@ import com.sportec.sporthub.navigation.DetalleSolicitud
 import com.sportec.sporthub.navigation.DetalleTransferencia
 import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.Etiqueta
+import com.sportec.sporthub.ui.components.tono
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.utils.formatoIntervalo
 import com.sportec.sporthub.utils.formatoPesos
@@ -76,7 +77,7 @@ fun GestionScreen(
                                     fontWeight = FontWeight.SemiBold,
                                     modifier = Modifier.weight(1f)
                                 )
-                                Etiqueta(texto = solicitud.estado.etiqueta)
+                                Etiqueta(texto = solicitud.estado.etiqueta, tono = solicitud.estado.tono)
                             }
                             Text(
                                 text = formatoIntervalo(solicitud.fecha, solicitud.hora, solicitud.duracionHoras),

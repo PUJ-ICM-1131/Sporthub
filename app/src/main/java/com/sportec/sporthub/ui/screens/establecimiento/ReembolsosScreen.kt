@@ -27,6 +27,7 @@ import com.sportec.sporthub.domain.Reservas
 import com.sportec.sporthub.domain.Rol
 import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.Etiqueta
+import com.sportec.sporthub.ui.components.tono
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.utils.formatoPesos
 
@@ -60,7 +61,7 @@ fun ReembolsosScreen(cuenta: Cuenta?) {
                                     fontWeight = FontWeight.SemiBold,
                                     modifier = Modifier.weight(1f)
                                 )
-                                Etiqueta(texto = reembolso.estado.name)
+                                Etiqueta(texto = reembolso.estado.name, tono = reembolso.estado.tono)
                             }
                             Text(
                                 text = "Motivo: ${reembolso.causa}",

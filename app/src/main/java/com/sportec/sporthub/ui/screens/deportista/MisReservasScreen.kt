@@ -31,6 +31,8 @@ import com.sportec.sporthub.navigation.DetalleReserva
 import com.sportec.sporthub.navigation.DetalleSolicitud
 import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.Etiqueta
+import com.sportec.sporthub.ui.components.TonoEtiqueta
+import com.sportec.sporthub.ui.components.tono
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.utils.formatoIntervalo
 import com.sportec.sporthub.utils.formatoPesos
@@ -117,7 +119,7 @@ private fun TarjetaSolicitud(solicitud: Solicitud, onClick: () -> Unit) {
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f)
                 )
-                Etiqueta(texto = solicitud.estado.etiqueta)
+                Etiqueta(texto = solicitud.estado.etiqueta, tono = solicitud.estado.tono)
             }
             Text(
                 text = formatoIntervalo(solicitud.fecha, solicitud.hora, solicitud.duracionHoras),
@@ -141,7 +143,7 @@ private fun TarjetaReserva(reserva: Reserva, onClick: () -> Unit) {
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f)
                 )
-                Etiqueta(texto = if (reserva.cerrada) "Cerrada" else reserva.estado.etiqueta)
+                Etiqueta(texto = if (reserva.cerrada) "Cerrada" else reserva.estado.etiqueta, tono = if (reserva.cerrada) TonoEtiqueta.GRIS else reserva.estado.tono)
             }
             Text(
                 text = formatoIntervalo(reserva.fecha, reserva.hora, reserva.duracionHoras),

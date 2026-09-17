@@ -29,6 +29,7 @@ import com.sportec.sporthub.domain.EstadoSolicitud
 import com.sportec.sporthub.domain.Rol
 import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.Etiqueta
+import com.sportec.sporthub.ui.components.tono
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.ui.components.TarjetaHechos
 import com.sportec.sporthub.utils.formatoHoraMillis
@@ -72,7 +73,7 @@ fun DetalleSolicitudScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Etiqueta(texto = solicitud.estado.etiqueta)
+                    Etiqueta(texto = solicitud.estado.etiqueta, tono = solicitud.estado.tono)
                     TarjetaHechos(
                         pares = buildList {
                             add("Servicio" to item.actividad.nombre)

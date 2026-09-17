@@ -32,6 +32,7 @@ import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.Etiqueta
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.ui.components.TarjetaHechos
+import com.sportec.sporthub.ui.components.tono
 import com.sportec.sporthub.utils.formatoIntervalo
 import com.sportec.sporthub.utils.formatoPesos
 
@@ -73,7 +74,7 @@ fun DetalleTransferenciaScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Etiqueta(texto = transferencia.estado.name)
+                Etiqueta(texto = transferencia.estado.etiqueta, tono = transferencia.estado.tono)
                 TarjetaHechos(
                     pares = listOf(
                         "Servicio" to item.actividad.nombre,

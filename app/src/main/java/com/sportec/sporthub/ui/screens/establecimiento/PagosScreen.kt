@@ -23,6 +23,7 @@ import com.sportec.sporthub.domain.EstadoPago
 import com.sportec.sporthub.domain.Reservas
 import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.Etiqueta
+import com.sportec.sporthub.ui.components.tono
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.utils.formatoPesos
 
@@ -52,7 +53,7 @@ fun PagosScreen(negocioId: String) {
                                     fontWeight = FontWeight.SemiBold,
                                     modifier = Modifier.weight(1f)
                                 )
-                                Etiqueta(texto = if (pago.estado == EstadoPago.EXITOSO) "Exitoso" else "Fallido")
+                                Etiqueta(texto = if (pago.estado == EstadoPago.EXITOSO) "Exitoso" else "Fallido", tono = pago.estado.tono)
                             }
                             Text(
                                 text = pago.medio,
