@@ -24,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
-import com.sportec.sporthub.domain.DatosMock
+import com.sportec.sporthub.domain.Negocios
 import com.sportec.sporthub.domain.Reserva
 import com.sportec.sporthub.domain.Solicitud
 import com.sportec.sporthub.navigation.DetalleReserva
@@ -107,7 +107,7 @@ fun MisReservasScreen(
 
 @Composable
 private fun TarjetaSolicitud(solicitud: Solicitud, onClick: () -> Unit) {
-    val actividad = DatosMock.actividadPorId(solicitud.actividadId)
+    val actividad = Negocios.actividadDe(solicitud.actividadId)
     ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -131,7 +131,7 @@ private fun TarjetaSolicitud(solicitud: Solicitud, onClick: () -> Unit) {
 
 @Composable
 private fun TarjetaReserva(reserva: Reserva, onClick: () -> Unit) {
-    val actividad = DatosMock.actividadPorId(reserva.actividadId)
+    val actividad = Negocios.actividadDe(reserva.actividadId)
     ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

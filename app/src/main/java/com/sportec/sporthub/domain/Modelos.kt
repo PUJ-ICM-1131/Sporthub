@@ -151,7 +151,8 @@ enum class EstadoPostulante { FILA, REVISION, PAGO, ATENDIDA, VENCIDA, INCOMPATI
 data class Postulante(
     val id: String,
     val usuarioId: String,
-    val estado: EstadoPostulante
+    val estado: EstadoPostulante,
+    val deadline: Long? = null
 )
 
 enum class EstadoTransferencia { PUBLICADA, TRAMITE, COMPLETADA, RETIRADA, VENCIDA }

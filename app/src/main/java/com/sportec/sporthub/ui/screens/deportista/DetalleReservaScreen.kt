@@ -30,6 +30,7 @@ fun DetalleReservaScreen(
     usuarioId: String,
     onBack: () -> Unit,
     onCancelar: (String) -> Unit,
+    onPublicarTransferencia: (String) -> Unit,
     viewModel: DetalleReservaViewModel = viewModel()
 ) {
     val estado by viewModel.uiState.collectAsState()
@@ -67,6 +68,11 @@ fun DetalleReservaScreen(
                             "Código" to reserva.id.uppercase()
                         )
                     )
+                    if (esCancelable && reserva.politica.transferable) {
+                        OutlinedButton(onClick = { onPublicarTransferencia(reserva.id) }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Publicar transferencia")
+                        }
+                    }
                     if (esCancelable) {
                         OutlinedButton(onClick = { onCancelar(reserva.id) }, modifier = Modifier.fillMaxWidth()) {
                             Text("Cancelar reserva")

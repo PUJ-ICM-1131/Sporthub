@@ -102,7 +102,7 @@ object DatosMock {
     )
 
     val transferencias: List<Transferencia> = listOf(
-        Transferencia("t1", "r3", "camila", "p3", EstadoTransferencia.PUBLICADA),
+        Transferencia("t1", "r3", "camila", "p3", EstadoTransferencia.PUBLICADA, listOf(Postulante("st1", "juan", EstadoPostulante.REVISION))),
         Transferencia("t2", "r1", "juan", "p1", EstadoTransferencia.PUBLICADA)
     )
 
@@ -129,6 +129,10 @@ object DatosMock {
 
     val reportes: List<Reporte> = listOf(
         Reporte("rep1", "camila", "Mensaje m2", "Sí, voy a revisar los horarios.", "Problema de interacción", "juan", "m2", "mensaje")
+    )
+
+    val resenas: List<Resena> = listOf(
+        Resena("res1", "r2", "juan", 5, "Excelente energía en la clase, repito la próxima semana.")
     )
 
     fun actividadPorId(id: String): Actividad? = actividades.firstOrNull { it.id == id }

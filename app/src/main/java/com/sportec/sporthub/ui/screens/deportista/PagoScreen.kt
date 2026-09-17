@@ -42,8 +42,8 @@ fun PagoScreen(
     LaunchedEffect(solicitudId) { viewModel.cargar(solicitudId) }
 
     PantallaBase(titulo = "Pago simulado", onBack = onBack) { padding ->
-        val solicitud = estado.solicitud
-        if (solicitud == null) {
+        val monto = estado.monto
+        if (monto == null) {
             EstadoError(
                 mensaje = estado.error ?: "No se pudo cargar la solicitud.",
                 onReintentar = { viewModel.cargar(solicitudId) },
@@ -57,7 +57,7 @@ fun PagoScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                TarjetaHechos(pares = listOf("Total a pagar" to formatoPesos(solicitud.precio)))
+                TarjetaHechos(pares = listOf("Total a pagar" to formatoPesos(monto)))
                 Text(text = "Medio de pago (simulado)", style = MaterialTheme.typography.labelLarge)
                 MEDIOS_DEMO.forEach { opcion ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
