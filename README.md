@@ -4,7 +4,7 @@
 
 SportHub es una aplicación Android del equipo **Sportec** que reúne actividades deportivas y de bienestar, reservas y comunidades privadas. Está dirigida a personas de 18 años en adelante, con Bogotá como punto de partida y una propuesta extensible a otras ciudades y pueblos.
 
-[Wiki del proyecto](https://github.com/PUJ-ICM-1131/Sporthub/wiki) · [Historias de usuario](https://github.com/PUJ-ICM-1131/Sporthub/wiki/Historias-de-usuario) · [Prototipo de interfaz](prototipo-ui/README.md) · [Issues](https://github.com/PUJ-ICM-1131/Sporthub/issues)
+[Wiki del proyecto](https://github.com/PUJ-ICM-1131/Sporthub/wiki) · [Historias de usuario](https://github.com/PUJ-ICM-1131/Sporthub/wiki/Historias-de-usuario) · [Prototipo de interfaz](https://github.com/PUJ-ICM-1131/Sporthub/wiki/Diseno-de-UI) · [Issues](https://github.com/PUJ-ICM-1131/Sporthub/issues)
 
 ## Qué permite hacer
 
@@ -29,13 +29,13 @@ Cada cuenta tiene un rol fijo. El registro público no permite crear cuentas de 
 
 ## Aplicación y simulaciones
 
-El repositorio contiene la aplicación Android y el código del prototipo web. La autenticación, los servicios de backend y las operaciones financieras se representan con mocks y datos ficticios. Los pagos y reembolsos no operan con dinero real.
+El repositorio contiene la aplicación Android. El prototipo web se distribuye como archivo ZIP desde la sección Diseño de interfaz de la wiki. La autenticación, los servicios de backend y las operaciones financieras se representan con mocks y datos ficticios. Los pagos y reembolsos no operan con dinero real.
 
 Las [reglas del producto](https://github.com/PUJ-ICM-1131/Sporthub/wiki/Alcance-y-reglas) y los criterios de las historias definen el comportamiento esperado. La existencia de una pantalla no sustituye la comprobación de su recorrido.
 
 ## Explorar el prototipo
 
-Abrir `prototipo-ui/index.html` en el navegador. El [README del prototipo](prototipo-ui/README.md) explica sus archivos, cuentas de demostración, escenarios y pruebas. Consultar archivos en GitHub no ejecuta automáticamente la interfaz HTML.
+Visita [Diseño de interfaz](https://github.com/PUJ-ICM-1131/Sporthub/wiki/Diseno-de-UI) para descargar **SportHub-Prototipo.zip**, consultar su contenido y abrirlo en el navegador. Después de extraerlo, abre `SportHub-Prototipo/index.html`.
 
 ## Qué contiene la wiki
 
