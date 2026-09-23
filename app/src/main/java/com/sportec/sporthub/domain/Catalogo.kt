@@ -1,5 +1,8 @@
 package com.sportec.sporthub.domain
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 data class ResultadoExplorar(
     val categorias: List<Categoria>,
     val actividades: List<ActividadConNegocio>
@@ -19,9 +22,9 @@ object Catalogo {
 
     fun obtener(actividadId: String): ActividadConNegocio {
         val actividad = Negocios.actividadDe(actividadId)
-            ?: throw IllegalArgumentException("El servicio ya no está disponible.")
+            ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_el_servicio_ya_no_esta_disponible))
         val negocio = Negocios.negocioDe(actividad.negocioId)
-            ?: throw IllegalArgumentException("El establecimiento ya no está disponible.")
+            ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_el_establecimiento_ya_no_esta_disponible))
         return ActividadConNegocio(actividad, negocio)
     }
 }

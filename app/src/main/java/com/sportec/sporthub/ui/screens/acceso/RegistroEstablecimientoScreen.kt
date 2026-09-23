@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.acceso
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,7 +41,7 @@ fun RegistroEstablecimientoScreen(
 
     LaunchedEffect(estado.registrado) { if (estado.registrado) onRegistrado() }
 
-    PantallaBase(titulo = "Registro de establecimiento", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_registro_de_establecimiento), onBack = onBack) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -46,60 +50,60 @@ fun RegistroEstablecimientoScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Datos de la persona de contacto", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.texto_datos_de_la_persona_de_contacto), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             OutlinedTextField(
                 value = estado.nombreContacto,
                 onValueChange = viewModel::onNombreContactoCambiado,
-                label = { Text("Nombre completo") },
+                label = { Text(stringResource(R.string.texto_nombre_completo)) },
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = estado.email,
                 onValueChange = viewModel::onEmailCambiado,
-                label = { Text("Correo electrónico") },
+                label = { Text(stringResource(R.string.texto_correo_electronico)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = estado.telefono,
                 onValueChange = viewModel::onTelefonoCambiado,
-                label = { Text("Teléfono") },
+                label = { Text(stringResource(R.string.texto_telefono)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = estado.contrasena,
                 onValueChange = viewModel::onContrasenaCambiada,
-                label = { Text("Contraseña") },
+                label = { Text(stringResource(R.string.texto_contrasena)) },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth()
             )
             HorizontalDivider()
-            Text("Datos del negocio", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.texto_datos_del_negocio), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             OutlinedTextField(
                 value = estado.nombreNegocio,
                 onValueChange = viewModel::onNombreNegocioCambiado,
-                label = { Text("Nombre del negocio") },
+                label = { Text(stringResource(R.string.texto_nombre_del_negocio)) },
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = estado.nit,
                 onValueChange = viewModel::onNitCambiado,
-                label = { Text("NIT") },
+                label = { Text(stringResource(R.string.texto_nit)) },
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = estado.direccion,
                 onValueChange = viewModel::onDireccionCambiada,
-                label = { Text("Dirección") },
+                label = { Text(stringResource(R.string.texto_direccion)) },
                 modifier = Modifier.fillMaxWidth()
             )
             if (estado.error != null) {
                 Aviso(texto = estado.error ?: "", tipo = TipoAviso.ERROR)
             }
             Button(onClick = viewModel::registrar, modifier = Modifier.fillMaxWidth()) {
-                Text("Crear cuenta")
+                Text(stringResource(R.string.texto_crear_cuenta))
             }
         }
     }

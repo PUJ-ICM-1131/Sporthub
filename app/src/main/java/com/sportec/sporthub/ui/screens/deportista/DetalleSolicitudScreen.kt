@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -54,10 +58,10 @@ fun DetalleSolicitudScreen(
 
     LaunchedEffect(solicitudId) { viewModel.cargar(solicitudId) }
 
-    PantallaBase(titulo = "Solicitud", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_solicitud), onBack = onBack) { padding ->
         when {
             estado.solicitud == null || estado.item == null -> EstadoError(
-                mensaje = estado.error ?: "No se pudo cargar la solicitud.",
+                mensaje = estado.error ?: Textos.obtener(R.string.texto_no_se_pudo_cargar_la_solicitud),
                 onReintentar = { viewModel.cargar(solicitudId) },
                 modifier = Modifier.padding(padding)
             )
@@ -78,11 +82,11 @@ fun DetalleSolicitudScreen(
                     Etiqueta(texto = solicitud.estado.etiqueta, tono = solicitud.estado.tono)
                     TarjetaHechos(
                         pares = buildList {
-                            add("Servicio" to item.actividad.nombre)
-                            add("Establecimiento" to item.negocio.nombre)
-                            add("Horario" to formatoIntervalo(solicitud.fecha, solicitud.hora, solicitud.duracionHoras))
-                            add("Total" to formatoPesos(solicitud.precio))
-                            solicitud.deadline?.let { add("Vence" to formatoHoraMillis(it)) }
+                            add(Textos.obtener(R.string.texto_servicio) to item.actividad.nombre)
+                            add(Textos.obtener(R.string.texto_establecimiento) to item.negocio.nombre)
+                            add(Textos.obtener(R.string.texto_horario) to formatoIntervalo(solicitud.fecha, solicitud.hora, solicitud.duracionHoras))
+                            add(Textos.obtener(R.string.texto_total) to formatoPesos(solicitud.precio))
+                            solicitud.deadline?.let { add(Textos.obtener(R.string.texto_vence) to formatoHoraMillis(it)) }
                         }
                     )
                     if (estado.error != null) {
@@ -92,7 +96,7 @@ fun DetalleSolicitudScreen(
                     if (esDueno) {
                         if (solicitud.estado == EstadoSolicitud.PAGO) {
                             Button(onClick = { onPagar(solicitud.id) }, modifier = Modifier.fillMaxWidth()) {
-                                Text("Pagar")
+                                Text(stringResource(R.string.texto_pagar))
                             }
                         }
                         if (solicitud.estado in ACTIVOS) {
@@ -100,7 +104,7 @@ fun DetalleSolicitudScreen(
                                 onClick = { motivo = ""; dialogoAbierto = "retirar" },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("Retirar solicitud")
+                                Text(stringResource(R.string.texto_retirar_solicitud))
                             }
                         }
                     }
@@ -111,7 +115,7 @@ fun DetalleSolicitudScreen(
                                 onClick = { viewModel.aprobar(cuenta.id) },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("Aprobar y habilitar pago")
+                                Text(stringResource(R.string.texto_aprobar_y_habilitar_pago))
                             }
                         }
                         if (solicitud.estado == EstadoSolicitud.FILA || solicitud.estado == EstadoSolicitud.REVISION) {
@@ -119,7 +123,7 @@ fun DetalleSolicitudScreen(
                                 onClick = { motivo = ""; dialogoAbierto = "rechazar" },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("Rechazar con motivo")
+                                Text(stringResource(R.string.texto_rechazar_con_motivo))
                             }
                         }
                     }
@@ -132,12 +136,12 @@ fun DetalleSolicitudScreen(
         val esRechazo = dialogoAbierto == "rechazar"
         AlertDialog(
             onDismissRequest = { dialogoAbierto = null },
-            title = { Text(if (esRechazo) "Rechazar solicitud" else "Retirar solicitud") },
+            title = { Text(if (esRechazo) Textos.obtener(R.string.texto_rechazar_solicitud) else Textos.obtener(R.string.texto_retirar_solicitud)) },
             text = {
                 OutlinedTextField(
                     value = motivo,
                     onValueChange = { motivo = it },
-                    label = { Text("Motivo") },
+                    label = { Text(stringResource(R.string.texto_motivo)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             },
@@ -149,10 +153,10 @@ fun DetalleSolicitudScreen(
                         else viewModel.retirar(motivo, cuenta?.id.orEmpty())
                         dialogoAbierto = null
                     }
-                ) { Text("Confirmar") }
+                ) { Text(stringResource(R.string.texto_confirmar)) }
             },
             dismissButton = {
-                TextButton(onClick = { dialogoAbierto = null }) { Text("Cancelar") }
+                TextButton(onClick = { dialogoAbierto = null }) { Text(stringResource(R.string.texto_cancelar)) }
             }
         )
     }

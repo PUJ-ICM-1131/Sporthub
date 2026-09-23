@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.establecimiento
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,9 +36,9 @@ fun ValidacionNegocioScreen(negocioId: String, operadorId: String) {
     val negocio = remember(negocios, negocioId) { negocios.firstOrNull { it.id == negocioId } }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
 
-    PantallaBase(titulo = "Estado de validación") { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_estado_de_validacion)) { padding ->
         if (negocio == null) {
-            EstadoError(mensaje = "El negocio ya no existe.", onReintentar = {}, modifier = Modifier.padding(padding))
+            EstadoError(mensaje = Textos.obtener(R.string.texto_el_negocio_ya_no_existe), onReintentar = {}, modifier = Modifier.padding(padding))
         } else {
             Column(
                 modifier = Modifier
@@ -45,10 +49,9 @@ fun ValidacionNegocioScreen(negocioId: String, operadorId: String) {
             ) {
                 Etiqueta(texto = negocio.estado.etiqueta, tono = negocio.estado.tono)
                 Text(text = negocio.nombre, style = MaterialTheme.typography.titleMedium)
-                Text(text = "NIT ${negocio.nit}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(text = stringResource(R.string.texto_nit_valor, negocio.nit), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (negocio.estado != EstadoNegocio.VALIDADO) {
-                    Text(
-                        text = "Verifica que el nombre y el NIT estén completos y vuelve a enviar tu registro a revisión.",
+                    Text(text = stringResource(R.string.texto_verifica_que_el_nombre_y_el_nit_esten_completos),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     if (error != null) {
@@ -65,7 +68,7 @@ fun ValidacionNegocioScreen(negocioId: String, operadorId: String) {
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Reenviar a revisión")
+                        Text(stringResource(R.string.texto_reenviar_a_revision))
                     }
                 }
             }

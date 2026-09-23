@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.lifecycle.ViewModel
 import com.sportec.sporthub.domain.Reserva
 import com.sportec.sporthub.domain.Reservas
@@ -30,7 +33,7 @@ class PublicarTransferenciaViewModel : ViewModel() {
             val transferencia = Transferencias.publicar(reservaId, usuarioId)
             _uiState.update { it.copy(publicada = transferencia.id) }
         } catch (e: Exception) {
-            _uiState.update { it.copy(error = e.message ?: "No se pudo publicar la transferencia.") }
+            _uiState.update { it.copy(error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_publicar_la_transferencia)) }
         }
     }
 }

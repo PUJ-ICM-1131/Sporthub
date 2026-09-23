@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.lifecycle.ViewModel
 import com.sportec.sporthub.domain.Reservas
 import com.sportec.sporthub.domain.Transferencias
@@ -14,11 +17,6 @@ data class PagoUiState(
     val esTransferencia: Boolean = false
 )
 
-/**
- * Ruta Pago(referencia) se comparte entre pagar una solicitud aceptada y
- * pagar una transferencia aprobada: primero se busca como solicitud y, si
- * no existe, como transferencia.
- */
 class PagoViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(PagoUiState())
@@ -38,7 +36,7 @@ class PagoViewModel : ViewModel() {
         _uiState.value = if (reserva != null) {
             PagoUiState(monto = reserva.precio, esTransferencia = true)
         } else {
-            PagoUiState(error = "La solicitud ya no existe.")
+            PagoUiState(error = Textos.obtener(R.string.texto_la_solicitud_ya_no_existe))
         }
     }
 
@@ -51,7 +49,7 @@ class PagoViewModel : ViewModel() {
             }
             onExito(reserva.id)
         } catch (e: Exception) {
-            _uiState.update { it.copy(error = e.message ?: "No se pudo procesar el pago.") }
+            _uiState.update { it.copy(error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_procesar_el_pago)) }
         }
     }
 }

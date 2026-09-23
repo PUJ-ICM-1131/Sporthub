@@ -1,5 +1,8 @@
 package com.sportec.sporthub.navigation
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
@@ -21,22 +24,22 @@ data class Pestana(
 
 fun pestanasDe(rol: Rol): List<Pestana> = when (rol) {
     Rol.DEPORTISTA -> listOf(
-        Pestana(Explorar, "Explorar", Icons.Filled.Search),
-        Pestana(MisReservas, "Mis reservas", Icons.Filled.DateRange),
-        Pestana(Mensajes, "Mensajes", Icons.Filled.Email),
-        Pestana(Perfil, "Perfil", Icons.Filled.Person)
+        Pestana(Explorar, Textos.obtener(R.string.texto_explorar), Icons.Filled.Search),
+        Pestana(MisReservas, Textos.obtener(R.string.texto_mis_reservas), Icons.Filled.DateRange),
+        Pestana(Mensajes, Textos.obtener(R.string.texto_mensajes), Icons.Filled.Email),
+        Pestana(Perfil, Textos.obtener(R.string.texto_perfil), Icons.Filled.Person)
     )
     Rol.ESTABLECIMIENTO -> listOf(
-        Pestana(Gestion, "Gestión", Icons.Filled.DateRange),
-        Pestana(Servicios, "Servicios", Icons.Filled.Build),
-        Pestana(Pagos, "Pagos", Icons.Filled.ShoppingCart),
-        Pestana(Mensajes, "Mensajes", Icons.Filled.Email),
-        Pestana(Perfil, "Cuenta", Icons.Filled.Person)
+        Pestana(Gestion, Textos.obtener(R.string.texto_gestion), Icons.Filled.DateRange),
+        Pestana(Servicios, Textos.obtener(R.string.texto_servicios), Icons.Filled.Build),
+        Pestana(Pagos, Textos.obtener(R.string.texto_pagos), Icons.Filled.ShoppingCart),
+        Pestana(Mensajes, Textos.obtener(R.string.texto_mensajes), Icons.Filled.Email),
+        Pestana(Perfil, Textos.obtener(R.string.texto_cuenta), Icons.Filled.Person)
     )
     Rol.ADMINISTRADOR -> listOf(
-        Pestana(Validaciones, "Negocios", Icons.Filled.CheckCircle),
-        Pestana(Reportes, "Reportes", Icons.Filled.Warning),
-        Pestana(Perfil, "Cuenta", Icons.Filled.Person)
+        Pestana(Validaciones, Textos.obtener(R.string.texto_negocios), Icons.Filled.CheckCircle),
+        Pestana(Reportes, Textos.obtener(R.string.texto_reportes), Icons.Filled.Warning),
+        Pestana(Perfil, Textos.obtener(R.string.texto_cuenta), Icons.Filled.Person)
     )
 }
 

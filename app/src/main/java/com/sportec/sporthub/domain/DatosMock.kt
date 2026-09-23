@@ -1,45 +1,49 @@
 package com.sportec.sporthub.domain
 
-object DatosMock {
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
 
-    const val CONTRASENA_DEMO = "Demo1234"
+object DatosMock {
+    private val hoy = java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota"))
+
+    val CONTRASENA_DEMO = Textos.obtener(R.string.texto_demo1234)
 
     val categorias: List<Categoria> = listOf(
-        Categoria("Fútbol", Segmento.DEPORTE),
-        Categoria("Pádel", Segmento.DEPORTE),
-        Categoria("Tenis", Segmento.DEPORTE),
-        Categoria("Baloncesto", Segmento.DEPORTE),
-        Categoria("Natación", Segmento.DEPORTE),
-        Categoria("Squash", Segmento.DEPORTE),
-        Categoria("Gimnasios", Segmento.BIENESTAR),
-        Categoria("CrossFit", Segmento.BIENESTAR),
-        Categoria("Yoga", Segmento.BIENESTAR),
-        Categoria("Pilates", Segmento.BIENESTAR),
-        Categoria("Boxeo", Segmento.BIENESTAR),
-        Categoria("Entrenamiento funcional", Segmento.BIENESTAR)
+        Categoria(Textos.obtener(R.string.texto_futbol), Segmento.DEPORTE),
+        Categoria(Textos.obtener(R.string.texto_padel), Segmento.DEPORTE),
+        Categoria(Textos.obtener(R.string.texto_tenis), Segmento.DEPORTE),
+        Categoria(Textos.obtener(R.string.texto_baloncesto), Segmento.DEPORTE),
+        Categoria(Textos.obtener(R.string.texto_natacion), Segmento.DEPORTE),
+        Categoria(Textos.obtener(R.string.texto_squash), Segmento.DEPORTE),
+        Categoria(Textos.obtener(R.string.texto_gimnasios), Segmento.BIENESTAR),
+        Categoria(Textos.obtener(R.string.texto_crossfit), Segmento.BIENESTAR),
+        Categoria(Textos.obtener(R.string.texto_yoga), Segmento.BIENESTAR),
+        Categoria(Textos.obtener(R.string.texto_pilates), Segmento.BIENESTAR),
+        Categoria(Textos.obtener(R.string.texto_boxeo), Segmento.BIENESTAR),
+        Categoria(Textos.obtener(R.string.texto_entrenamiento_funcional), Segmento.BIENESTAR)
     )
 
     val cuentas: List<Cuenta> = listOf(
-        Cuenta("juan", "Juan Carlos", "juan@demo.test", CONTRASENA_DEMO, Rol.DEPORTISTA, telefono = "300 123 4567"),
-        Cuenta("camila", "Camila Torres", "camila@demo.test", CONTRASENA_DEMO, Rol.DEPORTISTA),
-        Cuenta("negocio", "Distrito Activo", "negocio@demo.test", CONTRASENA_DEMO, Rol.ESTABLECIMIENTO, negocioId = "b1"),
-        Cuenta("admin", "Ana Administración", "admin@demo.test", CONTRASENA_DEMO, Rol.ADMINISTRADOR)
+        Cuenta("juan", Textos.obtener(R.string.texto_juan_carlos), Textos.obtener(R.string.texto_juan_demo_test), CONTRASENA_DEMO, Rol.DEPORTISTA, telefono = Textos.obtener(R.string.texto_300_123_4567)),
+        Cuenta("camila", Textos.obtener(R.string.texto_camila_torres), Textos.obtener(R.string.texto_camila_demo_test), CONTRASENA_DEMO, Rol.DEPORTISTA),
+        Cuenta("negocio", Textos.obtener(R.string.texto_laura_mendez), Textos.obtener(R.string.texto_negocio_demo_test), CONTRASENA_DEMO, Rol.ESTABLECIMIENTO, telefono = Textos.obtener(R.string.texto_300_444_3322), negocioId = "b1"),
+        Cuenta("admin", Textos.obtener(R.string.texto_ana_administracion), Textos.obtener(R.string.texto_admin_demo_test), CONTRASENA_DEMO, Rol.ADMINISTRADOR)
     )
 
     val negocios: List<Negocio> = listOf(
-        Negocio("b1", "Distrito Activo", "900123456", "300 555 0123", "Calle 120 # 15-40, Bogotá", "Espacios para moverte a tu ritmo. Deporte y bienestar en el norte de Bogotá.", EstadoNegocio.VALIDADO, 4.70, -74.04),
-        Negocio("b2", "Movimiento Chapinero", "901222333", "300 444 3322", "Carrera 7 # 60-12, Bogotá", "Clases de bienestar.", EstadoNegocio.PENDIENTE, 4.64, -74.06),
-        Negocio("b3", "Verde Yoga", "909000003", "300 555 0103", "Calle 70, Bogotá", "Establecimiento ficticio con actividades de deporte y bienestar.", EstadoNegocio.VALIDADO, 4.659, -74.071),
-        Negocio("b4", "Canchas del Parque", "909000004", "300 555 0104", "Carrera 30, Bogotá", "Establecimiento ficticio con actividades de deporte y bienestar.", EstadoNegocio.VALIDADO, 4.660, -74.098),
-        Negocio("b5", "Raqueta Norte", "909000005", "300 555 0105", "Calle 145, Bogotá", "Establecimiento ficticio con actividades de deporte y bienestar.", EstadoNegocio.VALIDADO, 4.706, -74.093),
-        Negocio("b6", "Vital Occidente", "909000006", "300 555 0106", "Occidente, Bogotá", "Establecimiento ficticio con actividades de deporte y bienestar.", EstadoNegocio.VALIDADO, 4.67, -74.184),
-        Negocio("b7", "Club Sabana", "909000007", "300 555 0107", "Sabana, Bogotá", "Establecimiento ficticio con actividades de deporte y bienestar.", EstadoNegocio.VALIDADO, 4.805, -74.124)
+        Negocio("b1", Textos.obtener(R.string.texto_distrito_activo), Textos.obtener(R.string.texto_900123456), Textos.obtener(R.string.texto_300_555_0123), Textos.obtener(R.string.texto_calle_120_15_40_bogota), Textos.obtener(R.string.texto_espacios_para_moverte_a_tu_ritmo_deporte_y_bienestar), EstadoNegocio.VALIDADO, 4.70, -74.04),
+        Negocio("b2", Textos.obtener(R.string.texto_movimiento_chapinero), Textos.obtener(R.string.texto_901222333), Textos.obtener(R.string.texto_300_444_3322), Textos.obtener(R.string.texto_carrera_7_60_12_bogota), Textos.obtener(R.string.texto_clases_de_bienestar), EstadoNegocio.PENDIENTE, 4.64, -74.06),
+        Negocio("b3", Textos.obtener(R.string.texto_verde_yoga), Textos.obtener(R.string.texto_909000003), Textos.obtener(R.string.texto_300_555_0103), Textos.obtener(R.string.texto_calle_70_bogota), Textos.obtener(R.string.texto_establecimiento_ficticio_con_actividades_de_deporte_y_bienestar), EstadoNegocio.VALIDADO, 4.659, -74.071),
+        Negocio("b4", Textos.obtener(R.string.texto_canchas_del_parque), Textos.obtener(R.string.texto_909000004), Textos.obtener(R.string.texto_300_555_0104), Textos.obtener(R.string.texto_carrera_30_bogota), Textos.obtener(R.string.texto_establecimiento_ficticio_con_actividades_de_deporte_y_bienestar), EstadoNegocio.VALIDADO, 4.660, -74.098),
+        Negocio("b5", Textos.obtener(R.string.texto_raqueta_norte), Textos.obtener(R.string.texto_909000005), Textos.obtener(R.string.texto_300_555_0105), Textos.obtener(R.string.texto_calle_145_bogota), Textos.obtener(R.string.texto_establecimiento_ficticio_con_actividades_de_deporte_y_bienestar), EstadoNegocio.VALIDADO, 4.706, -74.093),
+        Negocio("b6", Textos.obtener(R.string.texto_vital_occidente), Textos.obtener(R.string.texto_909000006), Textos.obtener(R.string.texto_300_555_0106), Textos.obtener(R.string.texto_occidente_bogota), Textos.obtener(R.string.texto_establecimiento_ficticio_con_actividades_de_deporte_y_bienestar), EstadoNegocio.VALIDADO, 4.67, -74.184),
+        Negocio("b7", Textos.obtener(R.string.texto_club_sabana), Textos.obtener(R.string.texto_909000007), Textos.obtener(R.string.texto_300_555_0107), Textos.obtener(R.string.texto_sabana_bogota), Textos.obtener(R.string.texto_establecimiento_ficticio_con_actividades_de_deporte_y_bienestar), EstadoNegocio.VALIDADO, 4.805, -74.124)
     )
 
     private val nombresBase = listOf(
-        "Cancha Horizonte", "Pádel entre amigos", "Tenis al aire libre", "Cancha Central",
-        "Piscina · Sesión libre", "Squash · Cancha 1", "Entrena a tu ritmo", "CrossFit en equipo",
-        "Yoga al atardecer", "Pilates esencial", "Boxeo · Técnica inicial", "Muévete con energía"
+        Textos.obtener(R.string.texto_cancha_horizonte), Textos.obtener(R.string.texto_padel_entre_amigos), Textos.obtener(R.string.texto_tenis_al_aire_libre), Textos.obtener(R.string.texto_cancha_central),
+        Textos.obtener(R.string.texto_piscina_sesion_libre), Textos.obtener(R.string.texto_squash_cancha_1), Textos.obtener(R.string.texto_entrena_a_tu_ritmo), Textos.obtener(R.string.texto_crossfit_en_equipo),
+        Textos.obtener(R.string.texto_yoga_al_atardecer), Textos.obtener(R.string.texto_pilates_esencial), Textos.obtener(R.string.texto_boxeo_tecnica_inicial), Textos.obtener(R.string.texto_muevete_con_energia)
     )
 
     private val preciosBase = listOf(
@@ -57,8 +61,8 @@ object DatosMock {
             precio = preciosBase[i],
             duracionMinutos = 120,
             capacidad = if (esEspacio) 1 else 12,
-            descripcion = if (esEspacio) "Tu espacio completo para compartir una sesión de deporte." else "Una clase guiada para reconectar con tu movimiento.",
-            politica = Politica(extra = "Llega con ropa cómoda. Cuida los espacios y sigue las indicaciones del equipo.")
+            descripcion = if (esEspacio) Textos.obtener(R.string.texto_tu_espacio_completo_para_compartir_una_sesion_de_deporte) else Textos.obtener(R.string.texto_una_clase_guiada_para_reconectar_con_tu_movimiento),
+            politica = Politica(extra = Textos.obtener(R.string.texto_llega_con_ropa_comoda_cuida_los_espacios_y_sigue))
         )
     }
 
@@ -78,27 +82,27 @@ object DatosMock {
             original.copy(
                 id = "${negocioId}a$i",
                 negocioId = negocioId,
-                nombre = "${original.categoria} · ${negocio.nombre}",
+                nombre = Textos.obtener(R.string.formato_dos_datos, original.categoria, negocio.nombre),
                 precio = original.precio + incremento
             )
         }
     }
 
     val solicitudes: List<Solicitud> = listOf(
-        Solicitud("s1", "juan", "a1", "2026-09-22", 10, 2, 1, EstadoSolicitud.REVISION, 60000, Politica(extra = "Llega con ropa cómoda.")),
-        Solicitud("s2", "camila", "a1", "2026-09-22", 10, 2, 2, EstadoSolicitud.FILA, 60000, Politica(extra = "Llega con ropa cómoda."))
+        Solicitud("s1", "juan", "a1", hoy.toString(), 10, 2, 1, EstadoSolicitud.REVISION, 60000, Politica(extra = Textos.obtener(R.string.texto_llega_con_ropa_comoda))),
+        Solicitud("s2", "camila", "a1", hoy.toString(), 10, 2, 2, EstadoSolicitud.FILA, 60000, Politica(extra = Textos.obtener(R.string.texto_llega_con_ropa_comoda)))
     )
 
     val reservas: List<Reserva> = listOf(
-        Reserva("r1", "juan", "a2", "2026-09-23", 14, 2, 45000, EstadoReserva.CONFIRMADA, "p1", politica = Politica(extra = "Trae tu raqueta.")),
-        Reserva("r2", "juan", "a8", "2026-09-21", 16, 2, 25000, EstadoReserva.CONFIRMADA, "p2", cerrada = true, politica = Politica()),
-        Reserva("r3", "camila", "a9", "2026-09-23", 18, 2, 30000, EstadoReserva.CONFIRMADA, "p3", politica = Politica())
+        Reserva("r1", "juan", "a2", hoy.plusDays(1).toString(), 14, 2, 45000, EstadoReserva.CONFIRMADA, "p1", politica = Politica(extra = Textos.obtener(R.string.texto_trae_tu_raqueta))),
+        Reserva("r2", "juan", "a8", hoy.minusDays(1).toString(), 16, 2, 25000, EstadoReserva.CONFIRMADA, "p2", cerrada = true, politica = Politica()),
+        Reserva("r3", "camila", "a9", hoy.plusDays(1).toString(), 18, 2, 30000, EstadoReserva.CONFIRMADA, "p3", politica = Politica())
     )
 
     val pagos: List<Pago> = listOf(
-        Pago("p1", "juan", 45000, EstadoPago.EXITOSO, "Tarjeta ·•• 1234", reservaId = "r1"),
-        Pago("p2", "juan", 25000, EstadoPago.EXITOSO, "Billetera ·•• 4567", reservaId = "r2"),
-        Pago("p3", "camila", 30000, EstadoPago.EXITOSO, "Transferencia ·•• 1122", reservaId = "r3")
+        Pago("p1", "juan", 45000, EstadoPago.EXITOSO, Textos.obtener(R.string.texto_tarjeta_1234), reservaId = "r1"),
+        Pago("p2", "juan", 25000, EstadoPago.EXITOSO, Textos.obtener(R.string.texto_billetera_4567), reservaId = "r2"),
+        Pago("p3", "camila", 30000, EstadoPago.EXITOSO, Textos.obtener(R.string.texto_transferencia_1122), reservaId = "r3")
     )
 
     val transferencias: List<Transferencia> = listOf(
@@ -107,32 +111,32 @@ object DatosMock {
     )
 
     val comunidades: List<Comunidad> = listOf(
-        Comunidad("g1", "Bogotá se mueve", "Deporte, bienestar y planes entre amigos.", "juan", "juan", listOf("juan", "camila"))
+        Comunidad("g1", Textos.obtener(R.string.texto_bogota_se_mueve), Textos.obtener(R.string.texto_deporte_bienestar_y_planes_entre_amigos), "juan", "juan", listOf("juan", "camila"))
     )
 
     val chats: List<Chat> = listOf(
         Chat("c1", miembros = listOf("juan", "camila"), mensajes = listOf(
-            Mensaje("m1", "camila", "¡Hola! ¿Miramos una clase de yoga para mañana?"),
-            Mensaje("m2", "juan", "Sí, voy a revisar los horarios.")
+            Mensaje("m1", "camila", Textos.obtener(R.string.texto_hola_miramos_una_clase_de_yoga_para_manana)),
+            Mensaje("m2", "juan", Textos.obtener(R.string.texto_si_voy_a_revisar_los_horarios))
         )),
         Chat("c2", miembros = listOf("juan", "negocio"), mensajes = listOf(
-            Mensaje("m3", "negocio", "Hola, Juan. Podemos ayudarte con horarios y servicios.")
+            Mensaje("m3", "negocio", Textos.obtener(R.string.texto_hola_juan_podemos_ayudarte_con_horarios_y_servicios))
         )),
         Chat("g1", comunidadId = "g1", mensajes = listOf(
-            Mensaje("m4", "camila", "¡Bienvenidos! Compartamos nuestros próximos planes.")
+            Mensaje("m4", "camila", Textos.obtener(R.string.texto_bienvenidos_compartamos_nuestros_proximos_planes))
         ))
     )
 
     val notificaciones: List<Notificacion> = listOf(
-        Notificacion("n1", "juan", "Tu solicitud está en revisión", "Distrito Activo revisará tu solicitud de pádel.", "request", "s1")
+        Notificacion("n1", "juan", Textos.obtener(R.string.texto_tu_solicitud_esta_en_revision), Textos.obtener(R.string.texto_distrito_activo_revisara_tu_solicitud_de_padel), "request", "s1")
     )
 
     val reportes: List<Reporte> = listOf(
-        Reporte("rep1", "camila", "Mensaje m2", "Sí, voy a revisar los horarios.", "Problema de interacción", "juan", "m2", "mensaje")
+        Reporte("rep1", "camila", Textos.obtener(R.string.texto_mensaje_m2), Textos.obtener(R.string.texto_si_voy_a_revisar_los_horarios), Textos.obtener(R.string.texto_problema_de_interaccion), "juan", "m2", "mensaje")
     )
 
     val resenas: List<Resena> = listOf(
-        Resena("res1", "r2", "juan", 5, "Excelente energía en la clase, repito la próxima semana.")
+        Resena("res1", "r2", "juan", 5, Textos.obtener(R.string.texto_excelente_energia_en_la_clase_repito_la_proxima_semana))
     )
 
     fun actividadPorId(id: String): Actividad? = actividades.firstOrNull { it.id == id }

@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,9 +48,9 @@ fun DetalleEstablecimientoScreen(
     val resenasNegocio = remember(resenas, negocioId) { Resenas.listarDeNegocio(negocioId) }
     val promedio = resenasNegocio.map { it.puntaje }.average().takeIf { !it.isNaN() }
 
-    PantallaBase(titulo = negocio?.nombre ?: "Establecimiento", onBack = onBack) { padding ->
+    PantallaBase(titulo = negocio?.nombre ?: Textos.obtener(R.string.texto_establecimiento), onBack = onBack) { padding ->
         if (negocio == null) {
-            EstadoError(mensaje = "El establecimiento ya no existe.", onReintentar = {}, modifier = Modifier.padding(padding))
+            EstadoError(mensaje = Textos.obtener(R.string.texto_el_establecimiento_ya_no_existe), onReintentar = {}, modifier = Modifier.padding(padding))
         } else {
             Column(
                 modifier = Modifier
@@ -61,22 +65,22 @@ fun DetalleEstablecimientoScreen(
                 }
                 TarjetaHechos(
                     pares = buildList {
-                        add("Dirección" to negocio.direccion)
-                        if (negocio.contacto.isNotBlank()) add("Contacto" to negocio.contacto)
-                        add("Calificación" to (promedio?.let { "%.1f / 5 (${resenasNegocio.size} reseñas)".format(it) } ?: "Sin reseñas todavía"))
+                        add(Textos.obtener(R.string.texto_direccion) to negocio.direccion)
+                        if (negocio.contacto.isNotBlank()) add(Textos.obtener(R.string.texto_contacto) to negocio.contacto)
+                        add(Textos.obtener(R.string.texto_calificacion) to (promedio?.let { Textos.obtener(R.string.formato_promedio_resenas, "%.1f".format(it), resenasNegocio.size) } ?: Textos.obtener(R.string.texto_sin_resenas_todavia)))
                     }
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = onEnviarMensaje, modifier = Modifier.weight(1f)) {
-                        Text("Enviar mensaje")
+                        Text(stringResource(R.string.texto_enviar_mensaje))
                     }
                     OutlinedButton(onClick = onComoLlegar, modifier = Modifier.weight(1f)) {
-                        Text("Cómo llegar")
+                        Text(stringResource(R.string.texto_como_llegar))
                     }
                 }
-                Text("Servicios", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.texto_servicios), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 if (servicios.isEmpty()) {
-                    EstadoVacio(mensaje = "Este establecimiento todavía no publica servicios.")
+                    EstadoVacio(mensaje = Textos.obtener(R.string.texto_este_establecimiento_todavia_no_publica_servicios))
                 } else {
                     servicios.forEach { actividad ->
                         val item = ActividadConNegocio(actividad, negocio)

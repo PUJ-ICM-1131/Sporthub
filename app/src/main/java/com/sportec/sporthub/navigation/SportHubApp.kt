@@ -40,38 +40,50 @@ import com.sportec.sporthub.ui.screens.admin.DetalleValidacionScreen
 import com.sportec.sporthub.ui.screens.admin.ReportesScreen
 import com.sportec.sporthub.ui.screens.admin.ValidacionesScreen
 import com.sportec.sporthub.ui.screens.comun.ChatScreen
+import com.sportec.sporthub.ui.screens.comun.ComunidadScreen
+import com.sportec.sporthub.ui.screens.comun.ContactosScreen
 import com.sportec.sporthub.ui.screens.comun.CrearComunidadScreen
+import com.sportec.sporthub.ui.screens.comun.EditarComunidadScreen
 import com.sportec.sporthub.ui.screens.comun.EditarPerfilScreen
+import com.sportec.sporthub.ui.screens.comun.InvitarScreen
 import com.sportec.sporthub.ui.screens.comun.MensajesScreen
 import com.sportec.sporthub.ui.screens.comun.NotificacionesScreen
+import com.sportec.sporthub.ui.screens.comun.NuevoChatScreen
 import com.sportec.sporthub.ui.screens.comun.PantallaPendiente
+import com.sportec.sporthub.ui.screens.comun.PermisoScreen
 import com.sportec.sporthub.ui.screens.comun.PerfilScreen
+import com.sportec.sporthub.ui.screens.comun.SucesionScreen
 import com.sportec.sporthub.ui.screens.comun.ReportarScreen
 import com.sportec.sporthub.ui.screens.deportista.BrujulaScreen
 import com.sportec.sporthub.ui.screens.deportista.BuscarScreen
+import com.sportec.sporthub.ui.screens.deportista.CheckInScreen
 import com.sportec.sporthub.ui.screens.deportista.CancelarReservaScreen
 import com.sportec.sporthub.ui.screens.deportista.DetalleActividadScreen
 import com.sportec.sporthub.ui.screens.deportista.DetalleEstablecimientoScreen
+import com.sportec.sporthub.ui.screens.deportista.DetalleReembolsoScreen
 import com.sportec.sporthub.ui.screens.deportista.DetalleReservaScreen
 import com.sportec.sporthub.ui.screens.deportista.DetalleSolicitudScreen
 import com.sportec.sporthub.ui.screens.deportista.DetalleTransferenciaScreen
 import com.sportec.sporthub.ui.screens.deportista.ExplorarScreen
+import com.sportec.sporthub.ui.screens.deportista.FiltrosScreen
+import com.sportec.sporthub.ui.screens.deportista.FotoLlegadaScreen
 import com.sportec.sporthub.ui.screens.deportista.HorariosScreen
 import com.sportec.sporthub.ui.screens.deportista.MapaScreen
 import com.sportec.sporthub.ui.screens.deportista.MisReservasScreen
+import com.sportec.sporthub.ui.screens.deportista.MisTransferenciasScreen
 import com.sportec.sporthub.ui.screens.deportista.OrigenScreen
 import com.sportec.sporthub.ui.screens.deportista.PagoExitosoScreen
 import com.sportec.sporthub.ui.screens.deportista.PagoScreen
 import com.sportec.sporthub.ui.screens.deportista.PublicarTransferenciaScreen
 import com.sportec.sporthub.ui.screens.deportista.ResenaScreen
+import com.sportec.sporthub.ui.screens.deportista.RutaScreen
 import com.sportec.sporthub.ui.screens.deportista.ResumenSolicitudScreen
 import com.sportec.sporthub.ui.screens.deportista.TransferenciasScreen
 import com.sportec.sporthub.ui.screens.establecimiento.AgendaScreen
-import com.sportec.sporthub.ui.screens.establecimiento.CondicionesScreen
-import com.sportec.sporthub.ui.screens.establecimiento.EditarNegocioScreen
 import com.sportec.sporthub.ui.screens.establecimiento.EditarServicioScreen
 import com.sportec.sporthub.ui.screens.establecimiento.GestionScreen
-import com.sportec.sporthub.ui.screens.establecimiento.HorariosServicioScreen
+import com.sportec.sporthub.ui.screens.establecimiento.MotivoRechazoScreen
+import com.sportec.sporthub.ui.screens.establecimiento.MotivoTransferenciaScreen
 import com.sportec.sporthub.ui.screens.establecimiento.PagosScreen
 import com.sportec.sporthub.ui.screens.establecimiento.ReembolsosScreen
 import com.sportec.sporthub.ui.screens.establecimiento.ResenasNegocioScreen
@@ -378,6 +390,126 @@ fun SportHubApp(
                 entry<Origen> {
                     OrigenScreen(onBack = { volver() })
                 }
+                entry<Permiso> { ruta ->
+                    PermisoScreen(
+                        tipo = ruta.tipo,
+                        onBack = { volver() },
+                        onResuelto = { volver() }
+                    )
+                }
+                entry<Ruta> { ruta ->
+                    RutaScreen(
+                        negocioId = ruta.negocioId,
+                        onBack = { volver() },
+                        onCambiarOrigen = { irA(Origen) },
+                        onBrujula = { irA(Brujula(ruta.negocioId)) }
+                    )
+                }
+                entry<NuevoChat> {
+                    NuevoChatScreen(
+                        usuarioId = cuenta?.id.orEmpty(),
+                        onBack = { volver() },
+                        onIniciar = { otroId ->
+                            val chat = MensajesDominio.chatEntre(cuenta?.id.orEmpty(), otroId)
+                            irA(Chat(chat.id))
+                        }
+                    )
+                }
+                entry<MisTransferencias> {
+                    MisTransferenciasScreen(
+                        usuarioId = cuenta?.id.orEmpty(),
+                        onBack = { volver() },
+                        onAbrir = { id -> irA(DetalleTransferencia(id)) }
+                    )
+                }
+                entry<DetalleReembolso> { ruta ->
+                    DetalleReembolsoScreen(
+                        reembolsoId = ruta.id,
+                        onBack = { volver() }
+                    )
+                }
+                entry<MotivoRechazo> { ruta ->
+                    MotivoRechazoScreen(
+                        solicitudId = ruta.solicitudId,
+                        operadorId = cuenta?.id.orEmpty(),
+                        onBack = { volver() },
+                        onRechazada = { volver() }
+                    )
+                }
+                entry<MotivoTransferencia> { ruta ->
+                    MotivoTransferenciaScreen(
+                        transferenciaId = ruta.transferenciaId,
+                        operadorId = cuenta?.id.orEmpty(),
+                        onBack = { volver() },
+                        onRechazada = { volver() }
+                    )
+                }
+                entry<Filtros> {
+                    FiltrosScreen(
+                        onBack = { volver() },
+                        onAplicados = { volver() }
+                    )
+                }
+                entry<CheckIn> { ruta ->
+                    CheckInScreen(
+                        reservaId = ruta.reservaId,
+                        usuarioId = cuenta?.id.orEmpty(),
+                        onBack = { volver() },
+                        onAdjuntarFoto = { irA(FotoLlegada(ruta.reservaId)) }
+                    )
+                }
+                entry<FotoLlegada> { ruta ->
+                    FotoLlegadaScreen(
+                        reservaId = ruta.reservaId,
+                        usuarioId = cuenta?.id.orEmpty(),
+                        onBack = { volver() },
+                        onGuardada = { volver() }
+                    )
+                }
+                entry<Contactos> {
+                    ContactosScreen(
+                        usuarioId = cuenta?.id.orEmpty(),
+                        onBack = { volver() },
+                        onAbrirChat = { otroId ->
+                            val chat = MensajesDominio.chatEntre(cuenta?.id.orEmpty(), otroId)
+                            irA(Chat(chat.id))
+                        }
+                    )
+                }
+                entry<Comunidad> { ruta ->
+                    ComunidadScreen(
+                        comunidadId = ruta.id,
+                        usuarioId = cuenta?.id.orEmpty(),
+                        onBack = { volver() },
+                        onAbrirChat = { irA(Chat(MensajesDominio.crearGrupo(ruta.id).id)) },
+                        onEditar = { irA(EditarComunidad(ruta.id)) },
+                        onInvitar = { irA(Invitar(ruta.id)) },
+                        onCeder = { irA(Sucesion(ruta.id)) }
+                    )
+                }
+                entry<EditarComunidad> { ruta ->
+                    EditarComunidadScreen(
+                        comunidadId = ruta.id,
+                        usuarioId = cuenta?.id.orEmpty(),
+                        onBack = { volver() },
+                        onGuardada = { volver() }
+                    )
+                }
+                entry<Invitar> { ruta ->
+                    InvitarScreen(
+                        comunidadId = ruta.comunidadId,
+                        usuarioId = cuenta?.id.orEmpty(),
+                        onBack = { volver() }
+                    )
+                }
+                entry<Sucesion> { ruta ->
+                    SucesionScreen(
+                        comunidadId = ruta.comunidadId,
+                        usuarioId = cuenta?.id.orEmpty(),
+                        onBack = { volver() },
+                        onCedida = { volver() }
+                    )
+                }
                 entry<Brujula> { ruta ->
                     BrujulaScreen(
                         negocioId = ruta.negocioId,
@@ -461,22 +593,7 @@ fun SportHubApp(
                         servicioId = ruta.id,
                         cuenta = cuenta,
                         onBack = { volver() },
-                        onVerHorarios = { id -> irA(HorariosServicio(id)) },
-                        onVerCondiciones = { id -> irA(Condiciones(id)) }
-                    )
-                }
-                entry<Condiciones> { ruta ->
-                    CondicionesScreen(
-                        actividadId = ruta.actividadId,
-                        operadorId = cuenta?.id.orEmpty(),
-                        onBack = { volver() }
-                    )
-                }
-                entry<HorariosServicio> { ruta ->
-                    HorariosServicioScreen(
-                        actividadId = ruta.actividadId,
-                        operadorId = cuenta?.id.orEmpty(),
-                        onBack = { volver() }
+                        onGuardado = { volver() }
                     )
                 }
                 entry<Agenda> {
@@ -505,13 +622,6 @@ fun SportHubApp(
                     ValidacionNegocioScreen(
                         negocioId = cuenta?.negocioId.orEmpty(),
                         operadorId = cuenta?.id.orEmpty()
-                    )
-                }
-                entry<EditarNegocio> {
-                    EditarNegocioScreen(
-                        negocioId = cuenta?.negocioId.orEmpty(),
-                        operadorId = cuenta?.id.orEmpty(),
-                        onBack = { volver() }
                     )
                 }
             }

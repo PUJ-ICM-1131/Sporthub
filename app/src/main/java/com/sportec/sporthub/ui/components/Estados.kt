@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.components
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,7 +61,7 @@ fun EstadoError(
             textAlign = TextAlign.Center
         )
         OutlinedButton(onClick = onReintentar) {
-            Text("Reintentar")
+            Text(stringResource(R.string.texto_reintentar))
         }
     }
 }

@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,7 +41,7 @@ fun ResenaScreen(
 
     LaunchedEffect(estado.enviada) { if (estado.enviada) onBack() }
 
-    PantallaBase(titulo = "Calificar", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_calificar), onBack = onBack) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -45,13 +49,13 @@ fun ResenaScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("¿Cómo estuvo tu experiencia?")
+            Text(stringResource(R.string.texto_como_estuvo_tu_experiencia))
             Row {
                 (1..5).forEach { valor ->
                     IconButton(onClick = { viewModel.onPuntajeCambiado(valor) }) {
                         Icon(
                             imageVector = if (valor <= estado.puntaje) Icons.Filled.Star else Icons.Filled.StarBorder,
-                            contentDescription = "$valor estrellas",
+                            contentDescription = Textos.obtener(R.string.texto_valor_estrellas, valor),
                             tint = Color(0xFFDF854B)
                         )
                     }
@@ -60,7 +64,7 @@ fun ResenaScreen(
             OutlinedTextField(
                 value = estado.comentario,
                 onValueChange = viewModel::onComentarioCambiado,
-                label = { Text("Comentario (opcional)") },
+                label = { Text(stringResource(R.string.texto_comentario_opcional)) },
                 minLines = 3,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -68,7 +72,7 @@ fun ResenaScreen(
                 Aviso(texto = estado.error ?: "", tipo = TipoAviso.ERROR)
             }
             Button(onClick = { viewModel.enviar(reservaId, usuarioId) }, modifier = Modifier.fillMaxWidth()) {
-                Text("Enviar calificación")
+                Text(stringResource(R.string.texto_enviar_calificacion))
             }
         }
     }

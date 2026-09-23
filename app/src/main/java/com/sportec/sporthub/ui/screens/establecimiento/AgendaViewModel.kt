@@ -1,29 +1,28 @@
 package com.sportec.sporthub.ui.screens.establecimiento
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.sportec.sporthub.domain.Reserva
 import com.sportec.sporthub.domain.Reservas
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
 
 class AgendaViewModel : ViewModel() {
 
-    private val _negocioId = MutableStateFlow<String?>(null)
+    private var negocioId: String? = null
+
+    private val _reservas = MutableStateFlow<List<Reserva>>(emptyList())
+    val reservas: StateFlow<List<Reserva>> = _reservas.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    val reservas: StateFlow<List<Reserva>> = combine(_negocioId, Reservas.reservas) { negocioId, _ ->
-        negocioId?.let { Reservas.listarReservasNegocio(it) }.orEmpty().sortedBy { it.fecha + it.hora }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
     fun cargar(negocioId: String) {
-        _negocioId.value = negocioId
+        this.negocioId = negocioId
+        refrescar()
     }
 
     fun confirmarCierre(reservaId: String, operadorId: String) = ejecutar {
@@ -34,12 +33,20 @@ class AgendaViewModel : ViewModel() {
         Reservas.enviarAvisoSalida(reservaId, operadorId)
     }
 
+    private fun refrescar() {
+        _reservas.value = negocioId
+            ?.let { Reservas.listarReservasNegocio(it) }
+            .orEmpty()
+            .sortedBy { it.fecha + it.hora }
+    }
+
     private fun ejecutar(accion: () -> Unit) {
         try {
             accion()
             _error.value = null
         } catch (e: Exception) {
-            _error.value = e.message ?: "No se pudo completar la acción."
+            _error.value = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_completar_la_accion)
         }
+        refrescar()
     }
 }

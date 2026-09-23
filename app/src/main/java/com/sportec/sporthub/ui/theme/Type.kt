@@ -6,7 +6,6 @@ import androidx.compose.ui.unit.sp
 
 private val base = Typography()
 
-/** Encabezados más audaces y con tracking negativo, como .content h1/h2 del prototipo. */
 val SportHubTypography = base.copy(
     displaySmall = base.displaySmall.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp),
     headlineMedium = base.headlineMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.6).sp),

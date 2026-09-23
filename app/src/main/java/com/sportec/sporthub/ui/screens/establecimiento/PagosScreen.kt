@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.establecimiento
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -47,7 +51,7 @@ fun PagosScreen(negocioId: String) {
         if (servicioFiltro == null) propios else propios.filter { actividadDe(it)?.id == servicioFiltro }
     }
 
-    PantallaBase(titulo = "Pagos") { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_pagos)) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (servicios.size > 1) {
                 LazyRow(
@@ -58,7 +62,7 @@ fun PagosScreen(negocioId: String) {
                         FilterChip(
                             selected = servicioFiltro == null,
                             onClick = { servicioFiltro = null },
-                            label = { Text("Todos los servicios") }
+                            label = { Text(stringResource(R.string.texto_todos_los_servicios)) }
                         )
                     }
                     items(servicios, key = { it.id }) { servicio ->
@@ -71,7 +75,7 @@ fun PagosScreen(negocioId: String) {
                 }
             }
             if (filtrados.isEmpty()) {
-                EstadoVacio(mensaje = "No hay cobros registrados.")
+                EstadoVacio(mensaje = Textos.obtener(R.string.texto_no_hay_cobros_registrados))
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -88,7 +92,7 @@ fun PagosScreen(negocioId: String) {
                                         fontWeight = FontWeight.SemiBold,
                                         modifier = Modifier.weight(1f)
                                     )
-                                    Etiqueta(texto = if (pago.estado == EstadoPago.EXITOSO) "Exitoso" else "Fallido", tono = pago.estado.tono)
+                                    Etiqueta(texto = if (pago.estado == EstadoPago.EXITOSO) Textos.obtener(R.string.texto_exitoso) else Textos.obtener(R.string.texto_fallido), tono = pago.estado.tono)
                                 }
                                 Text(
                                     text = actividadDe(pago)?.nombre ?: pago.medio,
@@ -100,7 +104,7 @@ fun PagosScreen(negocioId: String) {
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                Text(text = "Operación ${pago.id.uppercase()}", style = MaterialTheme.typography.bodySmall)
+                                Text(text = stringResource(R.string.texto_operacion_valor, pago.id.uppercase()), style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }

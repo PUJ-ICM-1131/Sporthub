@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.acceso
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.lifecycle.ViewModel
 import com.sportec.sporthub.domain.Autenticacion
 import com.sportec.sporthub.domain.Cuenta
@@ -40,14 +43,14 @@ class LoginViewModel : ViewModel() {
     fun iniciarSesion() {
         val estado = _uiState.value
         if (estado.usuario.isBlank() || estado.contrasena.isBlank()) {
-            _uiState.update { it.copy(error = "Ingresa tu correo o usuario y tu contraseña.") }
+            _uiState.update { it.copy(error = Textos.obtener(R.string.texto_ingresa_tu_correo_o_usuario_y_tu_contrasena)) }
             return
         }
         try {
             val cuenta = Autenticacion.iniciarSesion(estado.usuario, estado.contrasena, estado.simularError)
             _uiState.update { it.copy(contrasena = "", error = null, cuentaAutenticada = cuenta) }
         } catch (e: Exception) {
-            _uiState.update { it.copy(error = e.message ?: "No fue posible iniciar sesión.") }
+            _uiState.update { it.copy(error = e.message ?: Textos.obtener(R.string.texto_no_fue_posible_iniciar_sesion)) }
         }
     }
 

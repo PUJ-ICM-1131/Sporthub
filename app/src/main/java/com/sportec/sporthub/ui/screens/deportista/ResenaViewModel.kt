@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.lifecycle.ViewModel
 import com.sportec.sporthub.domain.Resenas
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +31,7 @@ class ResenaViewModel : ViewModel() {
             Resenas.crear(reservaId, usuarioId, estado.puntaje, estado.comentario.trim())
             _uiState.update { it.copy(enviada = true) }
         } catch (e: Exception) {
-            _uiState.update { it.copy(error = e.message ?: "No se pudo enviar la reseña.") }
+            _uiState.update { it.copy(error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_enviar_la_resena)) }
         }
     }
 }

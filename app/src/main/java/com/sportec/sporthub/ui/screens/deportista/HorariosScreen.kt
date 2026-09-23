@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -36,7 +40,7 @@ fun HorariosScreen(
 
     LaunchedEffect(actividadId) { viewModel.cargar(actividadId) }
 
-    PantallaBase(titulo = "Horarios y cupos", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_horarios_y_cupos), onBack = onBack) { padding ->
         when {
             estado.error != null -> EstadoError(
                 mensaje = estado.error ?: "",
@@ -55,7 +59,7 @@ fun HorariosScreen(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
-                Text(text = "Elige una fecha", style = MaterialTheme.typography.labelLarge)
+                Text(text = stringResource(R.string.texto_elige_una_fecha), style = MaterialTheme.typography.labelLarge)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(estado.fechas, key = { it }) { fecha ->
                         FilterChip(
@@ -65,7 +69,7 @@ fun HorariosScreen(
                         )
                     }
                 }
-                Text(text = "Elige un horario", style = MaterialTheme.typography.labelLarge)
+                Text(text = stringResource(R.string.texto_elige_un_horario), style = MaterialTheme.typography.labelLarge)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(estado.franjas, key = { it.hora }) { franja ->
                         FilterChip(
@@ -75,9 +79,9 @@ fun HorariosScreen(
                             label = {
                                 Text(
                                     if (franja.cuposLibres > 0) {
-                                        "${formatoHora(franja.hora)} · ${franja.cuposLibres} cupo${if (franja.cuposLibres != 1) "s" else ""}"
+                                        Textos.cantidad(R.plurals.horario_cupos, franja.cuposLibres, formatoHora(franja.hora), franja.cuposLibres)
                                     } else {
-                                        "${formatoHora(franja.hora)} · Sin cupo"
+                                        Textos.obtener(R.string.texto_valor_sin_cupo, formatoHora(franja.hora))
                                     }
                                 )
                             }
@@ -89,7 +93,7 @@ fun HorariosScreen(
                     enabled = estado.horaSeleccionada != null,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Solicitar este horario")
+                    Text(stringResource(R.string.texto_solicitar_este_horario))
                 }
             }
         }

@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,11 +43,11 @@ fun ResumenSolicitudScreen(
 
     LaunchedEffect(actividadId) { viewModel.cargar(actividadId) }
 
-    PantallaBase(titulo = "Resumen de la solicitud", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_resumen_de_la_solicitud), onBack = onBack) { padding ->
         val item = estado.item
         if (item == null) {
             EstadoError(
-                mensaje = estado.error ?: "No se pudo cargar el servicio.",
+                mensaje = estado.error ?: Textos.obtener(R.string.texto_no_se_pudo_cargar_el_servicio),
                 onReintentar = { viewModel.cargar(actividadId) },
                 modifier = Modifier.padding(padding)
             )
@@ -58,14 +62,13 @@ fun ResumenSolicitudScreen(
             ) {
                 TarjetaHechos(
                     pares = listOf(
-                        "Servicio" to item.actividad.nombre,
-                        "Establecimiento" to item.negocio.nombre,
-                        "Horario" to formatoIntervalo(fecha, hora, item.actividad.duracionMinutos / 60),
-                        "Total a pagar" to formatoPesos(item.actividad.precio)
+                        Textos.obtener(R.string.texto_servicio) to item.actividad.nombre,
+                        Textos.obtener(R.string.texto_establecimiento) to item.negocio.nombre,
+                        Textos.obtener(R.string.texto_horario) to formatoIntervalo(fecha, hora, item.actividad.duracionMinutos / 60),
+                        Textos.obtener(R.string.texto_total_a_pagar) to formatoPesos(item.actividad.precio)
                     )
                 )
-                Text(
-                    text = "Esta solicitud entra a revisión del establecimiento. Si hay cupo, la verás como \"En revisión\"; si no, quedará en fila.",
+                Text(text = stringResource(R.string.texto_esta_solicitud_entra_a_revision_del_establecimiento_si_hay),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -76,7 +79,7 @@ fun ResumenSolicitudScreen(
                     onClick = { viewModel.enviar(usuarioId, fecha, hora, onSolicitudEnviada) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Enviar solicitud")
+                    Text(stringResource(R.string.texto_enviar_solicitud))
                 }
             }
         }

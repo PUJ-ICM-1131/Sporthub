@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.establecimiento
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,9 +39,9 @@ fun ResponderResenaScreen(
     var respuesta by rememberSaveable { mutableStateOf("") }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
 
-    PantallaBase(titulo = "Responder reseña", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_responder_resena), onBack = onBack) { padding ->
         if (resena == null) {
-            EstadoError(mensaje = "La reseña ya no existe.", onReintentar = {}, modifier = Modifier.padding(padding))
+            EstadoError(mensaje = Textos.obtener(R.string.texto_la_resena_ya_no_existe), onReintentar = {}, modifier = Modifier.padding(padding))
         } else {
             Column(
                 modifier = Modifier
@@ -50,7 +54,7 @@ fun ResponderResenaScreen(
                 OutlinedTextField(
                     value = respuesta,
                     onValueChange = { respuesta = it },
-                    label = { Text("Respuesta del establecimiento") },
+                    label = { Text(stringResource(R.string.texto_respuesta_del_establecimiento)) },
                     minLines = 2,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -68,7 +72,7 @@ fun ResponderResenaScreen(
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Publicar respuesta")
+                    Text(stringResource(R.string.texto_publicar_respuesta))
                 }
             }
         }

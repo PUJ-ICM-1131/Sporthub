@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.acceso
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.lifecycle.ViewModel
 import com.sportec.sporthub.domain.Cuentas
 import com.sportec.sporthub.domain.Negocios
@@ -37,11 +40,12 @@ class RegistroEstablecimientoViewModel : ViewModel() {
     fun registrar() {
         val estado = _uiState.value
         try {
+            Cuentas.validarRegistro(estado.nombreContacto, estado.email, estado.contrasena, estado.telefono)
             val negocio = Negocios.crear(estado.nombreNegocio, estado.nit, estado.telefono, estado.direccion)
             Cuentas.registrar(estado.nombreContacto, estado.email, estado.contrasena, Rol.ESTABLECIMIENTO, estado.telefono, negocio.id)
             _uiState.update { it.copy(registrado = true) }
         } catch (e: Exception) {
-            _uiState.update { it.copy(error = e.message ?: "No se pudo crear la cuenta.") }
+            _uiState.update { it.copy(error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_crear_la_cuenta)) }
         }
     }
 }

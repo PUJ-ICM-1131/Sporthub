@@ -66,10 +66,7 @@ interface RutaAcceso : NavKey
 @Serializable data object EditarPerfil : NavKey
 
 @Serializable data object ValidacionNegocio : NavKey
-@Serializable data object EditarNegocio : NavKey
 @Serializable data class EditarServicio(val id: String) : NavKey
-@Serializable data class HorariosServicio(val actividadId: String) : NavKey
-@Serializable data class Condiciones(val actividadId: String) : NavKey
 @Serializable data class MotivoRechazo(val solicitudId: String) : NavKey
 @Serializable data object Agenda : NavKey
 @Serializable data object ResenasNegocio : NavKey

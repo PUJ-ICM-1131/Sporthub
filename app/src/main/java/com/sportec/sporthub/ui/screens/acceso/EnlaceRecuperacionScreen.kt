@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.acceso
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,7 +20,7 @@ import com.sportec.sporthub.ui.components.PantallaBase
 
 @Composable
 fun EnlaceRecuperacionScreen(email: String, onBack: () -> Unit, onAbrirEnlace: () -> Unit) {
-    PantallaBase(titulo = "Enlace de recuperación", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_enlace_de_recuperacion), onBack = onBack) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -24,19 +28,17 @@ fun EnlaceRecuperacionScreen(email: String, onBack: () -> Unit, onAbrirEnlace: (
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "Enviamos un enlace de recuperación a:",
+            Text(text = stringResource(R.string.texto_enviamos_un_enlace_de_recuperacion_a),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(email, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text(
-                text = "Esta es una demostración: usa el botón para simular que abriste el enlace desde tu correo.",
+            Text(text = stringResource(R.string.texto_esta_es_una_demostracion_usa_el_boton_para_simular),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Button(onClick = onAbrirEnlace, modifier = Modifier.fillMaxWidth()) {
-                Text("Abrir enlace de recuperación")
+                Text(stringResource(R.string.texto_abrir_enlace_de_recuperacion))
             }
         }
     }

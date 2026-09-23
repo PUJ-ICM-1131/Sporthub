@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.comun
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.lifecycle.ViewModel
 import com.sportec.sporthub.domain.Comunidades
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +31,7 @@ class CrearComunidadViewModel : ViewModel() {
             val comunidad = Comunidades.crear(estado.nombre, estado.descripcion, creadorId)
             _uiState.update { it.copy(creadaId = comunidad.id) }
         } catch (e: Exception) {
-            _uiState.update { it.copy(error = e.message ?: "No se pudo crear la comunidad.") }
+            _uiState.update { it.copy(error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_crear_la_comunidad)) }
         }
     }
 }

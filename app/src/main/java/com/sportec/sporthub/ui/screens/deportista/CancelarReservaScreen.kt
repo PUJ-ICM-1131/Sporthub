@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,10 +44,10 @@ fun CancelarReservaScreen(
     LaunchedEffect(reservaId) { viewModel.cargar(reservaId) }
     LaunchedEffect(estado.cancelada) { if (estado.cancelada) onCancelada() }
 
-    PantallaBase(titulo = "Cancelar reserva", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_cancelar_reserva), onBack = onBack) { padding ->
         val reserva = estado.reserva
         if (reserva == null) {
-            EstadoError(mensaje = "No se pudo cargar la reserva.", onReintentar = { viewModel.cargar(reservaId) }, modifier = Modifier.padding(padding))
+            EstadoError(mensaje = Textos.obtener(R.string.texto_no_se_pudo_cargar_la_reserva), onReintentar = { viewModel.cargar(reservaId) }, modifier = Modifier.padding(padding))
         } else {
             val devolucion = Math.round(reserva.precio * reserva.politica.refundPercent / 100.0).toInt()
             Column(
@@ -55,19 +59,18 @@ fun CancelarReservaScreen(
             ) {
                 TarjetaHechos(
                     pares = listOf(
-                        "Pagado" to formatoPesos(reserva.precio),
-                        "Devolución según condiciones" to formatoPesos(devolucion),
-                        "Plazo de devolución" to "${reserva.politica.refundHours} h"
+                        Textos.obtener(R.string.texto_pagado) to formatoPesos(reserva.precio),
+                        Textos.obtener(R.string.texto_devolucion_segun_condiciones) to formatoPesos(devolucion),
+                        Textos.obtener(R.string.texto_plazo_de_devolucion) to Textos.obtener(R.string.texto_valor_h, reserva.politica.refundHours)
                     )
                 )
                 OutlinedTextField(
                     value = motivo,
                     onValueChange = { motivo = it },
-                    label = { Text("Motivo (opcional)") },
+                    label = { Text(stringResource(R.string.texto_motivo_opcional)) },
                     modifier = Modifier.fillMaxWidth()
                 )
-                Text(
-                    text = "Cancelar no significa que la devolución ya se realizó. Tendrá un seguimiento independiente.",
+                Text(text = stringResource(R.string.texto_cancelar_no_significa_que_la_devolucion_ya_se_realizo),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -78,7 +81,7 @@ fun CancelarReservaScreen(
                     onClick = { viewModel.confirmar(motivo, usuarioId) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Confirmar cancelación")
+                    Text(stringResource(R.string.texto_confirmar_cancelacion))
                 }
             }
         }

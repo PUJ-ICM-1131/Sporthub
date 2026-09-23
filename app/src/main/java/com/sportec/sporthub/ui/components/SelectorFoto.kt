@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.components
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -27,7 +30,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 
-/** Selector de foto con el selector nativo de imágenes (photo picker), sin permisos de almacenamiento. */
 @Composable
 fun SelectorFoto(
     fotoUri: String?,
@@ -50,7 +52,7 @@ fun SelectorFoto(
         if (fotoUri != null) {
             AsyncImage(
                 model = fotoUri,
-                contentDescription = "Foto",
+                contentDescription = Textos.obtener(R.string.texto_foto),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
@@ -66,7 +68,7 @@ fun SelectorFoto(
         ) {
             Icon(
                 Icons.Filled.PhotoCamera,
-                contentDescription = "Cambiar foto",
+                contentDescription = Textos.obtener(R.string.texto_cambiar_foto),
                 tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(18.dp)
             )

@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sportec.sporthub.domain.Transferencias
 import com.sportec.sporthub.domain.Cuenta
 import com.sportec.sporthub.domain.EstadoPostulante
 import com.sportec.sporthub.domain.EstadoTransferencia
@@ -50,15 +55,17 @@ fun DetalleTransferenciaScreen(
     var dialogoRechazo by rememberSaveable { mutableStateOf<String?>(null) }
     var motivo by rememberSaveable { mutableStateOf("") }
 
-    LaunchedEffect(transferenciaId) { viewModel.cargar(transferenciaId) }
+    val transferencias by Transferencias.transferencias.collectAsState()
 
-    PantallaBase(titulo = "Transferencia", onBack = onBack) { padding ->
+    LaunchedEffect(transferenciaId, transferencias) { viewModel.cargar(transferenciaId) }
+
+    PantallaBase(titulo = Textos.obtener(R.string.texto_transferencia), onBack = onBack) { padding ->
         val transferencia = estado.transferencia
         val reserva = estado.reserva
         val item = estado.item
         if (transferencia == null || reserva == null || item == null) {
             EstadoError(
-                mensaje = estado.error ?: "La publicación ya no existe.",
+                mensaje = estado.error ?: Textos.obtener(R.string.texto_la_publicacion_ya_no_existe),
                 onReintentar = { viewModel.cargar(transferenciaId) },
                 modifier = Modifier.padding(padding)
             )
@@ -79,10 +86,10 @@ fun DetalleTransferenciaScreen(
                 Etiqueta(texto = transferencia.estado.etiqueta, tono = transferencia.estado.tono)
                 TarjetaHechos(
                     pares = listOf(
-                        "Servicio" to item.actividad.nombre,
-                        "Establecimiento" to item.negocio.nombre,
-                        "Horario" to formatoIntervalo(reserva.fecha, reserva.hora, reserva.duracionHoras),
-                        "Importe" to formatoPesos(reserva.precio)
+                        Textos.obtener(R.string.texto_servicio) to item.actividad.nombre,
+                        Textos.obtener(R.string.texto_establecimiento) to item.negocio.nombre,
+                        Textos.obtener(R.string.texto_horario) to formatoIntervalo(reserva.fecha, reserva.hora, reserva.duracionHoras),
+                        Textos.obtener(R.string.texto_importe) to formatoPesos(reserva.precio)
                     )
                 )
                 if (estado.error != null) {
@@ -93,38 +100,37 @@ fun DetalleTransferenciaScreen(
                     val candidato = transferencia.postulantes.firstOrNull { it.estado == EstadoPostulante.REVISION }
                     if (candidato != null) {
                         Button(onClick = { viewModel.aprobar(cuenta.id) }, modifier = Modifier.fillMaxWidth()) {
-                            Text("Aprobar y habilitar pago")
+                            Text(stringResource(R.string.texto_aprobar_y_habilitar_pago))
                         }
                         OutlinedButton(
                             onClick = { motivo = ""; dialogoRechazo = candidato.id },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Rechazar con motivo")
+                            Text(stringResource(R.string.texto_rechazar_con_motivo))
                         }
                     } else {
-                        Text("No hay interesados por revisar.", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.texto_no_hay_interesados_por_revisar), style = MaterialTheme.typography.bodyMedium)
                     }
                 } else if (esPropietario) {
                     if (vigente) {
-                        Text(
-                            text = "${transferencia.postulantes.count { it.estado in setOf(EstadoPostulante.FILA, EstadoPostulante.REVISION, EstadoPostulante.PAGO) }} interesados activos.",
+                        Text(text = stringResource(R.string.texto_valor_interesados_activos, transferencia.postulantes.count { it.estado in setOf(EstadoPostulante.FILA, EstadoPostulante.REVISION, EstadoPostulante.PAGO) }),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         OutlinedButton(onClick = { viewModel.retirar(cuenta.id) }, modifier = Modifier.fillMaxWidth()) {
-                            Text("Retirar publicación")
+                            Text(stringResource(R.string.texto_retirar_publicacion))
                         }
                     }
                 } else if (interes != null) {
                     when (interes.estado) {
                         EstadoPostulante.PAGO -> Button(onClick = { onPagar(transferenciaId) }, modifier = Modifier.fillMaxWidth()) {
-                            Text("Pagar transferencia")
+                            Text(stringResource(R.string.texto_pagar_transferencia))
                         }
-                        EstadoPostulante.ATENDIDA -> Text("Ya completaste esta transferencia.", style = MaterialTheme.typography.bodyMedium)
-                        else -> Text("Tu interés está ${interes.estado.name.lowercase()}.", style = MaterialTheme.typography.bodyMedium)
+                        EstadoPostulante.ATENDIDA -> Text(stringResource(R.string.texto_ya_completaste_esta_transferencia), style = MaterialTheme.typography.bodyMedium)
+                        else -> Text(stringResource(R.string.texto_tu_interes_esta_valor, interes.estado.etiqueta.lowercase()), style = MaterialTheme.typography.bodyMedium)
                     }
                 } else if (vigente && cuenta?.rol == Rol.DEPORTISTA) {
                     Button(onClick = { viewModel.unirse(cuenta.id) }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Aceptar tomar esta reserva")
+                        Text(stringResource(R.string.texto_aceptar_tomar_esta_reserva))
                     }
                 }
             }
@@ -134,12 +140,12 @@ fun DetalleTransferenciaScreen(
     if (dialogoRechazo != null) {
         AlertDialog(
             onDismissRequest = { dialogoRechazo = null },
-            title = { Text("Rechazar interesado") },
+            title = { Text(stringResource(R.string.texto_rechazar_interesado)) },
             text = {
                 OutlinedTextField(
                     value = motivo,
                     onValueChange = { motivo = it },
-                    label = { Text("Motivo") },
+                    label = { Text(stringResource(R.string.texto_motivo)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             },
@@ -150,10 +156,10 @@ fun DetalleTransferenciaScreen(
                         viewModel.rechazar(dialogoRechazo!!, motivo, cuenta?.id.orEmpty())
                         dialogoRechazo = null
                     }
-                ) { Text("Confirmar") }
+                ) { Text(stringResource(R.string.texto_confirmar)) }
             },
             dismissButton = {
-                TextButton(onClick = { dialogoRechazo = null }) { Text("Cancelar") }
+                TextButton(onClick = { dialogoRechazo = null }) { Text(stringResource(R.string.texto_cancelar)) }
             }
         )
     }

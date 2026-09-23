@@ -30,7 +30,6 @@ private val ErrorFondo = Color(0xFFFFF0EE)
 private val ErrorBorde = Color(0xFFBE4D4D)
 private val ErrorTexto = Color(0xFF8A3337)
 
-/** Banda con borde lateral de color, igual a .notice/.notice.warn/.notice.error del prototipo. */
 @Composable
 fun Aviso(
     texto: String,

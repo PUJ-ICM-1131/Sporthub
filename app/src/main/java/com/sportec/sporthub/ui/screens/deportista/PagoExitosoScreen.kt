@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,7 +29,7 @@ fun PagoExitosoScreen(
     reservaId: String,
     onVerReserva: (String) -> Unit
 ) {
-    PantallaBase(titulo = "Reserva confirmada") { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_reserva_confirmada)) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -40,15 +44,13 @@ fun PagoExitosoScreen(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(64.dp)
             )
-            Text(
-                text = "Ya tienes tu plan.",
+            Text(text = stringResource(R.string.texto_ya_tienes_tu_plan),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
             )
-            Text(
-                text = "Pago simulado exitoso. Tu reserva está confirmada.",
+            Text(text = stringResource(R.string.texto_pago_simulado_exitoso_tu_reserva_esta_confirmada),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -59,7 +61,7 @@ fun PagoExitosoScreen(
                     .fillMaxWidth()
                     .padding(top = 24.dp)
             ) {
-                Text("Ver mi reserva")
+                Text(stringResource(R.string.texto_ver_mi_reserva))
             }
         }
     }

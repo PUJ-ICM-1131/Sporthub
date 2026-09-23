@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,10 +51,10 @@ fun ExplorarScreen(
     val estado by viewModel.uiState.collectAsState()
 
     PantallaBase(
-        titulo = "Explorar",
+        titulo = Textos.obtener(R.string.texto_explorar),
         acciones = {
             IconButton(onClick = { onNavegar(Notificaciones) }) {
-                Icon(Icons.Filled.Notifications, contentDescription = "Notificaciones")
+                Icon(Icons.Filled.Notifications, contentDescription = Textos.obtener(R.string.texto_notificaciones))
             }
         }
     ) { padding ->
@@ -63,13 +67,11 @@ fun ExplorarScreen(
         ) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        text = "Hola, $nombre",
+                    Text(text = stringResource(R.string.texto_hola_valor, nombre),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Text(
-                        text = "¿Cómo quieres\nmoverte hoy?",
+                    Text(text = stringResource(R.string.texto_como_quieres_moverte_hoy),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -77,9 +79,9 @@ fun ExplorarScreen(
             }
             item {
                 TarjetaHero(
-                    titulo = "Menos rutina.\nMás movimiento.",
-                    subtitulo = "Encuentra tu espacio o tu próxima clase.",
-                    pillTexto = "TIEMPO PARA TI"
+                    titulo = Textos.obtener(R.string.texto_menos_rutina_mas_movimiento),
+                    subtitulo = Textos.obtener(R.string.texto_encuentra_tu_espacio_o_tu_proxima_clase),
+                    pillTexto = Textos.obtener(R.string.texto_tiempo_para_ti)
                 )
             }
             item {
@@ -87,11 +89,10 @@ fun ExplorarScreen(
                     modifier = Modifier.fillMaxSize(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "Encuentra tu actividad",
+                    Text(text = stringResource(R.string.texto_encuentra_tu_actividad),
                         style = MaterialTheme.typography.titleLarge
                     )
-                    TextButton(onClick = { onNavegar(Buscar) }) { Text("Ver todas") }
+                    TextButton(onClick = { onNavegar(Buscar) }) { Text(stringResource(R.string.texto_ver_todas)) }
                 }
             }
             item {
@@ -100,7 +101,7 @@ fun ExplorarScreen(
                         FilterChip(
                             selected = estado.categoriaSeleccionada == null,
                             onClick = { viewModel.seleccionarCategoria(null) },
-                            label = { Text("Todas") }
+                            label = { Text(stringResource(R.string.texto_todas)) }
                         )
                     }
                     items(estado.categorias, key = { it.nombre }) { categoria ->
@@ -117,15 +118,14 @@ fun ExplorarScreen(
                     modifier = Modifier.fillMaxSize(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "Planes para esta semana",
+                    Text(text = stringResource(R.string.texto_planes_para_esta_semana),
                         style = MaterialTheme.typography.titleLarge
                     )
-                    TextButton(onClick = { onNavegar(Mapa) }) { Text("Mapa") }
+                    TextButton(onClick = { onNavegar(Mapa) }) { Text(stringResource(R.string.texto_mapa)) }
                 }
             }
             if (estado.actividades.isEmpty()) {
-                item { EstadoVacio(mensaje = "No hay servicios publicados en esta categoría.") }
+                item { EstadoVacio(mensaje = Textos.obtener(R.string.texto_no_hay_servicios_publicados_en_esta_categoria)) }
             } else {
                 item {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(13.dp)) {
@@ -142,17 +142,15 @@ fun ExplorarScreen(
             }
             item {
                 TarjetaTint {
-                    Text(
-                        text = "Un plan que cambia de manos",
+                    Text(text = stringResource(R.string.texto_un_plan_que_cambia_de_manos),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
-                    Text(
-                        text = "Encuentra reservas publicadas para transferencia. El negocio debe aprobarte antes del pago.",
+                    Text(text = stringResource(R.string.texto_encuentra_reservas_publicadas_para_transferencia_el_negocio_debe_aprobarte),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    TextButton(onClick = { onNavegar(Transferencias) }) { Text("Explorar transferencias") }
+                    TextButton(onClick = { onNavegar(Transferencias) }) { Text(stringResource(R.string.texto_explorar_transferencias)) }
                 }
             }
         }

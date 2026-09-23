@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.lifecycle.ViewModel
 import com.sportec.sporthub.domain.ActividadConNegocio
 import com.sportec.sporthub.domain.Catalogo
@@ -27,13 +30,13 @@ class DetalleSolicitudViewModel : ViewModel() {
         solicitudId = id
         val solicitud = Reservas.obtenerSolicitud(id)
         if (solicitud == null) {
-            _uiState.value = DetalleSolicitudUiState(error = "La solicitud ya no existe.")
+            _uiState.value = DetalleSolicitudUiState(error = Textos.obtener(R.string.texto_la_solicitud_ya_no_existe))
             return
         }
         _uiState.value = try {
             DetalleSolicitudUiState(solicitud = solicitud, item = Catalogo.obtener(solicitud.actividadId))
         } catch (e: Exception) {
-            DetalleSolicitudUiState(error = e.message ?: "No se pudo cargar la solicitud.")
+            DetalleSolicitudUiState(error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_cargar_la_solicitud))
         }
     }
 
@@ -49,7 +52,7 @@ class DetalleSolicitudViewModel : ViewModel() {
             accion()
             cargar(id)
         } catch (e: Exception) {
-            _uiState.update { it.copy(error = e.message ?: "No se pudo completar la acción.") }
+            _uiState.update { it.copy(error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_completar_la_accion)) }
         }
     }
 }

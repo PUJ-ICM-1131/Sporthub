@@ -1,15 +1,14 @@
 package com.sportec.sporthub.domain
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
+import com.sportec.sporthub.utils.Validaciones
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-data class BloqueoHorario(val actividadId: String, val fecha: String, val hora: Int)
 
-/**
- * Catálogo mutable de negocios y sus servicios: ficha, validación, alta/edición
- * de actividades, condiciones y bloqueos de horario (HU-E01 a HU-E05).
- */
 object Negocios {
 
     private var secuencia = 900
@@ -21,8 +20,6 @@ object Negocios {
     private val _actividades = MutableStateFlow(DatosMock.actividades)
     val actividades: StateFlow<List<Actividad>> = _actividades.asStateFlow()
 
-    private val _bloqueos = MutableStateFlow<List<BloqueoHorario>>(emptyList())
-
     fun negocioDe(id: String): Negocio? = _negocios.value.firstOrNull { it.id == id }
 
     fun actividadDe(id: String): Actividad? = _actividades.value.firstOrNull { it.id == id }
@@ -32,8 +29,10 @@ object Negocios {
     fun operadorDe(negocioId: String): String? = Cuentas.todas().firstOrNull { it.negocioId == negocioId }?.id
 
     fun crear(nombre: String, nit: String, contacto: String, direccion: String): Negocio {
-        if (nombre.isBlank()) throw IllegalArgumentException("El nombre del negocio es obligatorio.")
-        if (direccion.isBlank()) throw IllegalArgumentException("La dirección es obligatoria.")
+        if (nombre.isBlank()) throw IllegalArgumentException(Textos.obtener(R.string.texto_el_nombre_del_negocio_es_obligatorio))
+        if (direccion.isBlank()) throw IllegalArgumentException(Textos.obtener(R.string.texto_la_direccion_es_obligatoria))
+        if (!Validaciones.nit(nit)) throw IllegalArgumentException(Textos.obtener(R.string.error_nit_formato))
+        if (!Validaciones.telefono(contacto)) throw IllegalArgumentException(Textos.obtener(R.string.error_telefono_formato))
         val negocio = Negocio(
             id = uid("b"), nombre = nombre.trim(), nit = nit.trim(), contacto = contacto.trim(),
             direccion = direccion.trim(), descripcion = "", estado = EstadoNegocio.PENDIENTE,
@@ -43,13 +42,8 @@ object Negocios {
         return negocio
     }
 
-    private fun exigirOperador(negocioId: String, operadorId: String) {
-        if (operadorDe(negocioId) != operadorId) throw IllegalStateException("Esta ficha corresponde a otra cuenta de negocio.")
-    }
-
     fun solicitarValidacion(negocioId: String, operadorId: String): Negocio {
-        val negocio = negocioDe(negocioId) ?: throw IllegalArgumentException("El negocio no existe.")
-        exigirOperador(negocioId, operadorId)
+        val negocio = negocioDe(negocioId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_el_negocio_no_existe))
         val nuevoEstado = if (negocio.nombre.isNotBlank() && negocio.nit.isNotBlank()) EstadoNegocio.VALIDADO else EstadoNegocio.PENDIENTE
         val actualizado = negocio.copy(estado = nuevoEstado)
         _negocios.value = _negocios.value.map { if (it.id == negocioId) actualizado else it }
@@ -57,27 +51,40 @@ object Negocios {
     }
 
     fun validar(negocioId: String, aprobado: Boolean): Negocio {
-        val negocio = negocioDe(negocioId) ?: throw IllegalArgumentException("El negocio no existe.")
-        if (negocio.estado != EstadoNegocio.PENDIENTE) throw IllegalStateException("Este negocio ya fue revisado.")
+        val negocio = negocioDe(negocioId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_el_negocio_no_existe))
+        if (negocio.estado != EstadoNegocio.PENDIENTE) throw IllegalStateException(Textos.obtener(R.string.texto_este_negocio_ya_fue_revisado))
         val actualizado = negocio.copy(estado = if (aprobado) EstadoNegocio.VALIDADO else EstadoNegocio.RECHAZADO)
         _negocios.value = _negocios.value.map { if (it.id == negocioId) actualizado else it }
-        operadorDe(negocioId)?.let {
-            Notificaciones.enviar(
-                it,
-                if (aprobado) "Negocio validado" else "Negocio rechazado",
-                if (aprobado) "Tu negocio ya está visible para deportistas." else "Revisa los datos de tu ficha y vuelve a intentarlo.",
-                "business",
-                negocioId
-            )
-        }
         return actualizado
     }
 
-    fun actualizarFicha(negocioId: String, operadorId: String, descripcion: String, contacto: String, direccion: String): Negocio {
-        val negocio = negocioDe(negocioId) ?: throw IllegalArgumentException("El negocio no existe.")
-        exigirOperador(negocioId, operadorId)
-        if (direccion.isBlank()) throw IllegalArgumentException("La dirección no puede estar vacía.")
-        val actualizado = negocio.copy(descripcion = descripcion, contacto = contacto, direccion = direccion)
+    fun actualizarFicha(negocioId: String, operadorId: String, nombre: String, nit: String, descripcion: String, contacto: String, direccion: String): Negocio {
+        val negocio = negocioDe(negocioId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_el_negocio_no_existe))
+        if (nombre.isBlank()) throw IllegalArgumentException(Textos.obtener(R.string.texto_el_nombre_del_negocio_es_obligatorio))
+        if (!Validaciones.nit(nit)) throw IllegalArgumentException(Textos.obtener(R.string.error_nit_formato))
+        if (direccion.isBlank()) throw IllegalArgumentException(Textos.obtener(R.string.texto_la_direccion_no_puede_estar_vacia))
+        if (!Validaciones.telefono(contacto)) throw IllegalArgumentException(Textos.obtener(R.string.error_telefono_formato))
+        val cambiaSensible = nombre.trim() != negocio.nombre || nit.trim() != negocio.nit
+        val actualizado = negocio.copy(
+            descripcion = descripcion.trim(),
+            contacto = contacto.trim(),
+            direccion = direccion.trim(),
+            cambioPendiente = if (cambiaSensible) CambioSensible(nombre.trim(), nit.trim()) else negocio.cambioPendiente
+        )
+        _negocios.value = _negocios.value.map { if (it.id == negocioId) actualizado else it }
+        return actualizado
+    }
+
+    fun listarCambiosPendientes(): List<Negocio> = _negocios.value.filter { it.cambioPendiente != null }
+
+    fun resolverCambioSensible(negocioId: String, aprobado: Boolean): Negocio {
+        val negocio = negocioDe(negocioId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_el_negocio_no_existe))
+        val cambio = negocio.cambioPendiente ?: throw IllegalStateException(Textos.obtener(R.string.cambio_sin_solicitud))
+        val actualizado = if (aprobado) {
+            negocio.copy(nombre = cambio.nombre, nit = cambio.nit, cambioPendiente = null)
+        } else {
+            negocio.copy(cambioPendiente = null)
+        }
         _negocios.value = _negocios.value.map { if (it.id == negocioId) actualizado else it }
         return actualizado
     }
@@ -93,24 +100,34 @@ object Negocios {
         duracionMinutos: Int,
         capacidad: Int,
         descripcion: String,
+        horaApertura: Int,
+        horaCierre: Int,
+        politica: Politica,
         fotoUri: String? = null
     ): Actividad {
-        exigirOperador(negocioId, operadorId)
-        if (negocioDe(negocioId)?.estado != EstadoNegocio.VALIDADO) throw IllegalStateException("El negocio debe estar validado para publicar servicios.")
-        if (nombre.isBlank()) throw IllegalArgumentException("El nombre es obligatorio.")
-        if (precio <= 0) throw IllegalArgumentException("El precio debe ser mayor a cero.")
-        if (duracionMinutos <= 0) throw IllegalArgumentException("La duración debe ser mayor a cero.")
-        if (capacidad <= 0) throw IllegalArgumentException("La capacidad debe ser mayor a cero.")
+        if (negocioDe(negocioId)?.estado != EstadoNegocio.VALIDADO) throw IllegalStateException(Textos.obtener(R.string.texto_el_negocio_debe_estar_validado_para_publicar_servicios))
+        if (nombre.isBlank()) throw IllegalArgumentException(Textos.obtener(R.string.texto_el_nombre_es_obligatorio))
+        if (precio <= 0) throw IllegalArgumentException(Textos.obtener(R.string.texto_el_precio_debe_ser_mayor_a_cero))
+        if (duracionMinutos <= 0) throw IllegalArgumentException(Textos.obtener(R.string.texto_la_duracion_debe_ser_mayor_a_cero))
+        if (capacidad <= 0) throw IllegalArgumentException(Textos.obtener(R.string.texto_la_capacidad_debe_ser_mayor_a_cero))
+        if (horaApertura !in 0..23 || horaCierre !in 1..24 || horaApertura >= horaCierre) {
+            throw IllegalArgumentException(Textos.obtener(R.string.error_horario_servicio))
+        }
+        if (politica.payMinutes <= 0) throw IllegalArgumentException(Textos.obtener(R.string.texto_el_plazo_de_pago_debe_ser_mayor_a_cero))
+        if (politica.cancelHours < 0) throw IllegalArgumentException(Textos.obtener(R.string.texto_la_anticipacion_de_cancelacion_no_puede_ser_negativa))
+        if (politica.refundPercent !in 0..100) throw IllegalArgumentException(Textos.obtener(R.string.texto_el_porcentaje_de_devolucion_debe_estar_entre_0_y))
+        if (politica.refundHours <= 0) throw IllegalArgumentException(Textos.obtener(R.string.texto_el_plazo_de_devolucion_debe_ser_mayor_a_cero))
 
         val existente = id?.let { actividadDe(it) }
         if (existente != null) {
             val cambiaCompromiso = existente.duracionMinutos != duracionMinutos || existente.capacidad != capacidad || existente.tipo != tipo
             if (cambiaCompromiso && Reservas.tieneCompromisos(existente.id)) {
-                throw IllegalStateException("No puedes cambiar duración, modalidad o capacidad con compromisos vigentes.")
+                throw IllegalStateException(Textos.obtener(R.string.texto_no_puedes_cambiar_duracion_modalidad_o_capacidad_con_compromisos))
             }
             val actualizada = existente.copy(
                 nombre = nombre, categoria = categoria, tipo = tipo, precio = precio,
                 duracionMinutos = duracionMinutos, capacidad = capacidad, descripcion = descripcion,
+                horaApertura = horaApertura, horaCierre = horaCierre, politica = politica,
                 fotoUri = fotoUri ?: existente.fotoUri
             )
             _actividades.value = _actividades.value.map { if (it.id == existente.id) actualizada else it }
@@ -119,44 +136,11 @@ object Negocios {
         val nueva = Actividad(
             id = uid("a"), negocioId = negocioId, nombre = nombre, categoria = categoria, tipo = tipo,
             precio = precio, duracionMinutos = duracionMinutos, capacidad = capacidad, descripcion = descripcion,
+            horaApertura = horaApertura, horaCierre = horaCierre, politica = politica,
             fotoUri = fotoUri
         )
         _actividades.value = _actividades.value + nueva
         return nueva
     }
 
-    fun actualizarPolitica(operadorId: String, actividadId: String, politica: Politica): Actividad {
-        val actividad = actividadDe(actividadId) ?: throw IllegalArgumentException("El servicio no existe.")
-        exigirOperador(actividad.negocioId, operadorId)
-        if (politica.payMinutes <= 0) throw IllegalArgumentException("El plazo de pago debe ser mayor a cero.")
-        if (politica.cancelHours < 0) throw IllegalArgumentException("La anticipación de cancelación no puede ser negativa.")
-        if (politica.refundPercent !in 0..100) throw IllegalArgumentException("El porcentaje de devolución debe estar entre 0 y 100.")
-        if (politica.refundHours <= 0) throw IllegalArgumentException("El plazo de devolución debe ser mayor a cero.")
-        val actualizada = actividad.copy(politica = politica)
-        _actividades.value = _actividades.value.map { if (it.id == actividadId) actualizada else it }
-        return actualizada
-    }
-
-    fun estaBloqueado(actividadId: String, fecha: String, hora: Int): Boolean =
-        _bloqueos.value.any { it.actividadId == actividadId && it.fecha == fecha && it.hora == hora }
-
-    fun listarBloqueos(actividadId: String, fecha: String): List<Int> =
-        _bloqueos.value.filter { it.actividadId == actividadId && it.fecha == fecha }.map { it.hora }
-
-    fun bloquearHorario(operadorId: String, actividadId: String, fecha: String, hora: Int) {
-        val actividad = actividadDe(actividadId) ?: throw IllegalArgumentException("El servicio no existe.")
-        exigirOperador(actividad.negocioId, operadorId)
-        if (Reservas.cuposLibres(actividad, fecha, hora) < actividad.capacidad) {
-            throw IllegalStateException("Este horario ya tiene compromisos; no puede bloquearse.")
-        }
-        if (!estaBloqueado(actividadId, fecha, hora)) {
-            _bloqueos.value = _bloqueos.value + BloqueoHorario(actividadId, fecha, hora)
-        }
-    }
-
-    fun desbloquearHorario(operadorId: String, actividadId: String, fecha: String, hora: Int) {
-        val actividad = actividadDe(actividadId) ?: throw IllegalArgumentException("El servicio no existe.")
-        exigirOperador(actividad.negocioId, operadorId)
-        _bloqueos.value = _bloqueos.value.filterNot { it.actividadId == actividadId && it.fecha == fecha && it.hora == hora }
-    }
 }

@@ -1,7 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.sportec.sporthub.domain.ActividadConNegocio
 import com.sportec.sporthub.domain.Catalogo
 import com.sportec.sporthub.domain.Reserva
@@ -9,10 +11,9 @@ import com.sportec.sporthub.domain.Reservas
 import com.sportec.sporthub.domain.Transferencia
 import com.sportec.sporthub.domain.Transferencias
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 data class DetalleTransferenciaUiState(
     val transferencia: Transferencia? = null,
@@ -23,48 +24,52 @@ data class DetalleTransferenciaUiState(
 
 class DetalleTransferenciaViewModel : ViewModel() {
 
-    private val _transferenciaId = MutableStateFlow<String?>(null)
-    private val _error = MutableStateFlow<String?>(null)
+    private var transferenciaId: String? = null
 
-    val uiState: StateFlow<DetalleTransferenciaUiState> = combine(
-        _transferenciaId, Transferencias.transferencias, _error
-    ) { id, _, error ->
-        val transferencia = id?.let { Transferencias.obtener(it) }
-        val reserva = transferencia?.let { Reservas.obtenerReserva(it.reservaId) }
-        val item = reserva?.let { runCatching { Catalogo.obtener(it.actividadId) }.getOrNull() }
-        DetalleTransferenciaUiState(transferencia, reserva, item, error)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DetalleTransferenciaUiState())
+    private val _uiState = MutableStateFlow(DetalleTransferenciaUiState())
+    val uiState: StateFlow<DetalleTransferenciaUiState> = _uiState.asStateFlow()
 
     fun cargar(id: String) {
-        _transferenciaId.value = id
+        transferenciaId = id
+        refrescar()
     }
 
-    fun aprobar(operadorId: String) = ejecutar { Transferencias.aprobar(_transferenciaId.value!!, operadorId) }
+    fun aprobar(operadorId: String) = ejecutar { Transferencias.aprobar(transferenciaId!!, operadorId) }
 
     fun rechazar(postulanteId: String, motivo: String, operadorId: String) = ejecutar {
-        Transferencias.rechazar(_transferenciaId.value!!, postulanteId, motivo, operadorId)
+        Transferencias.rechazar(transferenciaId!!, postulanteId, motivo, operadorId)
     }
 
-    fun unirse(usuarioId: String) = ejecutar { Transferencias.unirse(_transferenciaId.value!!, usuarioId) }
+    fun unirse(usuarioId: String) = ejecutar { Transferencias.unirse(transferenciaId!!, usuarioId) }
 
-    fun retirar(usuarioId: String) = ejecutar { Transferencias.retirarPublicacion(_transferenciaId.value!!, usuarioId) }
+    fun retirar(usuarioId: String) = ejecutar { Transferencias.retirarPublicacion(transferenciaId!!, usuarioId) }
 
     fun pagar(usuarioId: String, medio: String, onExito: (String) -> Unit) {
         try {
-            val reserva = Transferencias.pagar(_transferenciaId.value!!, usuarioId, medio)
-            _error.value = null
+            val reserva = Transferencias.pagar(transferenciaId!!, usuarioId, medio)
+            _uiState.update { it.copy(error = null) }
             onExito(reserva.id)
         } catch (e: Exception) {
-            _error.value = e.message ?: "No se pudo procesar el pago."
+            val mensaje = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_procesar_el_pago)
+            _uiState.update { it.copy(error = mensaje) }
+        }
+    }
+
+    private fun refrescar(error: String? = null) {
+        val transferencia = transferenciaId?.let { Transferencias.obtener(it) }
+        val reserva = transferencia?.let { Reservas.obtenerReserva(it.reservaId) }
+        val item = reserva?.let { runCatching { Catalogo.obtener(it.actividadId) }.getOrNull() }
+        _uiState.update {
+            it.copy(transferencia = transferencia, reserva = reserva, item = item, error = error)
         }
     }
 
     private fun ejecutar(accion: () -> Unit) {
         try {
             accion()
-            _error.value = null
+            refrescar()
         } catch (e: Exception) {
-            _error.value = e.message ?: "No se pudo completar la acción."
+            refrescar(e.message ?: Textos.obtener(R.string.texto_no_se_pudo_completar_la_accion))
         }
     }
 }

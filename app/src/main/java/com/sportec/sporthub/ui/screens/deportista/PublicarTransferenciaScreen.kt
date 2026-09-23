@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,10 +40,10 @@ fun PublicarTransferenciaScreen(
     LaunchedEffect(reservaId) { viewModel.cargar(reservaId) }
     LaunchedEffect(estado.publicada) { estado.publicada?.let(onPublicada) }
 
-    PantallaBase(titulo = "Publicar transferencia", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_publicar_transferencia), onBack = onBack) { padding ->
         val reserva = estado.reserva
         if (reserva == null) {
-            EstadoError(mensaje = estado.error ?: "La reserva ya no existe.", onReintentar = { viewModel.cargar(reservaId) }, modifier = Modifier.padding(padding))
+            EstadoError(mensaje = estado.error ?: Textos.obtener(R.string.texto_la_reserva_ya_no_existe), onReintentar = { viewModel.cargar(reservaId) }, modifier = Modifier.padding(padding))
         } else {
             Column(
                 modifier = Modifier
@@ -48,22 +52,21 @@ fun PublicarTransferenciaScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = "Publica tu reserva para que otro deportista pueda tomarla. Sigues siendo titular hasta que el destinatario aprobado pague.",
+                Text(text = stringResource(R.string.texto_publica_tu_reserva_para_que_otro_deportista_pueda_tomarla),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 TarjetaHechos(
                     pares = listOf(
-                        "Horario" to formatoIntervalo(reserva.fecha, reserva.hora, reserva.duracionHoras),
-                        "Pago del destinatario" to formatoPesos(reserva.precio),
-                        "Devolución aplicable a ti" to formatoPesos(Math.round(reserva.precio * reserva.politica.refundPercent / 100.0).toInt())
+                        Textos.obtener(R.string.texto_horario) to formatoIntervalo(reserva.fecha, reserva.hora, reserva.duracionHoras),
+                        Textos.obtener(R.string.texto_pago_del_destinatario) to formatoPesos(reserva.precio),
+                        Textos.obtener(R.string.texto_devolucion_aplicable_a_ti) to formatoPesos(Math.round(reserva.precio * reserva.politica.refundPercent / 100.0).toInt())
                     )
                 )
                 if (estado.error != null) {
                     Aviso(texto = estado.error ?: "", tipo = TipoAviso.ERROR)
                 }
                 Button(onClick = { viewModel.publicar(usuarioId) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Publicar reserva")
+                    Text(stringResource(R.string.texto_publicar_reserva))
                 }
             }
         }

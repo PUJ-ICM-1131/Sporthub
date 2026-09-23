@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.admin
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -27,9 +30,9 @@ fun ReportesScreen(onAbrir: (String) -> Unit) {
     val reportes by Reportes.reportes.collectAsState()
     val pendientes = remember(reportes) { Reportes.listarPendientes() }
 
-    PantallaBase(titulo = "Reportes") { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_reportes)) { padding ->
         if (pendientes.isEmpty()) {
-            EstadoVacio(mensaje = "No hay reportes pendientes.", modifier = Modifier.padding(padding))
+            EstadoVacio(mensaje = Textos.obtener(R.string.texto_no_hay_reportes_pendientes), modifier = Modifier.padding(padding))
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),

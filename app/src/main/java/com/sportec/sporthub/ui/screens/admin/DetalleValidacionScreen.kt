@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.admin
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,9 +32,9 @@ fun DetalleValidacionScreen(negocioId: String, onBack: () -> Unit) {
     val negocios by Negocios.negocios.collectAsState()
     val negocio = negocios.firstOrNull { it.id == negocioId }
 
-    PantallaBase(titulo = "Validación de negocio", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_validacion_de_negocio), onBack = onBack) { padding ->
         if (negocio == null) {
-            EstadoError(mensaje = "El negocio ya no existe.", onReintentar = {}, modifier = Modifier.padding(padding))
+            EstadoError(mensaje = Textos.obtener(R.string.texto_el_negocio_ya_no_existe), onReintentar = {}, modifier = Modifier.padding(padding))
         } else {
             Column(
                 modifier = Modifier
@@ -42,25 +46,25 @@ fun DetalleValidacionScreen(negocioId: String, onBack: () -> Unit) {
                 Text(negocio.nombre, style = MaterialTheme.typography.titleLarge)
                 TarjetaHechos(
                     pares = listOf(
-                        "NIT" to negocio.nit,
-                        "Contacto" to negocio.contacto,
-                        "Dirección" to negocio.direccion,
-                        "Descripción" to negocio.descripcion.ifBlank { "Sin descripción" }
+                        Textos.obtener(R.string.texto_nit) to negocio.nit,
+                        Textos.obtener(R.string.texto_contacto) to negocio.contacto,
+                        Textos.obtener(R.string.texto_direccion) to negocio.direccion,
+                        Textos.obtener(R.string.texto_descripcion) to negocio.descripcion.ifBlank { Textos.obtener(R.string.texto_sin_descripcion) }
                     )
                 )
                 if (negocio.estado == EstadoNegocio.PENDIENTE) {
                     Button(onClick = { Negocios.validar(negocioId, aprobado = true); onBack() }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Aprobar negocio")
+                        Text(stringResource(R.string.texto_aprobar_negocio))
                     }
                     OutlinedButton(
                         onClick = { Negocios.validar(negocioId, aprobado = false); onBack() },
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Rechazar negocio")
+                        Text(stringResource(R.string.texto_rechazar_negocio))
                     }
                 } else {
-                    Aviso(texto = "Este negocio ya fue revisado: ${negocio.estado.etiqueta}.", tipo = TipoAviso.NORMAL)
+                    Aviso(texto = Textos.obtener(R.string.texto_este_negocio_ya_fue_revisado_valor, negocio.estado.etiqueta), tipo = TipoAviso.NORMAL)
                 }
             }
         }

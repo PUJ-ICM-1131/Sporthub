@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -72,7 +76,7 @@ fun MapaScreen(onBack: () -> Unit, onVerServicios: (String) -> Unit, onElegirOri
         if (sinLimite) validados else validados.filter { Ubicacion.distanciaKm(origen, it.latitud, it.longitud) <= rango }
     }
 
-    PantallaBase(titulo = "Planes cerca de ti", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_planes_cerca_de_ti), onBack = onBack) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -82,13 +86,12 @@ fun MapaScreen(onBack: () -> Unit, onVerServicios: (String) -> Unit, onElegirOri
         ) {
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "Origen: ${origen.nombre}",
+                    Text(text = stringResource(R.string.texto_origen_valor, origen.nombre),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(onClick = onElegirOrigen) { Text("Elegir origen") }
+                    TextButton(onClick = onElegirOrigen) { Text(stringResource(R.string.texto_elegir_origen)) }
                 }
             }
             item {
@@ -105,7 +108,7 @@ fun MapaScreen(onBack: () -> Unit, onVerServicios: (String) -> Unit, onElegirOri
             }
             item {
                 Text(
-                    text = if (sinLimite) "Mostrando todos los establecimientos, sin límite de rango." else "Rango de búsqueda: ${"%.1f".format(rango)} km",
+                    text = if (sinLimite) Textos.obtener(R.string.texto_mostrando_todos_los_establecimientos_sin_limite_de_rango) else Textos.obtener(R.string.texto_rango_de_busqueda_valor_km, "%.1f".format(rango)),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -124,12 +127,11 @@ fun MapaScreen(onBack: () -> Unit, onVerServicios: (String) -> Unit, onElegirOri
                 FilterChip(
                     selected = sinLimite,
                     onClick = { sinLimite = !sinLimite },
-                    label = { Text("Buscar sin límite de rango") }
+                    label = { Text(stringResource(R.string.texto_buscar_sin_limite_de_rango)) }
                 )
             }
             item {
-                Text(
-                    text = "Verde: dentro del rango · Gris: fuera del rango · Punto naranja: origen. Distancia geográfica, no recorrido por calles.",
+                Text(text = stringResource(R.string.texto_verde_dentro_del_rango_gris_fuera_del_rango_punto),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -140,13 +142,12 @@ fun MapaScreen(onBack: () -> Unit, onVerServicios: (String) -> Unit, onElegirOri
                     TarjetaTint {
                         Text(elegido.nombre, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Text(elegido.direccion, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        TextButton(onClick = { onVerServicios(elegido.id) }) { Text("Ver servicios") }
+                        TextButton(onClick = { onVerServicios(elegido.id) }) { Text(stringResource(R.string.texto_ver_servicios)) }
                     }
                 }
             }
             item {
-                Text(
-                    text = "${visibles.size} establecimientos disponibles",
+                Text(text = stringResource(R.string.texto_valor_establecimientos_disponibles, visibles.size),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -163,7 +164,7 @@ fun MapaScreen(onBack: () -> Unit, onVerServicios: (String) -> Unit, onElegirOri
                         Text(negocio.nombre, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                         Text(negocio.direccion, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    TextButton(onClick = { onVerServicios(negocio.id) }) { Text("Ver servicios") }
+                    TextButton(onClick = { onVerServicios(negocio.id) }) { Text(stringResource(R.string.texto_ver_servicios)) }
                 }
             }
         }
@@ -199,8 +200,7 @@ private fun MapaEstatico(
     ) {
         val anchoPx = maxWidth
         val altoPx = maxHeight
-        Text(
-            text = "BOGOTÁ",
+        Text(text = stringResource(R.string.texto_bogota),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier

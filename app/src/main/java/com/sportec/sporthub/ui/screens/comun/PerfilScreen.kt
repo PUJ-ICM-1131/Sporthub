@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.comun
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +45,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import coil3.compose.AsyncImage
 import com.sportec.sporthub.domain.Cuenta
+import com.sportec.sporthub.domain.Cuentas
+import com.sportec.sporthub.domain.Negocios
 import com.sportec.sporthub.domain.Rol
 import com.sportec.sporthub.navigation.EditarPerfil
 import com.sportec.sporthub.navigation.Notificaciones
@@ -62,13 +68,15 @@ fun PerfilScreen(
     onCerrarSesion: () -> Unit
 ) {
     var confirmarSalida by rememberSaveable { mutableStateOf(false) }
-    val titulo = if (cuenta?.rol == Rol.DEPORTISTA) "Perfil" else "Cuenta"
+    val titulo = if (cuenta?.rol == Rol.DEPORTISTA) Textos.obtener(R.string.texto_perfil) else Textos.obtener(R.string.texto_cuenta)
+    val negocio = cuenta?.negocioId?.let { Negocios.negocioDe(it) }
+    val nombreCabecera = cuenta?.let { Cuentas.nombreParaMostrar(it) }.orEmpty()
 
     PantallaBase(
         titulo = titulo,
         acciones = {
             IconButton(onClick = { onNavegar(Notificaciones) }) {
-                Icon(Icons.Filled.Notifications, contentDescription = "Notificaciones")
+                Icon(Icons.Filled.Notifications, contentDescription = Textos.obtener(R.string.texto_notificaciones))
             }
         }
     ) { padding ->
@@ -110,13 +118,13 @@ fun PerfilScreen(
                             if (cuenta?.fotoUri != null) {
                                 AsyncImage(
                                     model = cuenta.fotoUri,
-                                    contentDescription = "Foto de perfil",
+                                    contentDescription = Textos.obtener(R.string.texto_foto_de_perfil),
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier.fillMaxSize()
                                 )
                             } else {
                                 Text(
-                                    text = iniciales(cuenta?.nombre.orEmpty()),
+                                    text = iniciales(nombreCabecera),
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = AvatarTexto
@@ -124,7 +132,7 @@ fun PerfilScreen(
                             }
                         }
                         Text(
-                            text = cuenta?.nombre.orEmpty(),
+                            text = nombreCabecera,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
@@ -132,18 +140,49 @@ fun PerfilScreen(
                     }
                 }
             }
+            if (negocio != null) {
+                item {
+                    Text(
+                        text = stringResource(R.string.perfil_datos_negocio),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+                item {
+                    TarjetaHechos(
+                        pares = listOf(
+                            stringResource(R.string.perfil_nit) to negocio.nit,
+                            stringResource(R.string.perfil_direccion) to negocio.direccion,
+                            stringResource(R.string.perfil_estado_negocio) to negocio.estado.etiqueta
+                        )
+                    )
+                }
+                item {
+                    Text(
+                        text = stringResource(R.string.perfil_persona_contacto),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
             item {
                 TarjetaHechos(
                     pares = buildList {
-                        add("Correo electrónico" to cuenta?.email.orEmpty())
-                        add("Teléfono" to (cuenta?.telefono ?: "Sin agregar"))
+                        if (negocio != null) {
+                            add(Textos.obtener(R.string.perfil_nombre_contacto) to cuenta?.nombre.orEmpty())
+                        }
+                        add(Textos.obtener(R.string.texto_correo_electronico) to cuenta?.email.orEmpty())
+                        add(Textos.obtener(R.string.texto_telefono) to (cuenta?.telefono ?: Textos.obtener(R.string.texto_sin_agregar)))
                     }
                 )
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Button(onClick = { onNavegar(EditarPerfil) }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Editar mis datos")
+                        Text(
+                            if (negocio != null) stringResource(R.string.perfil_editar_cuenta)
+                            else stringResource(R.string.texto_editar_mis_datos)
+                        )
                     }
                     opcionesPerfil(cuenta?.rol).forEach { destino ->
                         OutlinedButton(onClick = { onNavegar(destino.ruta) }, modifier = Modifier.fillMaxWidth()) {
@@ -157,7 +196,7 @@ fun PerfilScreen(
                         ),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Cerrar sesión")
+                        Text(stringResource(R.string.texto_cerrar_sesion))
                     }
                 }
             }
@@ -167,19 +206,19 @@ fun PerfilScreen(
     if (confirmarSalida) {
         AlertDialog(
             onDismissRequest = { confirmarSalida = false },
-            title = { Text("¿Cerrar sesión?") },
-            text = { Text("Tendrás que ingresar de nuevo para ver tus reservas y mensajes.") },
+            title = { Text(stringResource(R.string.texto_cerrar_sesion_2)) },
+            text = { Text(stringResource(R.string.texto_tendras_que_ingresar_de_nuevo_para_ver_tus_reservas)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmarSalida = false
                     onCerrarSesion()
                 }) {
-                    Text("Cerrar sesión")
+                    Text(stringResource(R.string.texto_cerrar_sesion))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { confirmarSalida = false }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.texto_cancelar))
                 }
             }
         )

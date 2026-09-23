@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.comun
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,7 +34,7 @@ fun CrearComunidadScreen(
 
     LaunchedEffect(estado.creadaId) { estado.creadaId?.let(onCreada) }
 
-    PantallaBase(titulo = "Crear comunidad", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_crear_comunidad), onBack = onBack) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -41,13 +45,13 @@ fun CrearComunidadScreen(
             OutlinedTextField(
                 value = estado.nombre,
                 onValueChange = viewModel::onNombreCambiado,
-                label = { Text("Nombre de la comunidad") },
+                label = { Text(stringResource(R.string.texto_nombre_de_la_comunidad)) },
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = estado.descripcion,
                 onValueChange = viewModel::onDescripcionCambiada,
-                label = { Text("Descripción") },
+                label = { Text(stringResource(R.string.texto_descripcion)) },
                 minLines = 2,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -55,7 +59,7 @@ fun CrearComunidadScreen(
                 Aviso(texto = estado.error ?: "", tipo = TipoAviso.ERROR)
             }
             Button(onClick = { viewModel.crear(creadorId) }, modifier = Modifier.fillMaxWidth()) {
-                Text("Crear comunidad")
+                Text(stringResource(R.string.texto_crear_comunidad))
             }
         }
     }

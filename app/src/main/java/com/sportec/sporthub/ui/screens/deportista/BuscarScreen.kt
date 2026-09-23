@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -36,7 +40,7 @@ fun BuscarScreen(
 ) {
     val estado by viewModel.uiState.collectAsState()
 
-    PantallaBase(titulo = "Encuentra tu plan", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_encuentra_tu_plan), onBack = onBack) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -48,7 +52,7 @@ fun BuscarScreen(
                 OutlinedTextField(
                     value = estado.texto,
                     onValueChange = viewModel::onTextoCambiado,
-                    placeholder = { Text("Actividad o establecimiento") },
+                    placeholder = { Text(stringResource(R.string.texto_actividad_o_establecimiento)) },
                     leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -56,7 +60,7 @@ fun BuscarScreen(
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = onVerEnMapa) { Text("Ver en mapa") }
+                    TextButton(onClick = onVerEnMapa) { Text(stringResource(R.string.texto_ver_en_mapa)) }
                 }
             }
             item {
@@ -65,7 +69,7 @@ fun BuscarScreen(
                         FilterChip(
                             selected = estado.categoriaSeleccionada == null,
                             onClick = { viewModel.seleccionarCategoria(null) },
-                            label = { Text("Todas") }
+                            label = { Text(stringResource(R.string.texto_todas)) }
                         )
                     }
                     items(estado.categorias, key = { it.nombre }) { categoria ->
@@ -78,14 +82,13 @@ fun BuscarScreen(
                 }
             }
             item {
-                Text(
-                    text = "${estado.resultados.size} actividades con disponibilidad",
+                Text(text = stringResource(R.string.texto_valor_actividades_con_disponibilidad, estado.resultados.size),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             if (estado.resultados.isEmpty()) {
-                item { EstadoVacio(mensaje = "No encontramos actividades con esos filtros.") }
+                item { EstadoVacio(mensaje = Textos.obtener(R.string.texto_no_encontramos_actividades_con_esos_filtros)) }
             } else {
                 items(estado.resultados, key = { it.actividad.id }) { item ->
                     TarjetaActividad(item = item, onClick = { onVerActividad(item.actividad.id) })

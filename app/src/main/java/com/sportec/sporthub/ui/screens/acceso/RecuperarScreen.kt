@@ -1,5 +1,10 @@
 package com.sportec.sporthub.ui.screens.acceso
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
+import com.sportec.sporthub.utils.Validaciones
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,7 +27,7 @@ import com.sportec.sporthub.ui.components.PantallaBase
 fun RecuperarScreen(onBack: () -> Unit, onEnlaceEnviado: (String) -> Unit) {
     var email by rememberSaveable { mutableStateOf("") }
 
-    PantallaBase(titulo = "Recuperar acceso", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_recuperar_acceso), onBack = onBack) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -30,23 +35,22 @@ fun RecuperarScreen(onBack: () -> Unit, onEnlaceEnviado: (String) -> Unit) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "Te enviaremos un enlace de recuperación a tu correo registrado.",
+            Text(text = stringResource(R.string.texto_te_enviaremos_un_enlace_de_recuperacion_a_tu_correo),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Correo electrónico") },
+                label = { Text(stringResource(R.string.texto_correo_electronico)) },
                 modifier = Modifier.fillMaxWidth()
             )
             Button(
                 onClick = { onEnlaceEnviado(email.trim()) },
-                enabled = email.contains("@"),
+                enabled = Validaciones.correo(email),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Enviar enlace")
+                Text(stringResource(R.string.texto_enviar_enlace))
             }
         }
     }

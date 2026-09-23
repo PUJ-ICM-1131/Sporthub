@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -34,16 +38,15 @@ fun TransferenciasScreen(onBack: () -> Unit, onAbrir: (String) -> Unit) {
     val transferencias by Transferencias.transferencias.collectAsState()
     val publicadas = remember(transferencias) { Transferencias.listarPublicadas() }
 
-    PantallaBase(titulo = "Reservas transferibles", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_reservas_transferibles), onBack = onBack) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            Text(
-                text = "Toma una reserva publicada. Primero requiere aprobación del negocio.",
+            Text(text = stringResource(R.string.texto_toma_una_reserva_publicada_primero_requiere_aprobacion_del_negocio),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(16.dp)
             )
             if (publicadas.isEmpty()) {
-                EstadoVacio(mensaje = "No hay reservas publicadas con estos filtros.")
+                EstadoVacio(mensaje = Textos.obtener(R.string.texto_no_hay_reservas_publicadas_con_estos_filtros))
             } else {
                 LazyColumn(
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),

@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.acceso
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.sportec.sporthub.R
 import com.sportec.sporthub.ui.components.TarjetaHero
 
 @Composable
@@ -44,24 +47,22 @@ fun BienvenidaScreen(
         ) {
             Image(
                 painter = painterResource(R.drawable.logo_sporthub),
-                contentDescription = "SportHub",
+                contentDescription = Textos.obtener(R.string.app_name),
                 modifier = Modifier
                     .padding(top = 8.dp)
                     .size(88.dp)
                     .align(Alignment.CenterHorizontally)
             )
             TarjetaHero(
-                titulo = "Encuentra tu\npróximo movimiento.",
-                subtitulo = "Deporte y bienestar en Bogotá, a tu ritmo."
+                titulo = Textos.obtener(R.string.texto_encuentra_tu_proximo_movimiento),
+                subtitulo = Textos.obtener(R.string.texto_deporte_y_bienestar_en_bogota_a_tu_ritmo)
             )
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text = "Tu tiempo libre\nempieza aquí.",
+                Text(text = stringResource(R.string.texto_tu_tiempo_libre_empieza_aqui),
                     style = MaterialTheme.typography.displaySmall,
                     fontWeight = FontWeight.Bold
                 )
-                Text(
-                    text = "Reserva espacios, encuentra clases y comparte planes con tu comunidad.",
+                Text(text = stringResource(R.string.texto_reserva_espacios_encuentra_clases_y_comparte_planes_con_tu),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -73,7 +74,7 @@ fun BienvenidaScreen(
                         .fillMaxWidth()
                         .height(52.dp)
                 ) {
-                    Text("Iniciar sesión")
+                    Text(stringResource(R.string.texto_iniciar_sesion))
                 }
                 OutlinedButton(
                     onClick = onCrearCuenta,
@@ -81,10 +82,9 @@ fun BienvenidaScreen(
                         .fillMaxWidth()
                         .height(52.dp)
                 ) {
-                    Text("Crear cuenta")
+                    Text(stringResource(R.string.texto_crear_cuenta))
                 }
-                Text(
-                    text = "Esta es una demostración. Usa los datos ficticios del panel de cuentas.",
+                Text(text = stringResource(R.string.texto_esta_es_una_demostracion_usa_los_datos_ficticios_del),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.align(Alignment.CenterHorizontally)

@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.comun
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,7 +30,7 @@ fun ReportarScreen(objetivo: String, autorId: String, onBack: () -> Unit, onEnvi
     var motivo by rememberSaveable { mutableStateOf("") }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
 
-    PantallaBase(titulo = "Reportar incidencia", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_reportar_incidencia), onBack = onBack) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -34,15 +38,14 @@ fun ReportarScreen(objetivo: String, autorId: String, onBack: () -> Unit, onEnvi
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "Cuéntanos qué pasó. Un administrador lo revisará.",
+            Text(text = stringResource(R.string.texto_cuentanos_que_paso_un_administrador_lo_revisara),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             OutlinedTextField(
                 value = motivo,
                 onValueChange = { motivo = it; error = null },
-                label = { Text("Motivo") },
+                label = { Text(stringResource(R.string.texto_motivo)) },
                 minLines = 4,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -55,12 +58,12 @@ fun ReportarScreen(objetivo: String, autorId: String, onBack: () -> Unit, onEnvi
                         Reportes.crear(autorId, objetivo, motivo.trim())
                         onEnviado()
                     } catch (e: Exception) {
-                        error = e.message ?: "No se pudo enviar el reporte."
+                        error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_enviar_el_reporte)
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Enviar reporte")
+                Text(stringResource(R.string.texto_enviar_reporte))
             }
         }
     }

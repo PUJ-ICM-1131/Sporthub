@@ -1,9 +1,12 @@
 package com.sportec.sporthub.domain
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 enum class Rol(val etiqueta: String) {
-    DEPORTISTA("Deportista"),
-    ESTABLECIMIENTO("Establecimiento"),
-    ADMINISTRADOR("Administrador")
+    DEPORTISTA(Textos.obtener(R.string.texto_deportista)),
+    ESTABLECIMIENTO(Textos.obtener(R.string.texto_establecimiento)),
+    ADMINISTRADOR(Textos.obtener(R.string.texto_administrador))
 }
 
 data class Cuenta(
@@ -19,10 +22,15 @@ data class Cuenta(
 )
 
 enum class EstadoNegocio(val etiqueta: String) {
-    VALIDADO("Validado"),
-    PENDIENTE("Pendiente"),
-    RECHAZADO("Rechazado")
+    VALIDADO(Textos.obtener(R.string.texto_validado)),
+    PENDIENTE(Textos.obtener(R.string.texto_pendiente)),
+    RECHAZADO(Textos.obtener(R.string.texto_rechazado))
 }
+
+data class CambioSensible(
+    val nombre: String,
+    val nit: String
+)
 
 data class Negocio(
     val id: String,
@@ -33,12 +41,13 @@ data class Negocio(
     val descripcion: String,
     val estado: EstadoNegocio,
     val latitud: Double,
-    val longitud: Double
+    val longitud: Double,
+    val cambioPendiente: CambioSensible? = null
 )
 
 enum class Segmento(val etiqueta: String) {
-    DEPORTE("Deporte"),
-    BIENESTAR("Bienestar")
+    DEPORTE(Textos.obtener(R.string.texto_deporte)),
+    BIENESTAR(Textos.obtener(R.string.texto_bienestar))
 }
 
 data class Categoria(
@@ -47,8 +56,8 @@ data class Categoria(
 )
 
 enum class TipoActividad(val etiqueta: String) {
-    ESPACIO("Espacio completo"),
-    CLASE("Clase grupal")
+    ESPACIO(Textos.obtener(R.string.texto_espacio_completo)),
+    CLASE(Textos.obtener(R.string.texto_clase_grupal))
 }
 
 data class Politica(
@@ -71,6 +80,8 @@ data class Actividad(
     val capacidad: Int,
     val descripcion: String,
     val politica: Politica = Politica(),
+    val horaApertura: Int = 6,
+    val horaCierre: Int = 21,
     val fotoUri: String? = null
 )
 
@@ -80,14 +91,14 @@ data class ActividadConNegocio(
 )
 
 enum class EstadoSolicitud(val etiqueta: String) {
-    FILA("En fila"),
-    REVISION("En revisión"),
-    PAGO("Pago pendiente"),
-    ATENDIDA("Atendida"),
-    VENCIDA("Vencida"),
-    INCOMPATIBLE("Incompatible"),
-    RECHAZADA("Rechazada"),
-    RETIRADA("Retirada")
+    FILA(Textos.obtener(R.string.texto_en_fila)),
+    REVISION(Textos.obtener(R.string.texto_en_revision)),
+    PAGO(Textos.obtener(R.string.texto_pago_pendiente)),
+    ATENDIDA(Textos.obtener(R.string.texto_atendida)),
+    VENCIDA(Textos.obtener(R.string.texto_vencida)),
+    INCOMPATIBLE(Textos.obtener(R.string.texto_incompatible)),
+    RECHAZADA(Textos.obtener(R.string.texto_rechazada)),
+    RETIRADA(Textos.obtener(R.string.texto_retirada))
 }
 
 data class Solicitud(
@@ -105,8 +116,8 @@ data class Solicitud(
 )
 
 enum class EstadoReserva(val etiqueta: String) {
-    CONFIRMADA("Confirmada"),
-    CANCELADA("Cancelada")
+    CONFIRMADA(Textos.obtener(R.string.texto_confirmada)),
+    CANCELADA(Textos.obtener(R.string.texto_cancelada))
 }
 
 data class Reserva(
@@ -120,7 +131,9 @@ data class Reserva(
     val estado: EstadoReserva,
     val pagoId: String?,
     val cerrada: Boolean = false,
-    val politica: Politica
+    val politica: Politica,
+    val llegada: Boolean = false,
+    val fotoLlegada: String? = null
 )
 
 enum class EstadoPago { EXITOSO, FALLIDO }
@@ -135,7 +148,11 @@ data class Pago(
     val transferenciaId: String? = null
 )
 
-enum class EstadoReembolso { PENDIENTE, REALIZADO, FALLIDO }
+enum class EstadoReembolso(val etiqueta: String) {
+    PENDIENTE(Textos.obtener(R.string.texto_pendiente)),
+    REALIZADO(Textos.obtener(R.string.texto_realizada)),
+    FALLIDO(Textos.obtener(R.string.texto_fallido))
+}
 
 data class Reembolso(
     val id: String,
@@ -148,7 +165,15 @@ data class Reembolso(
     val estado: EstadoReembolso = EstadoReembolso.PENDIENTE
 )
 
-enum class EstadoPostulante { FILA, REVISION, PAGO, ATENDIDA, VENCIDA, INCOMPATIBLE, RETIRADA }
+enum class EstadoPostulante(val etiqueta: String) {
+    FILA(Textos.obtener(R.string.texto_en_fila)),
+    REVISION(Textos.obtener(R.string.texto_en_revision)),
+    PAGO(Textos.obtener(R.string.texto_pago_pendiente)),
+    ATENDIDA(Textos.obtener(R.string.texto_atendida)),
+    VENCIDA(Textos.obtener(R.string.texto_vencida)),
+    INCOMPATIBLE(Textos.obtener(R.string.texto_incompatible)),
+    RETIRADA(Textos.obtener(R.string.texto_retirada))
+}
 
 data class Postulante(
     val id: String,
@@ -158,11 +183,11 @@ data class Postulante(
 )
 
 enum class EstadoTransferencia(val etiqueta: String) {
-    PUBLICADA("Publicada"),
-    TRAMITE("En trámite"),
-    COMPLETADA("Completada"),
-    RETIRADA("Retirada"),
-    VENCIDA("Vencida")
+    PUBLICADA(Textos.obtener(R.string.texto_publicada)),
+    TRAMITE(Textos.obtener(R.string.texto_en_tramite)),
+    COMPLETADA(Textos.obtener(R.string.texto_completada)),
+    RETIRADA(Textos.obtener(R.string.texto_retirada)),
+    VENCIDA(Textos.obtener(R.string.texto_vencida))
 }
 
 data class Transferencia(

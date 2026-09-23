@@ -24,7 +24,6 @@ private val VerdeHeroInicio = Color(0xFF163F34)
 private val VerdeHeroFin = Color(0xFF208152)
 private val VerdeHeroTexto = Color(0xFFD2E7D4)
 
-/** Tarjeta oscura degradada, igual a .hero del prototipo: título, subtítulo y una etiqueta opcional. */
 @Composable
 fun TarjetaHero(
     titulo: String,

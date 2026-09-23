@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.lifecycle.ViewModel
 import com.sportec.sporthub.domain.ActividadConNegocio
 import com.sportec.sporthub.domain.Catalogo
@@ -37,7 +40,7 @@ class ResumenSolicitudViewModel : ViewModel() {
             val solicitud = Reservas.enviarSolicitud(usuarioId, actividad.id, fecha, hora)
             onExito(solicitud.id)
         } catch (e: Exception) {
-            _uiState.update { it.copy(error = e.message ?: "No se pudo enviar la solicitud.") }
+            _uiState.update { it.copy(error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_enviar_la_solicitud)) }
         }
     }
 }

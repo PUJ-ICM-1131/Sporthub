@@ -1,5 +1,8 @@
 package com.sportec.sporthub.domain
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -7,7 +10,6 @@ import kotlinx.coroutines.flow.asStateFlow
 private val ACTIVOS_POSTULANTE = setOf(EstadoPostulante.FILA, EstadoPostulante.REVISION, EstadoPostulante.PAGO)
 private val VIGENTE = setOf(EstadoTransferencia.PUBLICADA, EstadoTransferencia.TRAMITE)
 
-/** Motor de reservas transferibles: publicar, postular, aprobar y pagar (HU-D13 a HU-D17, HU-E10). */
 object Transferencias {
 
     private var secuencia = 700
@@ -34,12 +36,12 @@ object Transferencias {
     }
 
     fun publicar(reservaId: String, usuarioId: String): Transferencia {
-        val reserva = Reservas.obtenerReserva(reservaId) ?: throw IllegalArgumentException("La reserva ya no existe.")
-        if (reserva.usuarioId != usuarioId || reserva.estado != EstadoReserva.CONFIRMADA) throw IllegalStateException("La reserva no es transferible en este estado.")
-        if (!reserva.politica.transferable) throw IllegalStateException("Esta reserva no admite transferencia.")
-        if (Reservas.ahora() >= Reservas.inicioMillis(reserva.fecha, reserva.hora)) throw IllegalStateException("El horario ya inició.")
+        val reserva = Reservas.obtenerReserva(reservaId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_reserva_ya_no_existe))
+        if (reserva.usuarioId != usuarioId || reserva.estado != EstadoReserva.CONFIRMADA) throw IllegalStateException(Textos.obtener(R.string.texto_la_reserva_no_es_transferible_en_este_estado))
+        if (!reserva.politica.transferable) throw IllegalStateException(Textos.obtener(R.string.texto_esta_reserva_no_admite_transferencia))
+        if (Reservas.ahora() >= Reservas.inicioMillis(reserva.fecha, reserva.hora)) throw IllegalStateException(Textos.obtener(R.string.texto_el_horario_ya_inicio))
         if (_transferencias.value.any { it.reservaId == reservaId && it.estado in VIGENTE }) {
-            throw IllegalStateException("Ya existe una publicación activa para esta reserva.")
+            throw IllegalStateException(Textos.obtener(R.string.texto_ya_existe_una_publicacion_activa_para_esta_reserva))
         }
         val nueva = Transferencia(uid("t"), reservaId, usuarioId, reserva.pagoId ?: "", EstadoTransferencia.PUBLICADA)
         _transferencias.value = _transferencias.value + nueva
@@ -56,29 +58,27 @@ object Transferencias {
         _transferencias.value = _transferencias.value.map {
             if (it.id == transferenciaId) it.copy(postulantes = it.postulantes.map { p -> if (p.id == siguiente.id) p.copy(estado = EstadoPostulante.REVISION) else p }) else it
         }
-        Notificaciones.enviar(Negocios.operadorDe(actividad.negocioId), "Interesado por revisar", "Alguien quiere tomar una reserva publicada.", "transfer", transferenciaId)
     }
 
     fun unirse(transferenciaId: String, usuarioId: String) {
-        val transferencia = obtener(transferenciaId) ?: throw IllegalArgumentException("La publicación ya no existe.")
+        val transferencia = obtener(transferenciaId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_publicacion_ya_no_existe))
         val reserva = Reservas.obtenerReserva(transferencia.reservaId)!!
         if (transferencia.estado !in VIGENTE || Reservas.ahora() >= Reservas.inicioMillis(reserva.fecha, reserva.hora)) {
-            throw IllegalStateException("Esta publicación ya no acepta interesados.")
+            throw IllegalStateException(Textos.obtener(R.string.texto_esta_publicacion_ya_no_acepta_interesados))
         }
-        if (usuarioId == transferencia.propietarioId) throw IllegalStateException("No puedes tomar tu propia publicación.")
-        if (transferencia.postulantes.any { it.usuarioId == usuarioId && it.estado in ACTIVOS_POSTULANTE }) throw IllegalStateException("Ya estás en esta fila.")
+        if (usuarioId == transferencia.propietarioId) throw IllegalStateException(Textos.obtener(R.string.texto_no_puedes_tomar_tu_propia_publicacion))
+        if (transferencia.postulantes.any { it.usuarioId == usuarioId && it.estado in ACTIVOS_POSTULANTE }) throw IllegalStateException(Textos.obtener(R.string.texto_ya_estas_en_esta_fila))
         val nuevo = Postulante(uid("st"), usuarioId, EstadoPostulante.FILA)
         _transferencias.value = _transferencias.value.map { if (it.id == transferenciaId) it.copy(postulantes = it.postulantes + nuevo) else it }
         avanzar(transferenciaId)
     }
 
     fun aprobar(transferenciaId: String, operadorId: String) {
-        val transferencia = obtener(transferenciaId) ?: throw IllegalArgumentException("La publicación ya no existe.")
+        val transferencia = obtener(transferenciaId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_publicacion_ya_no_existe))
         val reserva = Reservas.obtenerReserva(transferencia.reservaId)!!
         val actividad = Negocios.actividadDe(reserva.actividadId)!!
-        if (Negocios.operadorDe(actividad.negocioId) != operadorId) throw IllegalStateException("Esta publicación corresponde a otra cuenta de negocio.")
         val candidato = transferencia.postulantes.firstOrNull { it.estado == EstadoPostulante.REVISION }
-            ?: throw IllegalStateException("No hay un interesado por aprobar.")
+            ?: throw IllegalStateException(Textos.obtener(R.string.texto_no_hay_un_interesado_por_aprobar))
         val deadline = minOf(Reservas.ahora() + reserva.politica.payMinutes * 60_000L, Reservas.inicioMillis(reserva.fecha, reserva.hora))
         _transferencias.value = _transferencias.value.map {
             if (it.id == transferenciaId) it.copy(
@@ -86,32 +86,29 @@ object Transferencias {
                 postulantes = it.postulantes.map { p -> if (p.id == candidato.id) p.copy(estado = EstadoPostulante.PAGO, deadline = deadline) else p }
             ) else it
         }
-        Notificaciones.enviar(candidato.usuarioId, "Transferencia aprobada", "Paga dentro del plazo para recibir la reserva.", "transfer", transferenciaId)
     }
 
     fun rechazar(transferenciaId: String, postulanteId: String, motivo: String, operadorId: String) {
-        val transferencia = obtener(transferenciaId) ?: throw IllegalArgumentException("La publicación ya no existe.")
+        val transferencia = obtener(transferenciaId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_publicacion_ya_no_existe))
         val reserva = Reservas.obtenerReserva(transferencia.reservaId)!!
         val actividad = Negocios.actividadDe(reserva.actividadId)!!
-        if (Negocios.operadorDe(actividad.negocioId) != operadorId) throw IllegalStateException("Esta publicación corresponde a otra cuenta de negocio.")
-        val postulante = transferencia.postulantes.firstOrNull { it.id == postulanteId } ?: throw IllegalArgumentException("El interesado ya no existe.")
+        val postulante = transferencia.postulantes.firstOrNull { it.id == postulanteId } ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_el_interesado_ya_no_existe))
         _transferencias.value = _transferencias.value.map {
             if (it.id == transferenciaId) it.copy(postulantes = it.postulantes.map { p -> if (p.id == postulanteId) p.copy(estado = EstadoPostulante.RETIRADA) else p }) else it
         }
-        Notificaciones.enviar(postulante.usuarioId, "Interés rechazado", motivo.ifBlank { "El establecimiento no aprobó tu interés." }, "transfer", transferenciaId)
         avanzar(transferenciaId)
     }
 
     fun pagar(transferenciaId: String, usuarioId: String, medio: String): Reserva {
-        val transferencia = obtener(transferenciaId) ?: throw IllegalArgumentException("La publicación ya no existe.")
+        val transferencia = obtener(transferenciaId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_publicacion_ya_no_existe))
         val postulante = transferencia.postulantes.firstOrNull { it.usuarioId == usuarioId && it.estado == EstadoPostulante.PAGO }
-            ?: throw IllegalStateException("No tienes un turno de pago vigente.")
-        if (postulante.deadline != null && Reservas.ahora() >= postulante.deadline) throw IllegalStateException("El plazo de pago venció.")
+            ?: throw IllegalStateException(Textos.obtener(R.string.texto_no_tienes_un_turno_de_pago_vigente))
+        if (postulante.deadline != null && Reservas.ahora() >= postulante.deadline) throw IllegalStateException(Textos.obtener(R.string.texto_el_plazo_de_pago_vencio))
         val reserva = Reservas.obtenerReserva(transferencia.reservaId)!!
         val nuevoPago = Reservas.registrarPago(usuarioId, reserva.precio, medio)
         val monto = Math.round(reserva.precio * reserva.politica.refundPercent / 100.0).toInt()
         if (monto > 0) {
-            Reservas.registrarReembolso(reserva.id, transferencia.propietarioId, transferencia.pagoId, monto, "transferencia", reserva.politica.refundHours)
+            Reservas.registrarReembolso(reserva.id, transferencia.propietarioId, transferencia.pagoId, monto, Textos.obtener(R.string.texto_transferencia), reserva.politica.refundHours)
         }
         val reservaActualizada = Reservas.cambiarTitular(reserva.id, usuarioId, nuevoPago.id)
         _transferencias.value = _transferencias.value.map {
@@ -126,15 +123,13 @@ object Transferencias {
                 }
             ) else it
         }
-        Notificaciones.enviar(usuarioId, "Ahora la reserva es tuya", "El pago fue exitoso.", "reservation", reserva.id)
-        Notificaciones.enviar(transferencia.propietarioId, "Transferencia completada", "Puedes consultar la devolución aplicable.", "transfer", transferenciaId)
         return reservaActualizada
     }
 
     fun retirarPublicacion(transferenciaId: String, usuarioId: String) {
-        val transferencia = obtener(transferenciaId) ?: throw IllegalArgumentException("La publicación ya no existe.")
-        if (transferencia.propietarioId != usuarioId) throw IllegalStateException("No puedes retirar esta publicación.")
-        if (transferencia.postulantes.any { it.estado == EstadoPostulante.PAGO }) throw IllegalStateException("Hay un turno de pago activo; espera su resultado.")
+        val transferencia = obtener(transferenciaId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_publicacion_ya_no_existe))
+        if (transferencia.propietarioId != usuarioId) throw IllegalStateException(Textos.obtener(R.string.texto_no_puedes_retirar_esta_publicacion))
+        if (transferencia.postulantes.any { it.estado == EstadoPostulante.PAGO }) throw IllegalStateException(Textos.obtener(R.string.texto_hay_un_turno_de_pago_activo_espera_su_resultado))
         _transferencias.value = _transferencias.value.map { if (it.id == transferenciaId) it.copy(estado = EstadoTransferencia.RETIRADA) else it }
     }
 }

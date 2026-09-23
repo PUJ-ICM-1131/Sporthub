@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.establecimiento
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -42,11 +46,13 @@ fun AgendaScreen(
     val reservas by viewModel.reservas.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    LaunchedEffect(negocioId) { viewModel.cargar(negocioId) }
+    val listaReservas by Reservas.reservas.collectAsState()
 
-    PantallaBase(titulo = "Agenda") { padding ->
+    LaunchedEffect(negocioId, listaReservas) { viewModel.cargar(negocioId) }
+
+    PantallaBase(titulo = Textos.obtener(R.string.texto_agenda)) { padding ->
         if (reservas.isEmpty()) {
-            EstadoVacio(mensaje = "Todavía no hay reservas.", modifier = Modifier.padding(padding))
+            EstadoVacio(mensaje = Textos.obtener(R.string.texto_todavia_no_hay_reservas), modifier = Modifier.padding(padding))
         } else {
             LazyColumn(
                 modifier = Modifier
@@ -75,10 +81,10 @@ private fun TarjetaAgenda(reserva: Reserva, operadorId: String, viewModel: Agend
     val fase: String
     val tonoFase: TonoEtiqueta
     when {
-        reserva.cerrada -> { fase = "Cerrada por el establecimiento"; tonoFase = TonoEtiqueta.GRIS }
-        ahora < inicio -> { fase = "Programada"; tonoFase = TonoEtiqueta.VERDE }
-        ahora < fin -> { fase = "En horario"; tonoFase = TonoEtiqueta.VERDE }
-        else -> { fase = "Horario finalizado · pendiente de cierre"; tonoFase = TonoEtiqueta.AMBAR }
+        reserva.cerrada -> { fase = Textos.obtener(R.string.texto_cerrada_por_el_establecimiento); tonoFase = TonoEtiqueta.GRIS }
+        ahora < inicio -> { fase = Textos.obtener(R.string.texto_programada); tonoFase = TonoEtiqueta.VERDE }
+        ahora < fin -> { fase = Textos.obtener(R.string.texto_en_horario); tonoFase = TonoEtiqueta.VERDE }
+        else -> { fase = Textos.obtener(R.string.texto_horario_finalizado_pendiente_de_cierre); tonoFase = TonoEtiqueta.AMBAR }
     }
 
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -99,12 +105,12 @@ private fun TarjetaAgenda(reserva: Reserva, operadorId: String, viewModel: Agend
             )
             if (!reserva.cerrada && ahora in inicio until fin) {
                 OutlinedButton(onClick = { viewModel.enviarAvisoSalida(reserva.id, operadorId) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Enviar aviso de salida")
+                    Text(stringResource(R.string.texto_enviar_aviso_de_salida))
                 }
             }
             if (!reserva.cerrada && ahora >= fin) {
                 Button(onClick = { viewModel.confirmarCierre(reserva.id, operadorId) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Confirmar cierre")
+                    Text(stringResource(R.string.texto_confirmar_cierre))
                 }
             }
         }

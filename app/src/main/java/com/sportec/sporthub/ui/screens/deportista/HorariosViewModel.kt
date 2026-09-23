@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.lifecycle.ViewModel
 import com.sportec.sporthub.domain.Actividad
 import com.sportec.sporthub.domain.Catalogo
@@ -11,7 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-private val PRIMERA_FECHA_DEMO: LocalDate = LocalDate.parse("2026-09-22")
+private val PRIMERA_FECHA_DEMO: LocalDate = LocalDate.now(java.time.ZoneId.of("America/Bogota"))
 
 data class HorariosUiState(
     val error: String? = null,
@@ -43,7 +46,7 @@ class HorariosViewModel : ViewModel() {
                 franjas = Reservas.listarFranjas(item.actividad, primera)
             )
         } catch (e: Exception) {
-            HorariosUiState(error = e.message ?: "No se pudo cargar el servicio.")
+            HorariosUiState(error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_cargar_el_servicio))
         }
     }
 

@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.establecimiento
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -35,6 +39,7 @@ import androidx.navigation3.runtime.NavKey
 import com.sportec.sporthub.domain.EstadoReserva
 import com.sportec.sporthub.domain.Negocios
 import com.sportec.sporthub.domain.Reservas
+import com.sportec.sporthub.domain.Transferencias
 import com.sportec.sporthub.navigation.Agenda
 import com.sportec.sporthub.navigation.DetalleSolicitud
 import com.sportec.sporthub.navigation.DetalleTransferencia
@@ -66,9 +71,12 @@ fun GestionScreen(
         (servicioFiltro == null || it.actividadId == servicioFiltro) && (fechaFiltro.isBlank() || it.fecha == fechaFiltro)
     }
 
-    LaunchedEffect(negocioId) { viewModel.cargar(negocioId) }
+    val solicitudes by Reservas.solicitudes.collectAsState()
+    val transferencias by Transferencias.transferencias.collectAsState()
 
-    PantallaBase(titulo = "Gestión") { padding ->
+    LaunchedEffect(negocioId, solicitudes, transferencias) { viewModel.cargar(negocioId) }
+
+    PantallaBase(titulo = Textos.obtener(R.string.texto_gestion)) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -77,33 +85,33 @@ fun GestionScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Text("Ingresos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.texto_ingresos), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
             item {
                 TarjetaTint {
-                    Text("Total de reservas aprobadas", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.texto_total_de_reservas_aprobadas), style = MaterialTheme.typography.bodyMedium)
                     Text(
                         text = formatoPesos(aprobadas.sumOf { it.precio }),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
-                    Text("${aprobadas.size} reservas", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.texto_valor_reservas, aprobadas.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             item {
                 ExposedDropdownMenuBox(expanded = menuServicioAbierto, onExpandedChange = { menuServicioAbierto = it }) {
                     OutlinedTextField(
-                        value = serviciosNegocio.firstOrNull { it.id == servicioFiltro }?.nombre ?: "Todos los servicios",
+                        value = serviciosNegocio.firstOrNull { it.id == servicioFiltro }?.nombre ?: Textos.obtener(R.string.texto_todos_los_servicios),
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Filtrar por servicio") },
+                        label = { Text(stringResource(R.string.texto_filtrar_por_servicio)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = menuServicioAbierto) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                     )
                     ExposedDropdownMenu(expanded = menuServicioAbierto, onDismissRequest = { menuServicioAbierto = false }) {
-                        DropdownMenuItem(text = { Text("Todos los servicios") }, onClick = { servicioFiltro = null; menuServicioAbierto = false })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.texto_todos_los_servicios)) }, onClick = { servicioFiltro = null; menuServicioAbierto = false })
                         serviciosNegocio.forEach { servicio ->
                             DropdownMenuItem(text = { Text(servicio.nombre) }, onClick = { servicioFiltro = servicio.id; menuServicioAbierto = false })
                         }
@@ -114,38 +122,37 @@ fun GestionScreen(
                 OutlinedTextField(
                     value = fechaFiltro,
                     onValueChange = { fechaFiltro = it },
-                    label = { Text("Filtrar por fecha (AAAA-MM-DD)") },
-                    placeholder = { Text("2026-09-22") },
+                    label = { Text(stringResource(R.string.texto_filtrar_por_fecha_aaaa_mm_dd)) },
+                    placeholder = { Text(stringResource(R.string.ejemplo_formato_fecha)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
             if (servicioFiltro != null || fechaFiltro.isNotBlank()) {
                 item {
                     TarjetaTint {
-                        Text("Pagos filtrados", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.texto_pagos_filtrados), style = MaterialTheme.typography.bodyMedium)
                         Text(
                             text = formatoPesos(filtradas.sumOf { it.precio }),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
-                        Text("${filtradas.size} reservas", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.texto_valor_reservas, filtradas.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
             item {
                 OutlinedButton(onClick = { onNavegar(Agenda) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Ver agenda")
+                    Text(stringResource(R.string.texto_ver_agenda))
                 }
             }
             item {
-                Text(
-                    text = "Solicitudes por revisar",
+                Text(text = stringResource(R.string.texto_solicitudes_por_revisar),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
             }
             if (estado.solicitudes.isEmpty()) {
-                item { EstadoVacio(mensaje = "No hay solicitudes pendientes.") }
+                item { EstadoVacio(mensaje = Textos.obtener(R.string.texto_no_hay_solicitudes_pendientes)) }
             } else {
                 items(estado.solicitudes, key = { it.id }) { solicitud ->
                     val actividad = Negocios.actividadDe(solicitud.actividadId)
@@ -172,8 +179,7 @@ fun GestionScreen(
             }
             if (estado.transferencias.isNotEmpty()) {
                 item {
-                    Text(
-                        text = "Transferencias por aprobar",
+                    Text(text = stringResource(R.string.texto_transferencias_por_aprobar),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -181,7 +187,7 @@ fun GestionScreen(
                 items(estado.transferencias, key = { it.id }) { transferencia ->
                     ElevatedCard(onClick = { onNavegar(DetalleTransferencia(transferencia.id)) }, modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Interesado esperando revisión", style = MaterialTheme.typography.bodyLarge)
+                            Text(stringResource(R.string.texto_interesado_esperando_revision), style = MaterialTheme.typography.bodyLarge)
                         }
                     }
                 }

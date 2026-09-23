@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.comun
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -48,10 +52,10 @@ fun ChatScreen(
     var error by rememberSaveable { mutableStateOf<String?>(null) }
 
     val titulo = if (chat?.comunidadId != null) {
-        Comunidades.comunidadDe(chat.comunidadId)?.nombre ?: "Comunidad"
+        Comunidades.comunidadDe(chat.comunidadId)?.nombre ?: Textos.obtener(R.string.texto_comunidad)
     } else {
         val otroId = chat?.miembros?.firstOrNull { it != usuarioId }
-        Cuentas.porId(otroId.orEmpty())?.let { Cuentas.nombreParaMostrar(it) } ?: "Conversación"
+        Cuentas.porId(otroId.orEmpty())?.let { Cuentas.nombreParaMostrar(it) } ?: Textos.obtener(R.string.texto_conversacion)
     }
 
     PantallaBase(
@@ -59,12 +63,12 @@ fun ChatScreen(
         onBack = onBack,
         acciones = {
             IconButton(onClick = onReportar) {
-                Icon(Icons.Filled.Flag, contentDescription = "Reportar")
+                Icon(Icons.Filled.Flag, contentDescription = Textos.obtener(R.string.texto_reportar))
             }
         }
     ) { padding ->
         if (chat == null) {
-            EstadoError(mensaje = "La conversación ya no existe.", onReintentar = {}, modifier = Modifier.padding(padding))
+            EstadoError(mensaje = Textos.obtener(R.string.texto_la_conversacion_ya_no_existe), onReintentar = {}, modifier = Modifier.padding(padding))
         } else {
             Column(modifier = Modifier.fillMaxSize().padding(padding)) {
                 LazyColumn(
@@ -86,7 +90,7 @@ fun ChatScreen(
                     OutlinedTextField(
                         value = texto,
                         onValueChange = { texto = it },
-                        label = { Text("Mensaje") },
+                        label = { Text(stringResource(R.string.texto_mensaje)) },
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = {
@@ -98,7 +102,7 @@ fun ChatScreen(
                             error = e.message
                         }
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar")
+                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = Textos.obtener(R.string.texto_enviar))
                     }
                 }
             }

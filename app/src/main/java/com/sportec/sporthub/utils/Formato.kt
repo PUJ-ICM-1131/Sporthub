@@ -1,5 +1,8 @@
 package com.sportec.sporthub.utils
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -18,11 +21,11 @@ fun formatoFecha(fecha: String): String =
 fun formatoDiaCorto(fecha: String): String {
     val dia = LocalDate.parse(fecha)
     val nombre = dia.dayOfWeek.getDisplayName(TextStyle.SHORT, localeColombia).replaceFirstChar { it.uppercase() }
-    return "$nombre ${dia.dayOfMonth}"
+    return Textos.obtener(R.string.formato_dia_corto, nombre, dia.dayOfMonth)
 }
 
 fun formatoIntervalo(fecha: String, hora: Int, duracionHoras: Int): String =
-    "${formatoFecha(fecha)} · ${formatoHora(hora)}–${formatoHora(hora + duracionHoras)}"
+    Textos.obtener(R.string.formato_intervalo_horario, formatoFecha(fecha), formatoHora(hora), formatoHora(hora + duracionHoras))
 
 fun formatoHoraMillis(millis: Long): String =
     Instant.ofEpochMilli(millis).atZone(ZoneId.of("America/Bogota"))
@@ -34,9 +37,9 @@ fun formatoDuracion(minutos: Int): String {
     val horas = minutos / 60
     val resto = minutos % 60
     return when {
-        horas == 0 -> "$resto min"
-        resto == 0 -> "$horas h"
-        else -> "$horas h $resto min"
+        horas == 0 -> Textos.obtener(R.string.texto_valor_min, resto)
+        resto == 0 -> Textos.obtener(R.string.texto_valor_h, horas)
+        else -> Textos.obtener(R.string.texto_valor_h_valor_min, horas, resto)
     }
 }
 

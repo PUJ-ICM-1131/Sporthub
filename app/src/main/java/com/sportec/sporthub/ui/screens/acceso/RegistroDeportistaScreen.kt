@@ -1,5 +1,14 @@
 package com.sportec.sporthub.ui.screens.acceso
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Checkbox
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,7 +43,7 @@ fun RegistroDeportistaScreen(
 
     LaunchedEffect(estado.registrado) { if (estado.registrado) onRegistrado() }
 
-    PantallaBase(titulo = "Registro de deportista", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_registro_de_deportista), onBack = onBack) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -46,36 +55,47 @@ fun RegistroDeportistaScreen(
             OutlinedTextField(
                 value = estado.nombre,
                 onValueChange = viewModel::onNombreCambiado,
-                label = { Text("Nombre completo") },
+                label = { Text(stringResource(R.string.texto_nombre_completo)) },
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = estado.email,
                 onValueChange = viewModel::onEmailCambiado,
-                label = { Text("Correo electrónico") },
+                label = { Text(stringResource(R.string.texto_correo_electronico)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = estado.telefono,
                 onValueChange = viewModel::onTelefonoCambiado,
-                label = { Text("Teléfono") },
+                label = { Text(stringResource(R.string.texto_telefono)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = estado.contrasena,
                 onValueChange = viewModel::onContrasenaCambiada,
-                label = { Text("Contraseña") },
+                label = { Text(stringResource(R.string.texto_contrasena)) },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth()
             )
+            Row(
+                modifier = Modifier.fillMaxWidth().toggleable(
+                    value = estado.confirmaMayoriaEdad,
+                    role = Role.Checkbox,
+                    onValueChange = viewModel::onMayoriaEdadCambiada
+                ),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(checked = estado.confirmaMayoriaEdad, onCheckedChange = null)
+                Text(stringResource(R.string.confirmacion_mayoria_edad))
+            }
             if (estado.error != null) {
                 Aviso(texto = estado.error ?: "", tipo = TipoAviso.ERROR)
             }
             Button(onClick = viewModel::registrar, modifier = Modifier.fillMaxWidth()) {
-                Text("Crear cuenta")
+                Text(stringResource(R.string.texto_crear_cuenta))
             }
         }
     }

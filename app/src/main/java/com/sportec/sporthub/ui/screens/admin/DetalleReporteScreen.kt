@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.admin
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,9 +31,9 @@ fun DetalleReporteScreen(reporteId: String, onBack: () -> Unit) {
     val reportes by Reportes.reportes.collectAsState()
     val reporte = reportes.firstOrNull { it.id == reporteId }
 
-    PantallaBase(titulo = "Detalle del reporte", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_detalle_del_reporte), onBack = onBack) { padding ->
         if (reporte == null) {
-            EstadoError(mensaje = "El reporte ya no existe.", onReintentar = {}, modifier = Modifier.padding(padding))
+            EstadoError(mensaje = Textos.obtener(R.string.texto_el_reporte_ya_no_existe), onReintentar = {}, modifier = Modifier.padding(padding))
         } else {
             Column(
                 modifier = Modifier
@@ -41,17 +45,17 @@ fun DetalleReporteScreen(reporteId: String, onBack: () -> Unit) {
                 Text(reporte.objetivo, style = MaterialTheme.typography.titleLarge)
                 TarjetaHechos(
                     pares = buildList {
-                        add("Motivo" to reporte.motivo)
-                        add("Reportado por" to (Cuentas.porId(reporte.autorId)?.nombre ?: reporte.autorId))
-                        if (reporte.contexto.isNotBlank()) add("Contexto" to reporte.contexto)
+                        add(Textos.obtener(R.string.texto_motivo) to reporte.motivo)
+                        add(Textos.obtener(R.string.texto_reportado_por) to (Cuentas.porId(reporte.autorId)?.nombre ?: reporte.autorId))
+                        if (reporte.contexto.isNotBlank()) add(Textos.obtener(R.string.texto_contexto) to reporte.contexto)
                     }
                 )
                 if (reporte.estado == EstadoReporte.PENDIENTE) {
                     Button(onClick = { Reportes.resolver(reporteId); onBack() }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Marcar como resuelto")
+                        Text(stringResource(R.string.texto_marcar_como_resuelto))
                     }
                 } else {
-                    Aviso(texto = "Este reporte ya fue resuelto.", tipo = TipoAviso.NORMAL)
+                    Aviso(texto = Textos.obtener(R.string.texto_este_reporte_ya_fue_resuelto), tipo = TipoAviso.NORMAL)
                 }
             }
         }

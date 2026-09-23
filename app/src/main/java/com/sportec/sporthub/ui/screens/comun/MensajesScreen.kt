@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.comun
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -37,15 +40,15 @@ fun MensajesScreen(
     val propios = chats.filter { Mensajes.esMiembro(it, usuarioId) }
 
     PantallaBase(
-        titulo = "Mensajes",
+        titulo = Textos.obtener(R.string.texto_mensajes),
         acciones = {
             IconButton(onClick = onCrearComunidad) {
-                Icon(Icons.Filled.GroupAdd, contentDescription = "Crear comunidad")
+                Icon(Icons.Filled.GroupAdd, contentDescription = Textos.obtener(R.string.texto_crear_comunidad))
             }
         }
     ) { padding ->
         if (propios.isEmpty()) {
-            EstadoVacio(mensaje = "Todavía no tienes conversaciones.", modifier = Modifier.padding(padding))
+            EstadoVacio(mensaje = Textos.obtener(R.string.texto_todavia_no_tienes_conversaciones), modifier = Modifier.padding(padding))
         } else {
             LazyColumn(
                 modifier = Modifier
@@ -65,12 +68,12 @@ fun MensajesScreen(
 @Composable
 private fun ItemChat(chat: Chat, usuarioId: String, onClick: () -> Unit) {
     val nombre = if (chat.comunidadId != null) {
-        Comunidades.comunidadDe(chat.comunidadId)?.nombre ?: "Comunidad"
+        Comunidades.comunidadDe(chat.comunidadId)?.nombre ?: Textos.obtener(R.string.texto_comunidad)
     } else {
         val otroId = chat.miembros.firstOrNull { it != usuarioId }
-        Cuentas.porId(otroId.orEmpty())?.let { Cuentas.nombreParaMostrar(it) } ?: "Conversación"
+        Cuentas.porId(otroId.orEmpty())?.let { Cuentas.nombreParaMostrar(it) } ?: Textos.obtener(R.string.texto_conversacion)
     }
-    val ultimo = chat.mensajes.lastOrNull()?.texto ?: "Sin mensajes todavía"
+    val ultimo = chat.mensajes.lastOrNull()?.texto ?: Textos.obtener(R.string.texto_sin_mensajes_todavia)
     ListItem(
         headlineContent = { Text(nombre) },
         supportingContent = { Text(ultimo, maxLines = 1) },

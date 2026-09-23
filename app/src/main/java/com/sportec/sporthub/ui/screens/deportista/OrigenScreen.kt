@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -26,7 +30,7 @@ import com.sportec.sporthub.ui.components.PantallaBase
 fun OrigenScreen(onBack: () -> Unit) {
     val origenActual by Ubicacion.origen.collectAsState()
 
-    PantallaBase(titulo = "Origen de búsqueda", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_origen_de_busqueda), onBack = onBack) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -35,8 +39,7 @@ fun OrigenScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
-                Text(
-                    text = "Elige el punto desde donde se calcula la distancia a los establecimientos.",
+                Text(text = stringResource(R.string.texto_elige_el_punto_desde_donde_se_calcula_la_distancia),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

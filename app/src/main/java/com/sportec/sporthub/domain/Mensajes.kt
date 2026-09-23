@@ -1,10 +1,12 @@
 package com.sportec.sporthub.domain
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** Chats 1:1, incluida la atención de un establecimiento a sus deportistas (HU-D18, HU-D19, HU-E11). */
 object Mensajes {
 
     private var secuencia = 600
@@ -26,9 +28,17 @@ object Mensajes {
         return nuevo
     }
 
+    fun chatEntre(usuarioId: String, otroId: String): Chat {
+        val existente = _chats.value.firstOrNull { it.miembros.toSet() == setOf(usuarioId, otroId) }
+        if (existente != null) return existente
+        val nuevo = Chat(uid("c"), miembros = listOf(usuarioId, otroId), mensajes = emptyList())
+        _chats.value = _chats.value + nuevo
+        return nuevo
+    }
+
     fun chatConNegocio(usuarioId: String, negocioId: String): Chat {
         val operadorId = Negocios.operadorDe(negocioId)
-            ?: throw IllegalArgumentException("El establecimiento no tiene cuenta activa.")
+            ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_el_establecimiento_no_tiene_cuenta_activa))
         val existente = _chats.value.firstOrNull { it.miembros.toSet() == setOf(usuarioId, operadorId) }
         if (existente != null) return existente
         val nuevo = Chat(uid("c"), miembros = listOf(usuarioId, operadorId), mensajes = emptyList())
@@ -37,9 +47,9 @@ object Mensajes {
     }
 
     fun enviar(chatId: String, autorId: String, texto: String): Chat {
-        if (texto.isBlank()) throw IllegalArgumentException("El mensaje no puede estar vacío.")
-        val chat = chatDe(chatId) ?: throw IllegalArgumentException("La conversación ya no existe.")
-        if (!esMiembro(chat, autorId)) throw IllegalStateException("No tienes acceso a esta conversación.")
+        if (texto.isBlank()) throw IllegalArgumentException(Textos.obtener(R.string.texto_el_mensaje_no_puede_estar_vacio))
+        val chat = chatDe(chatId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_conversacion_ya_no_existe))
+        if (!esMiembro(chat, autorId)) throw IllegalStateException(Textos.obtener(R.string.texto_no_tienes_acceso_a_esta_conversacion))
         val actualizado = chat.copy(mensajes = chat.mensajes + Mensaje(uid("m"), autorId, texto))
         _chats.value = _chats.value.map { if (it.id == chatId) actualizado else it }
         return actualizado

@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.establecimiento
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,9 +34,9 @@ fun ResenasNegocioScreen(negocioId: String, onResponder: (String) -> Unit) {
     val resenas by Resenas.resenas.collectAsState()
     val propias = remember(resenas, negocioId) { Resenas.listarDeNegocio(negocioId) }
 
-    PantallaBase(titulo = "Reseñas") { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_resenas)) { padding ->
         if (propias.isEmpty()) {
-            EstadoVacio(mensaje = "Las reseñas de reservas cerradas aparecerán aquí.", modifier = Modifier.padding(padding))
+            EstadoVacio(mensaje = Textos.obtener(R.string.texto_las_resenas_de_reservas_cerradas_apareceran_aqui), modifier = Modifier.padding(padding))
         } else {
             LazyColumn(
                 modifier = Modifier
@@ -42,20 +46,19 @@ fun ResenasNegocioScreen(negocioId: String, onResponder: (String) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(propias, key = { it.id }) { resena ->
-                    val autor = Cuentas.porId(resena.usuarioId)?.nombre ?: "Deportista"
+                    val autor = Cuentas.porId(resena.usuarioId)?.nombre ?: Textos.obtener(R.string.texto_deportista)
                     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(text = "$autor · ${resena.puntaje} / 5", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(text = stringResource(R.string.formato_autor_puntaje, autor, resena.puntaje), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                             Text(text = resena.comentario, style = MaterialTheme.typography.bodyMedium)
                             if (resena.respuesta != null) {
-                                Text(
-                                    text = "Tu respuesta: ${resena.respuesta}",
+                                Text(text = stringResource(R.string.texto_tu_respuesta_valor, resena.respuesta),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             } else {
                                 OutlinedButton(onClick = { onResponder(resena.id) }, modifier = Modifier.fillMaxWidth()) {
-                                    Text("Responder")
+                                    Text(stringResource(R.string.texto_responder))
                                 }
                             }
                         }

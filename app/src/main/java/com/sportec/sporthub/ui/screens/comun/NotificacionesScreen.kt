@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.comun
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -40,9 +43,9 @@ fun NotificacionesScreen(
     val notificaciones by Notificaciones.notificaciones.collectAsState()
     val propias = notificaciones.filter { it.usuarioId == usuarioId }
 
-    PantallaBase(titulo = "Notificaciones", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_notificaciones), onBack = onBack) { padding ->
         if (propias.isEmpty()) {
-            EstadoVacio(mensaje = "Por ahora estás al día.", modifier = Modifier.padding(padding))
+            EstadoVacio(mensaje = Textos.obtener(R.string.texto_por_ahora_estas_al_dia), modifier = Modifier.padding(padding))
         } else {
             LazyColumn(
                 modifier = Modifier

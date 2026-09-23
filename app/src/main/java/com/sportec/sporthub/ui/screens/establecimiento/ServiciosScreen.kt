@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.establecimiento
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -48,15 +52,15 @@ fun ServiciosScreen(
     val filtradas = propias.filter { categoriaFiltro == null || it.categoria == categoriaFiltro }
 
     PantallaBase(
-        titulo = "Servicios",
+        titulo = Textos.obtener(R.string.texto_servicios),
         acciones = {
             IconButton(onClick = onNuevoServicio) {
-                Icon(Icons.Filled.Add, contentDescription = "Nuevo servicio")
+                Icon(Icons.Filled.Add, contentDescription = Textos.obtener(R.string.texto_nuevo_servicio))
             }
         }
     ) { padding ->
         if (propias.isEmpty()) {
-            EstadoVacio(mensaje = "Aún no tienes servicios publicados.", modifier = Modifier.padding(padding))
+            EstadoVacio(mensaje = Textos.obtener(R.string.texto_aun_no_tienes_servicios_publicados), modifier = Modifier.padding(padding))
         } else {
             Column(modifier = Modifier.fillMaxSize().padding(padding)) {
                 if (categoriasPropias.size > 1) {
@@ -68,7 +72,7 @@ fun ServiciosScreen(
                             FilterChip(
                                 selected = categoriaFiltro == null,
                                 onClick = { categoriaFiltro = null },
-                                label = { Text("Todos") }
+                                label = { Text(stringResource(R.string.texto_todos)) }
                             )
                         }
                         items(categoriasPropias) { categoria ->
@@ -98,8 +102,7 @@ fun ServiciosScreen(
                                 )
                                 Text(text = formatoPesos(actividad.precio), style = MaterialTheme.typography.titleSmall)
                             }
-                            Text(
-                                text = "${actividad.categoria} · ${formatoDuracion(actividad.duracionMinutos)}",
+                            Text(text = stringResource(R.string.formato_dos_datos, actividad.categoria, formatoDuracion(actividad.duracionMinutos)),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

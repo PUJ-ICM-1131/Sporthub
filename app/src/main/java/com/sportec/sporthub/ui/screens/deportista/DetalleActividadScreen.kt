@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -41,7 +45,7 @@ fun DetalleActividadScreen(
 
     LaunchedEffect(actividadId) { viewModel.cargar(actividadId) }
 
-    PantallaBase(titulo = estado.item?.actividad?.nombre ?: "Detalle del servicio", onBack = onBack) { padding ->
+    PantallaBase(titulo = estado.item?.actividad?.nombre ?: Textos.obtener(R.string.texto_detalle_del_servicio), onBack = onBack) { padding ->
         when {
             estado.error != null -> EstadoError(
                 mensaje = estado.error ?: "",
@@ -76,25 +80,25 @@ fun DetalleActividadScreen(
                     Text(text = item.actividad.descripcion, style = MaterialTheme.typography.bodyLarge)
                     TarjetaHechos(
                         pares = listOf(
-                            "Establecimiento" to item.negocio.nombre,
-                            "Dirección" to item.negocio.direccion,
-                            "Duración" to formatoDuracion(item.actividad.duracionMinutos),
-                            "Capacidad" to if (item.actividad.tipo.etiqueta == "Espacio completo") "Espacio exclusivo" else "${item.actividad.capacidad} cupos por sesión"
+                            Textos.obtener(R.string.texto_establecimiento) to item.negocio.nombre,
+                            Textos.obtener(R.string.texto_direccion) to item.negocio.direccion,
+                            Textos.obtener(R.string.texto_duracion) to formatoDuracion(item.actividad.duracionMinutos),
+                            Textos.obtener(R.string.texto_capacidad) to if (item.actividad.tipo.etiqueta == Textos.obtener(R.string.texto_espacio_completo)) Textos.obtener(R.string.texto_espacio_exclusivo) else Textos.obtener(R.string.texto_valor_cupos_por_sesion, item.actividad.capacidad)
                         )
                     )
                     TarjetaHechos(
                         pares = listOf(
-                            "Plazo de pago" to "${item.actividad.politica.payMinutes} min desde la aprobación",
-                            "Cancelar hasta" to "${item.actividad.politica.cancelHours} h antes del inicio",
-                            "Devolución aplicable" to "${item.actividad.politica.refundPercent} %",
-                            "Transferencia" to if (item.actividad.politica.transferable) "Permitida" else "No permitida"
+                            Textos.obtener(R.string.texto_plazo_de_pago) to Textos.obtener(R.string.texto_valor_min_desde_la_aprobacion, item.actividad.politica.payMinutes),
+                            Textos.obtener(R.string.texto_cancelar_hasta) to Textos.obtener(R.string.texto_valor_h_antes_del_inicio, item.actividad.politica.cancelHours),
+                            Textos.obtener(R.string.texto_devolucion_aplicable) to Textos.obtener(R.string.formato_porcentaje, item.actividad.politica.refundPercent),
+                            Textos.obtener(R.string.texto_transferencia) to if (item.actividad.politica.transferable) Textos.obtener(R.string.texto_permitida) else Textos.obtener(R.string.texto_no_permitida)
                         )
                     )
                     Button(onClick = onVerHorarios, modifier = Modifier.fillMaxWidth()) {
-                        Text("Ver horarios")
+                        Text(stringResource(R.string.texto_ver_horarios))
                     }
                     OutlinedButton(onClick = onVerEstablecimiento, modifier = Modifier.fillMaxWidth()) {
-                        Text("Ver establecimiento")
+                        Text(stringResource(R.string.texto_ver_establecimiento))
                     }
                 }
             }

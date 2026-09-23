@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.components
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -42,7 +46,6 @@ import com.sportec.sporthub.ui.theme.TenueOscuro
 import com.sportec.sporthub.utils.formatoDuracion
 import com.sportec.sporthub.utils.formatoPesos
 
-/** Tono semántico de una etiqueta de estado, igual a .pill/.pill.amber/.pill.red/.pill.gray del prototipo. */
 enum class TonoEtiqueta { VERDE, AMBAR, ROJO, GRIS }
 
 val EstadoSolicitud.tono: TonoEtiqueta get() = when (this) {
@@ -168,8 +171,7 @@ fun TarjetaActividad(
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-            Text(
-                text = "${item.negocio.nombre} · ${formatoDuracion(item.actividad.duracionMinutos)}",
+            Text(text = stringResource(R.string.formato_dos_datos, item.negocio.nombre, formatoDuracion(item.actividad.duracionMinutos)),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -181,7 +183,6 @@ fun TarjetaActividad(
 
 private val VerdeTinte = Color(0xFFEDF8EB)
 
-/** Tarjeta tenue verde, igual a .card.tint del prototipo (avisos y teasers destacados). */
 @Composable
 fun TarjetaTint(
     modifier: Modifier = Modifier,

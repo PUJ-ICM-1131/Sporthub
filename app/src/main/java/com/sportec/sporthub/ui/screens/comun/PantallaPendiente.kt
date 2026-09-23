@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.comun
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -53,18 +57,15 @@ fun PantallaPendiente(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Text(
-                            text = "Pantalla en construcción",
+                        Text(text = stringResource(R.string.texto_pantalla_en_construccion),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
-                        Text(
-                            text = "La navegación ya está conectada. El contenido se implementa en las próximas iteraciones.",
+                        Text(text = stringResource(R.string.texto_la_navegacion_ya_esta_conectada_el_contenido_se_implementa),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         if (info.historias.isNotEmpty()) {
-                            Text(
-                                text = "Historias: ${info.historias.joinToString(", ")}",
+                            Text(text = stringResource(R.string.texto_historias_valor, info.historias.joinToString(", ")),
                                 style = MaterialTheme.typography.labelLarge
                             )
                         }
@@ -73,8 +74,7 @@ fun PantallaPendiente(
             }
             if (info.destinos.isNotEmpty()) {
                 item {
-                    Text(
-                        text = "Continúa hacia",
+                    Text(text = stringResource(R.string.texto_continua_hacia),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 8.dp)

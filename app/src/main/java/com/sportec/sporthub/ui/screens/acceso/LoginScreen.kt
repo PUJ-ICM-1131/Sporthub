@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.acceso
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -60,7 +64,7 @@ fun LoginScreen(
         }
     }
 
-    PantallaBase(titulo = "Iniciar sesión", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_iniciar_sesion), onBack = onBack) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -69,20 +73,18 @@ fun LoginScreen(
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "Bienvenido de nuevo",
+            Text(text = stringResource(R.string.texto_bienvenido_de_nuevo),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold
             )
-            Text(
-                text = "Accede con tu cuenta de deportista, establecimiento o administrador.",
+            Text(text = stringResource(R.string.texto_accede_con_tu_cuenta_de_deportista_establecimiento_o_administrador),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             OutlinedTextField(
                 value = estado.usuario,
                 onValueChange = viewModel::onUsuarioCambiado,
-                label = { Text("Correo o usuario") },
+                label = { Text(stringResource(R.string.texto_correo_o_usuario)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
@@ -93,7 +95,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = estado.contrasena,
                 onValueChange = viewModel::onContrasenaCambiada,
-                label = { Text("Contraseña") },
+                label = { Text(stringResource(R.string.texto_contrasena)) },
                 singleLine = true,
                 visualTransformation = if (mostrarContrasena) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
@@ -103,7 +105,7 @@ fun LoginScreen(
                 keyboardActions = KeyboardActions(onDone = { viewModel.iniciarSesion() }),
                 trailingIcon = {
                     TextButton(onClick = { mostrarContrasena = !mostrarContrasena }) {
-                        Text(if (mostrarContrasena) "Ocultar" else "Mostrar")
+                        Text(if (mostrarContrasena) Textos.obtener(R.string.texto_ocultar) else Textos.obtener(R.string.texto_mostrar))
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -122,22 +124,20 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(52.dp)
             ) {
-                Text("Ingresar")
+                Text(stringResource(R.string.texto_ingresar))
             }
             TextButton(
                 onClick = onRecuperar,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
-                Text("¿Olvidaste tu contraseña?")
+                Text(stringResource(R.string.texto_olvidaste_tu_contrasena))
             }
             HorizontalDivider()
-            Text(
-                text = "Cuentas de demostración",
+            Text(text = stringResource(R.string.texto_cuentas_de_demostracion),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold
             )
-            Text(
-                text = "Toca una cuenta para llenar el formulario. Contraseña: ${DatosMock.CONTRASENA_DEMO}",
+            Text(text = stringResource(R.string.texto_toca_una_cuenta_para_llenar_el_formulario_contrasena_valor, DatosMock.CONTRASENA_DEMO),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -145,15 +145,14 @@ fun LoginScreen(
                 DatosMock.cuentas.forEach { cuenta ->
                     ListItem(
                         headlineContent = { Text(cuenta.nombre) },
-                        supportingContent = { Text("${cuenta.id} · ${cuenta.rol.etiqueta}") },
+                        supportingContent = { Text(stringResource(R.string.formato_dos_datos, cuenta.id, cuenta.rol.etiqueta)) },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         modifier = Modifier.clickable { viewModel.usarCuentaDemo(cuenta) }
                     )
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Simular fallo del servicio",
+                Text(text = stringResource(R.string.texto_simular_fallo_del_servicio),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.weight(1f)
                 )

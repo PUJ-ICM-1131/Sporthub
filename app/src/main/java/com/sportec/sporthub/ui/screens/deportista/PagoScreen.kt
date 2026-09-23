@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,7 +32,7 @@ import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.ui.components.TarjetaHechos
 import com.sportec.sporthub.utils.formatoPesos
 
-private val MEDIOS_DEMO = listOf("Tarjeta ·•• 1234", "Billetera ·•• 4567", "Transferencia ·•• 1122")
+private val MEDIOS_DEMO = listOf(Textos.obtener(R.string.texto_tarjeta_1234), Textos.obtener(R.string.texto_billetera_4567), Textos.obtener(R.string.texto_transferencia_1122))
 
 @Composable
 fun PagoScreen(
@@ -43,11 +47,11 @@ fun PagoScreen(
 
     LaunchedEffect(solicitudId) { viewModel.cargar(solicitudId) }
 
-    PantallaBase(titulo = "Pago simulado", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_pago_simulado), onBack = onBack) { padding ->
         val monto = estado.monto
         if (monto == null) {
             EstadoError(
-                mensaje = estado.error ?: "No se pudo cargar la solicitud.",
+                mensaje = estado.error ?: Textos.obtener(R.string.texto_no_se_pudo_cargar_la_solicitud),
                 onReintentar = { viewModel.cargar(solicitudId) },
                 modifier = Modifier.padding(padding)
             )
@@ -59,8 +63,8 @@ fun PagoScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                TarjetaHechos(pares = listOf("Total a pagar" to formatoPesos(monto)))
-                Text(text = "Medio de pago (simulado)", style = MaterialTheme.typography.labelLarge)
+                TarjetaHechos(pares = listOf(Textos.obtener(R.string.texto_total_a_pagar) to formatoPesos(monto)))
+                Text(text = stringResource(R.string.texto_medio_de_pago_simulado), style = MaterialTheme.typography.labelLarge)
                 MEDIOS_DEMO.forEach { opcion ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         RadioButton(selected = medio == opcion, onClick = { medio = opcion })
@@ -74,7 +78,7 @@ fun PagoScreen(
                     onClick = { viewModel.pagar(usuarioId, medio, onPagoExitoso) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Pagar")
+                    Text(stringResource(R.string.texto_pagar))
                 }
             }
         }

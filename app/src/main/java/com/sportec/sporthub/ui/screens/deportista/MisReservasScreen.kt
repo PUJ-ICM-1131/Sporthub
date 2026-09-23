@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -29,6 +32,7 @@ import com.sportec.sporthub.domain.Reserva
 import com.sportec.sporthub.domain.Reservas
 import com.sportec.sporthub.domain.Solicitud
 import com.sportec.sporthub.domain.Transferencia
+import com.sportec.sporthub.domain.Transferencias
 import com.sportec.sporthub.navigation.DetalleReserva
 import com.sportec.sporthub.navigation.DetalleSolicitud
 import com.sportec.sporthub.navigation.DetalleTransferencia
@@ -48,9 +52,13 @@ fun MisReservasScreen(
 ) {
     val estado by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(usuarioId) { viewModel.cargar(usuarioId) }
+    val solicitudes by Reservas.solicitudes.collectAsState()
+    val reservas by Reservas.reservas.collectAsState()
+    val transferencias by Transferencias.transferencias.collectAsState()
 
-    PantallaBase(titulo = "Mis reservas") { padding ->
+    LaunchedEffect(usuarioId, solicitudes, reservas, transferencias) { viewModel.cargar(usuarioId) }
+
+    PantallaBase(titulo = Textos.obtener(R.string.texto_mis_reservas)) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -69,10 +77,10 @@ fun MisReservasScreen(
                     ) {
                         Text(
                             when (pestana) {
-                                PestanaReservas.SOLICITUDES -> "Solicitudes"
-                                PestanaReservas.PROXIMAS -> "Próximas"
-                                PestanaReservas.HISTORIAL -> "Historial"
-                                PestanaReservas.TRANSFERENCIAS -> "Transferencias"
+                                PestanaReservas.SOLICITUDES -> Textos.obtener(R.string.texto_solicitudes)
+                                PestanaReservas.PROXIMAS -> Textos.obtener(R.string.texto_proximas)
+                                PestanaReservas.HISTORIAL -> Textos.obtener(R.string.texto_historial)
+                                PestanaReservas.TRANSFERENCIAS -> Textos.obtener(R.string.texto_transferencias)
                             }
                         )
                     }
@@ -85,28 +93,28 @@ fun MisReservasScreen(
             ) {
                 when (estado.pestana) {
                     PestanaReservas.SOLICITUDES -> if (estado.solicitudes.isEmpty()) {
-                        item { EstadoVacio(mensaje = "Aún no tienes solicitudes.") }
+                        item { EstadoVacio(mensaje = Textos.obtener(R.string.texto_aun_no_tienes_solicitudes)) }
                     } else {
                         items(estado.solicitudes, key = { it.id }) { solicitud ->
                             TarjetaSolicitud(solicitud) { onNavegar(DetalleSolicitud(solicitud.id)) }
                         }
                     }
                     PestanaReservas.PROXIMAS -> if (estado.proximas.isEmpty()) {
-                        item { EstadoVacio(mensaje = "Aquí aparecerán tus próximas reservas.") }
+                        item { EstadoVacio(mensaje = Textos.obtener(R.string.texto_aqui_apareceran_tus_proximas_reservas)) }
                     } else {
                         items(estado.proximas, key = { it.id }) { reserva ->
                             TarjetaReserva(reserva) { onNavegar(DetalleReserva(reserva.id)) }
                         }
                     }
                     PestanaReservas.HISTORIAL -> if (estado.historial.isEmpty()) {
-                        item { EstadoVacio(mensaje = "Aquí verás tus reservas canceladas o finalizadas.") }
+                        item { EstadoVacio(mensaje = Textos.obtener(R.string.texto_aqui_veras_tus_reservas_canceladas_o_finalizadas)) }
                     } else {
                         items(estado.historial, key = { it.id }) { reserva ->
                             TarjetaReserva(reserva) { onNavegar(DetalleReserva(reserva.id)) }
                         }
                     }
                     PestanaReservas.TRANSFERENCIAS -> if (estado.transferencias.isEmpty()) {
-                        item { EstadoVacio(mensaje = "Aquí verás las transferencias que publiques o en las que participes.") }
+                        item { EstadoVacio(mensaje = Textos.obtener(R.string.texto_aqui_veras_las_transferencias_que_publiques_o_en_las)) }
                     } else {
                         items(estado.transferencias, key = { it.id }) { transferencia ->
                             TarjetaTransferenciaReserva(transferencia) { onNavegar(DetalleTransferencia(transferencia.id)) }
@@ -154,7 +162,7 @@ private fun TarjetaReserva(reserva: Reserva, onClick: () -> Unit) {
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f)
                 )
-                Etiqueta(texto = if (reserva.cerrada) "Cerrada" else reserva.estado.etiqueta, tono = if (reserva.cerrada) TonoEtiqueta.GRIS else reserva.estado.tono)
+                Etiqueta(texto = if (reserva.cerrada) Textos.obtener(R.string.texto_cerrada) else reserva.estado.etiqueta, tono = if (reserva.cerrada) TonoEtiqueta.GRIS else reserva.estado.tono)
             }
             Text(
                 text = formatoIntervalo(reserva.fecha, reserva.hora, reserva.duracionHoras),

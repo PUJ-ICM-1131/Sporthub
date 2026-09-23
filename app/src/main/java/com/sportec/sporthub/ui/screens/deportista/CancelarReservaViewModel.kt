@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.lifecycle.ViewModel
 import com.sportec.sporthub.domain.Reserva
 import com.sportec.sporthub.domain.Reservas
@@ -29,7 +32,7 @@ class CancelarReservaViewModel : ViewModel() {
             Reservas.cancelarReserva(id, motivo, usuarioId)
             _uiState.update { it.copy(cancelada = true) }
         } catch (e: Exception) {
-            _uiState.update { it.copy(error = e.message ?: "No se pudo cancelar la reserva.") }
+            _uiState.update { it.copy(error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_cancelar_la_reserva)) }
         }
     }
 }

@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import com.sportec.sporthub.domain.ActividadConNegocio
 import com.sportec.sporthub.domain.Catalogo
 import com.sportec.sporthub.domain.Categoria
+import com.sportec.sporthub.domain.Filtros
+import com.sportec.sporthub.domain.Ubicacion
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,11 +41,13 @@ class BuscarViewModel : ViewModel() {
         val estado = _uiState.value
         val resultado = Catalogo.explorar(estado.categoriaSeleccionada)
         val texto = estado.texto.trim()
+        val origen = Ubicacion.origen.value
         val filtrados = resultado.actividades.filter {
-            texto.isBlank() ||
+            val coincideTexto = texto.isBlank() ||
                 it.actividad.nombre.contains(texto, ignoreCase = true) ||
                 it.negocio.nombre.contains(texto, ignoreCase = true) ||
                 it.actividad.categoria.contains(texto, ignoreCase = true)
+            coincideTexto && Filtros.cumple(it, origen)
         }
         _uiState.update { it.copy(categorias = resultado.categorias, resultados = filtrados) }
     }

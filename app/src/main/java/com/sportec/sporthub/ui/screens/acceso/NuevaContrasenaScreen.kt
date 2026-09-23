@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.acceso
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,7 +30,7 @@ fun NuevaContrasenaScreen(email: String, onBack: () -> Unit, onListo: () -> Unit
     var contrasena by rememberSaveable { mutableStateOf("") }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
 
-    PantallaBase(titulo = "Nueva contraseña", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_nueva_contrasena), onBack = onBack) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -37,7 +41,7 @@ fun NuevaContrasenaScreen(email: String, onBack: () -> Unit, onListo: () -> Unit
             OutlinedTextField(
                 value = contrasena,
                 onValueChange = { contrasena = it; error = null },
-                label = { Text("Nueva contraseña") },
+                label = { Text(stringResource(R.string.texto_nueva_contrasena)) },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -50,12 +54,12 @@ fun NuevaContrasenaScreen(email: String, onBack: () -> Unit, onListo: () -> Unit
                         Cuentas.restablecerContrasena(email, contrasena)
                         onListo()
                     } catch (e: Exception) {
-                        error = e.message ?: "No se pudo actualizar la contraseña."
+                        error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_actualizar_la_contrasena)
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Guardar y volver a iniciar sesión")
+                Text(stringResource(R.string.texto_guardar_y_volver_a_iniciar_sesion))
             }
         }
     }

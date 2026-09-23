@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.lifecycle.ViewModel
 import com.sportec.sporthub.domain.ActividadConNegocio
 import com.sportec.sporthub.domain.Catalogo
@@ -27,7 +30,7 @@ class DetalleReservaViewModel : ViewModel() {
     fun cargar(id: String) {
         val reserva = Reservas.obtenerReserva(id)
         if (reserva == null) {
-            _uiState.value = DetalleReservaUiState(error = "La reserva ya no existe.")
+            _uiState.value = DetalleReservaUiState(error = Textos.obtener(R.string.texto_la_reserva_ya_no_existe))
             return
         }
         _uiState.value = try {
@@ -38,7 +41,7 @@ class DetalleReservaViewModel : ViewModel() {
                 yaCalificada = Resenas.resenas.value.any { it.reservaId == id }
             )
         } catch (e: Exception) {
-            DetalleReservaUiState(error = e.message ?: "No se pudo cargar la reserva.")
+            DetalleReservaUiState(error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_cargar_la_reserva))
         }
     }
 }

@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.establecimiento
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -40,9 +44,9 @@ fun ReembolsosScreen(cuenta: Cuenta?) {
         else Reservas.listarReembolsosUsuario(cuenta?.id.orEmpty())
     }
 
-    PantallaBase(titulo = "Reembolsos") { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_reembolsos)) { padding ->
         if (propios.isEmpty()) {
-            EstadoVacio(mensaje = "No tienes devoluciones por consultar.", modifier = Modifier.padding(padding))
+            EstadoVacio(mensaje = Textos.obtener(R.string.texto_no_tienes_devoluciones_por_consultar), modifier = Modifier.padding(padding))
         } else {
             LazyColumn(
                 modifier = Modifier
@@ -61,10 +65,9 @@ fun ReembolsosScreen(cuenta: Cuenta?) {
                                     fontWeight = FontWeight.SemiBold,
                                     modifier = Modifier.weight(1f)
                                 )
-                                Etiqueta(texto = reembolso.estado.name, tono = reembolso.estado.tono)
+                                Etiqueta(texto = reembolso.estado.etiqueta, tono = reembolso.estado.tono)
                             }
-                            Text(
-                                text = "Motivo: ${reembolso.causa}",
+                            Text(text = stringResource(R.string.texto_motivo_valor, reembolso.causa),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -73,11 +76,11 @@ fun ReembolsosScreen(cuenta: Cuenta?) {
                                     Button(
                                         onClick = { Reservas.confirmarReembolso(reembolso.id, cuenta.id, true) },
                                         modifier = Modifier.weight(1f)
-                                    ) { Text("Realizada") }
+                                    ) { Text(stringResource(R.string.texto_realizada)) }
                                     OutlinedButton(
                                         onClick = { Reservas.confirmarReembolso(reembolso.id, cuenta.id, false) },
                                         modifier = Modifier.weight(1f)
-                                    ) { Text("Fallida") }
+                                    ) { Text(stringResource(R.string.texto_fallida)) }
                                 }
                             }
                         }

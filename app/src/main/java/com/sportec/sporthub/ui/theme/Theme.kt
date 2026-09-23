@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-/** Radios de esquina calcados de los tokens CSS del prototipo: .slot/input 12px, .primary/.card button 13px, .card 17px, .hero 23px. */
 private val SportHubShapes = Shapes(
     extraSmall = RoundedCornerShape(10.dp),
     small = RoundedCornerShape(13.dp),

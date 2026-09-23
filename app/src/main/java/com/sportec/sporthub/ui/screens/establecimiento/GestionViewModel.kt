@@ -1,7 +1,6 @@
 package com.sportec.sporthub.ui.screens.establecimiento
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.sportec.sporthub.domain.EstadoPostulante
 import com.sportec.sporthub.domain.EstadoSolicitud
 import com.sportec.sporthub.domain.Reservas
@@ -9,10 +8,9 @@ import com.sportec.sporthub.domain.Solicitud
 import com.sportec.sporthub.domain.Transferencia
 import com.sportec.sporthub.domain.Transferencias
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 private val PENDIENTES = setOf(EstadoSolicitud.FILA, EstadoSolicitud.REVISION)
 
@@ -23,22 +21,27 @@ data class GestionUiState(
 
 class GestionViewModel : ViewModel() {
 
-    private val _negocioId = MutableStateFlow<String?>(null)
+    private var negocioId: String? = null
 
-    val uiState: StateFlow<GestionUiState> = combine(
-        _negocioId, Reservas.solicitudes, Transferencias.transferencias
-    ) { negocioId, _, _ ->
-        if (negocioId == null) {
-            GestionUiState()
-        } else {
-            GestionUiState(
-                solicitudes = Reservas.listarSolicitudesNegocio(negocioId).filter { it.estado in PENDIENTES }.sortedBy { it.orden },
-                transferencias = Transferencias.listarDeNegocio(negocioId).filter { t -> t.postulantes.any { it.estado == EstadoPostulante.REVISION } }
-            )
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GestionUiState())
+    private val _uiState = MutableStateFlow(GestionUiState())
+    val uiState: StateFlow<GestionUiState> = _uiState.asStateFlow()
 
     fun cargar(negocioId: String) {
-        _negocioId.value = negocioId
+        this.negocioId = negocioId
+        refrescar()
+    }
+
+    private fun refrescar() {
+        val id = negocioId
+        if (id == null) {
+            _uiState.update { GestionUiState() }
+            return
+        }
+        val solicitudes = Reservas.listarSolicitudesNegocio(id)
+            .filter { it.estado in PENDIENTES }
+            .sortedBy { it.orden }
+        val transferencias = Transferencias.listarDeNegocio(id)
+            .filter { transferencia -> transferencia.postulantes.any { it.estado == EstadoPostulante.REVISION } }
+        _uiState.update { it.copy(solicitudes = solicitudes, transferencias = transferencias) }
     }
 }

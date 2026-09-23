@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,10 +45,10 @@ fun DetalleReservaScreen(
 
     LaunchedEffect(reservaId) { viewModel.cargar(reservaId) }
 
-    PantallaBase(titulo = "Reserva", onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_reserva), onBack = onBack) { padding ->
         when {
             estado.reserva == null || estado.item == null -> EstadoError(
-                mensaje = estado.error ?: "No se pudo cargar la reserva.",
+                mensaje = estado.error ?: Textos.obtener(R.string.texto_no_se_pudo_cargar_la_reserva),
                 onReintentar = { viewModel.cargar(reservaId) },
                 modifier = Modifier.padding(padding)
             )
@@ -62,34 +66,34 @@ fun DetalleReservaScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Etiqueta(texto = if (reserva.cerrada) "Cerrada por el establecimiento" else reserva.estado.etiqueta, tono = if (reserva.cerrada) TonoEtiqueta.GRIS else reserva.estado.tono)
+                    Etiqueta(texto = if (reserva.cerrada) Textos.obtener(R.string.texto_cerrada_por_el_establecimiento) else reserva.estado.etiqueta, tono = if (reserva.cerrada) TonoEtiqueta.GRIS else reserva.estado.tono)
                     TarjetaHechos(
                         pares = listOf(
-                            "Servicio" to item.actividad.nombre,
-                            "Establecimiento" to item.negocio.nombre,
-                            "Horario" to formatoIntervalo(reserva.fecha, reserva.hora, reserva.duracionHoras),
-                            "Total pagado" to formatoPesos(reserva.precio),
-                            "Código" to reserva.id.uppercase()
+                            Textos.obtener(R.string.texto_servicio) to item.actividad.nombre,
+                            Textos.obtener(R.string.texto_establecimiento) to item.negocio.nombre,
+                            Textos.obtener(R.string.texto_horario) to formatoIntervalo(reserva.fecha, reserva.hora, reserva.duracionHoras),
+                            Textos.obtener(R.string.texto_total_pagado) to formatoPesos(reserva.precio),
+                            Textos.obtener(R.string.texto_codigo) to reserva.id.uppercase()
                         )
                     )
                     if (esCancelable && reserva.politica.transferable && estado.transferenciaId == null) {
                         OutlinedButton(onClick = { onPublicarTransferencia(reserva.id) }, modifier = Modifier.fillMaxWidth()) {
-                            Text("Publicar transferencia")
+                            Text(stringResource(R.string.texto_publicar_transferencia))
                         }
                     }
                     if (esCancelable) {
                         OutlinedButton(onClick = { onCancelar(reserva.id) }, modifier = Modifier.fillMaxWidth()) {
-                            Text("Cancelar reserva")
+                            Text(stringResource(R.string.texto_cancelar_reserva))
                         }
                     }
                     if (esDueno && estado.transferenciaId != null) {
                         OutlinedButton(onClick = { onVerTransferencia(estado.transferenciaId!!) }, modifier = Modifier.fillMaxWidth()) {
-                            Text("Ver transferencias de esta reserva")
+                            Text(stringResource(R.string.texto_ver_transferencias_de_esta_reserva))
                         }
                     }
                     if (esDueno && reserva.cerrada && !estado.yaCalificada) {
                         OutlinedButton(onClick = { onCalificar(reserva.id) }, modifier = Modifier.fillMaxWidth()) {
-                            Text("Calificar")
+                            Text(stringResource(R.string.texto_calificar))
                         }
                     }
                 }

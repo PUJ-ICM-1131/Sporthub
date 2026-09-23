@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.components
 
+import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.Textos
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -32,7 +35,6 @@ private val LineaCancha = Color(0xFFF4F2D9)
 private val MatVerde = Color(0xFFD9E8BD)
 private val MatDurazno = Color(0xFFF1D3B5)
 
-/** Ilustración generativa por categoría, equivalente a la función art() del prototipo (.art svg). */
 @Composable
 fun IlustracionActividad(actividad: Actividad, modifier: Modifier = Modifier) {
     if (actividad.fotoUri != null) {
@@ -103,7 +105,7 @@ fun IlustracionActividad(actividad: Actividad, modifier: Modifier = Modifier) {
             )
         }
         Etiqueta(
-            texto = if (esEspacio) "Espacio completo" else "Clase · ${actividad.capacidad} cupo${if (actividad.capacidad != 1) "s" else ""}",
+            texto = if (esEspacio) Textos.obtener(R.string.texto_espacio_completo) else Textos.cantidad(R.plurals.clase_cupos, actividad.capacidad, actividad.capacidad),
             contenedor = Color.White.copy(alpha = 0.94f),
             contenido = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
