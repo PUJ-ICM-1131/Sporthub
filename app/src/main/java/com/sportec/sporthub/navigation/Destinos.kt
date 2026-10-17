@@ -72,24 +72,18 @@ fun infoDe(ruta: NavKey): InfoPantalla = when (ruta) {
     )
     Origen -> InfoPantalla(Textos.obtener(R.string.texto_origen_de_busqueda), listOf("HU-D02", "HU-D05", "HU-D27"))
     is DetalleActividad -> InfoPantalla(
-        Textos.obtener(R.string.texto_detalle_del_servicio), listOf("HU-D03"),
-        listOf(Destino(Textos.obtener(R.string.texto_ver_establecimiento), DetalleEstablecimiento("b1")), Destino(Textos.obtener(R.string.texto_ver_horarios), Horarios(ruta.id)))
+        Textos.obtener(R.string.texto_detalle_del_servicio), listOf("HU-D03", "HU-D04", "HU-D06", "HU-D07", "HU-D14"),
+        listOf(Destino(Textos.obtener(R.string.texto_ver_establecimiento), DetalleEstablecimiento("b1")))
     )
     is DetalleEstablecimiento -> InfoPantalla(
         Textos.obtener(R.string.texto_establecimiento), listOf("HU-D03", "HU-D05", "HU-D14", "HU-D19"),
         listOf(
             Destino(Textos.obtener(R.string.texto_ver_servicio), DetalleActividad("a1")),
-            Destino(Textos.obtener(R.string.texto_ver_horarios), Horarios("a1")),
             Destino(Textos.obtener(R.string.texto_enviar_mensaje), Chat("c2")),
             Destino(Textos.obtener(R.string.texto_como_llegar), Ruta(ruta.id)),
             Destino(Textos.obtener(R.string.texto_reportar), Reportar("negocio"))
         )
     )
-    is Horarios -> InfoPantalla(
-        Textos.obtener(R.string.texto_horarios_y_cupos), listOf("HU-D04", "HU-D06", "HU-D07", "HU-D14"),
-        listOf(Destino(Textos.obtener(R.string.texto_solicitar_este_horario), ResumenSolicitud(ruta.actividadId, java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")).toString(), 10)))
-    )
-
     is ResumenSolicitud -> InfoPantalla(
         Textos.obtener(R.string.texto_resumen_de_la_solicitud), listOf("HU-D06", "HU-D07"),
         listOf(Destino(Textos.obtener(R.string.texto_enviar_solicitud), DetalleSolicitud("s1")))

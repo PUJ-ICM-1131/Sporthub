@@ -30,7 +30,6 @@ interface RutaAcceso : NavKey
 @Serializable data object Origen : NavKey
 @Serializable data class DetalleActividad(val id: String) : NavKey
 @Serializable data class DetalleEstablecimiento(val id: String) : NavKey
-@Serializable data class Horarios(val actividadId: String) : NavKey
 
 @Serializable data class ResumenSolicitud(val actividadId: String, val fecha: String, val hora: Int) : NavKey
 @Serializable data class DetalleSolicitud(val id: String) : NavKey

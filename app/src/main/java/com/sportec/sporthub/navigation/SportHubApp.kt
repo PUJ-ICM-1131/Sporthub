@@ -66,7 +66,6 @@ import com.sportec.sporthub.ui.screens.deportista.DetalleTransferenciaScreen
 import com.sportec.sporthub.ui.screens.deportista.ExplorarScreen
 import com.sportec.sporthub.ui.screens.deportista.FiltrosScreen
 import com.sportec.sporthub.ui.screens.deportista.FotoLlegadaScreen
-import com.sportec.sporthub.ui.screens.deportista.HorariosScreen
 import com.sportec.sporthub.ui.screens.deportista.MapaScreen
 import com.sportec.sporthub.ui.screens.deportista.MisReservasScreen
 import com.sportec.sporthub.ui.screens.deportista.MisTransferenciasScreen
@@ -253,6 +252,7 @@ fun SportHubApp(
                 }
                 entry<Explorar> {
                     ExplorarScreen(
+                        usuarioId = cuenta?.id.orEmpty(),
                         nombre = cuenta?.nombre?.substringBefore(" ").orEmpty(),
                         onNavegar = { irA(it) }
                     )
@@ -285,7 +285,7 @@ fun SportHubApp(
                     DetalleActividadScreen(
                         actividadId = ruta.id,
                         onBack = { volver() },
-                        onVerHorarios = { irA(Horarios(ruta.id)) },
+                        onSolicitar = { fecha, hora -> irA(ResumenSolicitud(ruta.id, fecha, hora)) },
                         onVerEstablecimiento = {
                             Negocios.actividadDe(ruta.id)?.negocioId?.let { irA(DetalleEstablecimiento(it)) }
                         }
@@ -301,13 +301,6 @@ fun SportHubApp(
                             irA(Chat(chat.id))
                         },
                         onComoLlegar = { irA(Ruta(ruta.id)) }
-                    )
-                }
-                entry<Horarios> { ruta ->
-                    HorariosScreen(
-                        actividadId = ruta.actividadId,
-                        onBack = { volver() },
-                        onSolicitar = { fecha, hora -> irA(ResumenSolicitud(ruta.actividadId, fecha, hora)) }
                     )
                 }
                 entry<ResumenSolicitud> { ruta ->

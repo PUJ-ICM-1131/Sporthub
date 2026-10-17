@@ -30,9 +30,8 @@ import com.sportec.sporthub.utils.formatoDiaCorto
 import com.sportec.sporthub.utils.formatoHora
 
 @Composable
-fun HorariosScreen(
+fun SelectorHorario(
     actividadId: String,
-    onBack: () -> Unit,
     onSolicitar: (fecha: String, hora: Int) -> Unit,
     viewModel: HorariosViewModel = viewModel()
 ) {
@@ -40,18 +39,14 @@ fun HorariosScreen(
 
     LaunchedEffect(actividadId) { viewModel.cargar(actividadId) }
 
-    PantallaBase(titulo = Textos.obtener(R.string.texto_horarios_y_cupos), onBack = onBack) { padding ->
         when {
             estado.error != null -> EstadoError(
                 mensaje = estado.error ?: "",
-                onReintentar = { viewModel.cargar(actividadId) },
-                modifier = Modifier.padding(padding)
+                onReintentar = { viewModel.cargar(actividadId) }
             )
             else -> Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
+                    .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
@@ -97,5 +92,4 @@ fun HorariosScreen(
                 }
             }
         }
-    }
 }

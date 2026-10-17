@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,10 +38,11 @@ import com.sportec.sporthub.utils.formatoPesos
 fun DetalleActividadScreen(
     actividadId: String,
     onBack: () -> Unit,
-    onVerHorarios: () -> Unit,
+    onSolicitar: (String, Int) -> Unit,
     onVerEstablecimiento: () -> Unit,
     viewModel: DetalleActividadViewModel = viewModel()
 ) {
+    var mostrarHorarios by androidx.compose.runtime.saveable.rememberSaveable(actividadId) { androidx.compose.runtime.mutableStateOf(false) }
     val estado by viewModel.uiState.collectAsState()
 
     LaunchedEffect(actividadId) { viewModel.cargar(actividadId) }
@@ -95,9 +97,10 @@ fun DetalleActividadScreen(
                             Textos.obtener(R.string.texto_transferencia) to if (item.actividad.politica.transferable) Textos.obtener(R.string.texto_permitida) else Textos.obtener(R.string.texto_no_permitida)
                         )
                     )
-                    Button(onClick = onVerHorarios, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.texto_ver_horarios))
+                    Button(onClick = { mostrarHorarios = !mostrarHorarios }, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(if (mostrarHorarios) R.string.ocultar_horarios else R.string.texto_ver_horarios))
                     }
+                    if (mostrarHorarios) SelectorHorario(actividadId, onSolicitar)
                     OutlinedButton(onClick = onVerEstablecimiento, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.texto_ver_establecimiento))
                     }
