@@ -62,7 +62,8 @@ fun DetalleActividadScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    IlustracionActividad(item.actividad)
+                    if (item.actividad.fotos.isEmpty()) IlustracionActividad(item.actividad)
+                    else com.sportec.sporthub.ui.components.CarruselFotos(item.actividad.fotos)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Etiqueta(texto = item.actividad.categoria)
                         Etiqueta(

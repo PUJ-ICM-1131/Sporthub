@@ -1,5 +1,6 @@
 package com.sportec.sporthub.ui.screens.comun
 
+import com.sportec.sporthub.ui.components.AvatarChat
 import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Textos
 
@@ -37,7 +38,10 @@ fun MensajesScreen(
     onCrearComunidad: () -> Unit
 ) {
     val chats by Mensajes.chats.collectAsState()
-    val propios = chats.filter { Mensajes.esMiembro(it, usuarioId) }
+    val grupos by Comunidades.comunidades.collectAsState()
+    val propios = chats.filter { chat ->
+        chat.comunidadId?.let { id -> grupos.any { it.id == id && usuarioId in it.miembros } } ?: (usuarioId in chat.miembros)
+    }
 
     PantallaBase(
         titulo = Textos.obtener(R.string.texto_mensajes),
@@ -67,14 +71,18 @@ fun MensajesScreen(
 
 @Composable
 private fun ItemChat(chat: Chat, usuarioId: String, onClick: () -> Unit) {
+    val cuentas by Cuentas.cuentas.collectAsState()
+    val comunidades by Comunidades.comunidades.collectAsState()
+    val grupo = comunidades.firstOrNull { it.id == chat.comunidadId }
+    val persona = cuentas.firstOrNull { it.id == chat.miembros.firstOrNull { id -> id != usuarioId } }
     val nombre = if (chat.comunidadId != null) {
-        Comunidades.comunidadDe(chat.comunidadId)?.nombre ?: Textos.obtener(R.string.texto_comunidad)
+        grupo?.nombre ?: Textos.obtener(R.string.texto_comunidad)
     } else {
-        val otroId = chat.miembros.firstOrNull { it != usuarioId }
-        Cuentas.porId(otroId.orEmpty())?.let { Cuentas.nombreParaMostrar(it) } ?: Textos.obtener(R.string.texto_conversacion)
+        persona?.let { Cuentas.nombreParaMostrar(it) } ?: Textos.obtener(R.string.texto_conversacion)
     }
     val ultimo = chat.mensajes.lastOrNull()?.texto ?: Textos.obtener(R.string.texto_sin_mensajes_todavia)
     ListItem(
+        leadingContent = { AvatarChat(if (chat.comunidadId != null) grupo?.fotoUri else persona?.fotoUri, nombre, chat.comunidadId != null) },
         headlineContent = { Text(nombre) },
         supportingContent = { Text(ultimo, maxLines = 1) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),

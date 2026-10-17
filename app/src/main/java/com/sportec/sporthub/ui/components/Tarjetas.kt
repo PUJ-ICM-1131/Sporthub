@@ -114,7 +114,7 @@ fun Etiqueta(texto: String, tono: TonoEtiqueta, modifier: Modifier = Modifier) {
     val oscuro = isSystemInDarkTheme()
     val (contenedor, contenido) = when (tono) {
         TonoEtiqueta.VERDE -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
-        TonoEtiqueta.AMBAR -> (if (oscuro) CalidoOscuro else Calido) to CalidoTexto
+        TonoEtiqueta.AMBAR -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
         TonoEtiqueta.ROJO -> (if (oscuro) RojoTenueOscuro else RojoTenue) to (if (oscuro) RojoClaro else RojoTenueTexto)
         TonoEtiqueta.GRIS -> (if (oscuro) GrisTenueOscuro else GrisTenue) to (if (oscuro) TenueOscuro else GrisTenueTexto)
     }
@@ -157,7 +157,7 @@ fun TarjetaActividad(
     ) {
         IlustracionActividad(item.actividad)
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = item.actividad.nombre,
                     style = MaterialTheme.typography.titleMedium,
@@ -189,7 +189,8 @@ fun TarjetaTint(
     contenido: @Composable ColumnScope.() -> Unit
 ) {
     Surface(
-        color = VerdeTinte,
+        color = if (isSystemInDarkTheme()) MaterialTheme.colorScheme.surfaceContainerHigh else VerdeTinte,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         shape = RoundedCornerShape(17.dp),
         modifier = modifier.fillMaxWidth()
     ) {

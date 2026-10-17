@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.comun
 
+import com.sportec.sporthub.ui.components.SelectorFoto
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.remember
 import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Textos
 import androidx.compose.ui.res.stringResource
@@ -15,6 +19,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -31,6 +37,7 @@ fun CrearComunidadScreen(
     viewModel: CrearComunidadViewModel = viewModel()
 ) {
     val estado by viewModel.uiState.collectAsState()
+    var procesandoFoto by remember { mutableStateOf(false) }
 
     LaunchedEffect(estado.creadaId) { estado.creadaId?.let(onCreada) }
 
@@ -39,9 +46,12 @@ fun CrearComunidadScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Text(stringResource(R.string.comunidad_foto))
+            SelectorFoto(estado.fotoUri, viewModel::onFotoCambiada, onProcesando = { procesandoFoto = it })
             OutlinedTextField(
                 value = estado.nombre,
                 onValueChange = viewModel::onNombreCambiado,
@@ -58,7 +68,7 @@ fun CrearComunidadScreen(
             if (estado.error != null) {
                 Aviso(texto = estado.error ?: "", tipo = TipoAviso.ERROR)
             }
-            Button(onClick = { viewModel.crear(creadorId) }, modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = { viewModel.crear(creadorId) }, enabled = !procesandoFoto, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.texto_crear_comunidad))
             }
         }

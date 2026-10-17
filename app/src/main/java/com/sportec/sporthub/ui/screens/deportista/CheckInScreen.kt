@@ -1,5 +1,10 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import coil3.compose.AsyncImage
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.layout.ContentScale
 import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Textos
 import androidx.compose.ui.res.stringResource
@@ -50,6 +55,7 @@ fun CheckInScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -60,6 +66,14 @@ fun CheckInScreen(
             )
             if (reserva.llegada) {
                 Aviso(texto = stringResource(R.string.checkin_registrada), tipo = TipoAviso.NORMAL)
+            }
+            reserva.fotoLlegada?.let { uri ->
+                AsyncImage(
+                    model = uri,
+                    contentDescription = stringResource(R.string.foto_llegada_titulo),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxWidth().height(180.dp)
+                )
             }
             if (error != null) {
                 Aviso(texto = error ?: "", tipo = TipoAviso.ERROR)

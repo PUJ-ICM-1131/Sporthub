@@ -31,8 +31,11 @@ class EditarPerfilViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(EditarPerfilUiState())
     val uiState: StateFlow<EditarPerfilUiState> = _uiState.asStateFlow()
 
+    private var cuentaCargada: String? = null
+
     fun cargar(cuenta: Cuenta) {
-        if (_uiState.value.guardada != null) return
+        if (cuentaCargada == cuenta.id) return
+        cuentaCargada = cuenta.id
         val negocio = cuenta.negocioId?.let { Negocios.negocioDe(it) }
         _uiState.value = EditarPerfilUiState(
             nombre = cuenta.nombre,

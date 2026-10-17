@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.comun
 
+import com.sportec.sporthub.ui.components.SelectorFoto
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.remember
 import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Textos
 import androidx.compose.ui.res.stringResource
@@ -37,6 +41,8 @@ fun EditarComunidadScreen(
     val comunidad = comunidades.firstOrNull { it.id == comunidadId }
     var nombre by rememberSaveable { mutableStateOf(comunidad?.nombre.orEmpty()) }
     var descripcion by rememberSaveable { mutableStateOf(comunidad?.descripcion.orEmpty()) }
+    var fotoUri by rememberSaveable(comunidadId) { mutableStateOf(comunidad?.fotoUri) }
+    var procesandoFoto by remember { mutableStateOf(false) }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
 
     PantallaBase(titulo = Textos.obtener(R.string.comunidad_editar_titulo), onBack = onBack) { padding ->
@@ -47,13 +53,20 @@ fun EditarComunidadScreen(
             )
             return@PantallaBase
         }
+        if (comunidad.adminId != usuarioId) {
+            EstadoVacio(mensaje = stringResource(R.string.comunidad_solo_admin), modifier = Modifier.padding(padding))
+            return@PantallaBase
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Text(stringResource(R.string.comunidad_foto))
+            SelectorFoto(fotoUri, { fotoUri = it }, onProcesando = { procesandoFoto = it })
             OutlinedTextField(
                 value = nombre,
                 onValueChange = { nombre = it },
@@ -70,9 +83,10 @@ fun EditarComunidadScreen(
                 Aviso(texto = error ?: "", tipo = TipoAviso.ERROR)
             }
             Button(
+                enabled = !procesandoFoto,
                 onClick = {
                     try {
-                        Comunidades.editar(comunidadId, nombre, descripcion, usuarioId)
+                        Comunidades.editar(comunidadId, nombre, descripcion, usuarioId, fotoUri)
                         onGuardada()
                     } catch (e: Exception) {
                         error = e.message

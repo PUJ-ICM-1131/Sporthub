@@ -1,5 +1,6 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import androidx.compose.runtime.remember
 import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Textos
 import androidx.compose.ui.res.stringResource
@@ -36,7 +37,8 @@ fun FotoLlegadaScreen(
 ) {
     val reservas by Reservas.reservas.collectAsState()
     val reserva = reservas.firstOrNull { it.id == reservaId }
-    var foto by rememberSaveable { mutableStateOf(reserva?.fotoLlegada) }
+    var procesandoFoto by remember { mutableStateOf(false) }
+    var foto by rememberSaveable(reservaId, usuarioId) { mutableStateOf(reserva?.fotoLlegada) }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
     val sinFoto = stringResource(R.string.foto_llegada_sin_foto)
 
@@ -62,13 +64,15 @@ fun FotoLlegadaScreen(
             )
             SelectorFoto(
                 fotoUri = foto,
-                onFotoSeleccionada = { foto = it },
+                onFotoSeleccionada = { foto = it; error = null },
+                onProcesando = { procesandoFoto = it },
                 modifier = Modifier.fillMaxWidth()
             )
             if (error != null) {
                 Aviso(texto = error ?: "", tipo = TipoAviso.ERROR)
             }
             Button(
+                enabled = !procesandoFoto,
                 onClick = {
                     val elegida = foto
                     if (elegida == null) {

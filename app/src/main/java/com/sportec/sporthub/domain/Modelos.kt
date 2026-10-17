@@ -82,7 +82,8 @@ data class Actividad(
     val politica: Politica = Politica(),
     val horaApertura: Int = 6,
     val horaCierre: Int = 21,
-    val fotoUri: String? = null
+    val fotoUri: String? = null,
+    val fotos: List<String> = listOfNotNull(fotoUri)
 )
 
 data class ActividadConNegocio(
@@ -205,7 +206,8 @@ data class Comunidad(
     val descripcion: String,
     val creadorId: String,
     val adminId: String,
-    val miembros: List<String>
+    val miembros: List<String>,
+    val fotoUri: String? = null
 )
 
 data class Mensaje(

@@ -55,6 +55,7 @@ fun EditarServicioScreen(
     viewModel: EditarServicioViewModel = viewModel()
 ) {
     val estado by viewModel.uiState.collectAsState()
+    var procesandoFoto by remember { mutableStateOf(false) }
     var menuCategoria by remember { mutableStateOf(false) }
     var menuApertura by remember { mutableStateOf(false) }
     var menuCierre by remember { mutableStateOf(false) }
@@ -76,7 +77,9 @@ fun EditarServicioScreen(
         ) {
             TituloBloque(stringResource(R.string.servicio_bloque_datos))
 
-            SelectorFoto(fotoUri = estado.fotoUri, onFotoSeleccionada = viewModel::onFotoCambiada)
+            com.sportec.sporthub.ui.components.CarruselFotos(estado.fotos, viewModel::quitarFoto)
+            Text(stringResource(R.string.fotos_ayuda))
+            if (estado.fotos.size < 8) SelectorFoto(fotoUri = null, onFotoSeleccionada = viewModel::onFotoCambiada, onProcesando = { procesandoFoto = it })
             OutlinedTextField(
                 value = estado.nombre,
                 onValueChange = viewModel::onNombreCambiado,
@@ -261,6 +264,7 @@ fun EditarServicioScreen(
             }
             Button(
                 onClick = { viewModel.guardar(cuenta?.negocioId.orEmpty(), cuenta?.id.orEmpty()) },
+                enabled = !procesandoFoto,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.servicio_guardar_todo))

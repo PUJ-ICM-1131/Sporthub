@@ -11,7 +11,37 @@ import kotlinx.coroutines.flow.asStateFlow
 
 data class Origen(val nombre: String, val latitud: Double, val longitud: Double)
 
+data class PosicionActual(
+    val latitud: Double,
+    val longitud: Double,
+    val instante: Long,
+    val precisionMetros: Float? = null
+) {
+    fun esFiable(ahora: Long): Boolean =
+        latitud.isFinite() && longitud.isFinite() &&
+            latitud in -90.0..90.0 && longitud in -180.0..180.0 &&
+            instante > 0 && instante <= ahora && ahora - instante <= 30000L &&
+            precisionMetros != null && precisionMetros.isFinite() &&
+            precisionMetros > 0f && precisionMetros <= 50f
+}
+
 object Ubicacion {
+    private val _posicionActual = MutableStateFlow<PosicionActual?>(null)
+    val posicionActual: StateFlow<PosicionActual?> = _posicionActual.asStateFlow()
+
+    fun actualizarPosicion(latitud: Double, longitud: Double, instante: Long = System.currentTimeMillis(), precisionMetros: Float? = null) {
+        if (latitud.isFinite() && longitud.isFinite() && latitud in -90.0..90.0 && longitud in -180.0..180.0) {
+            if (instante > System.currentTimeMillis() || instante <= 0L) return
+            val anterior = _posicionActual.value
+            if (anterior != null && instante < anterior.instante) return
+            _posicionActual.value = PosicionActual(latitud, longitud, instante, precisionMetros)
+        }
+    }
+
+    fun borrarPosicion() {
+        _posicionActual.value = null
+    }
+
 
     val PRESETS = listOf(
         Origen(Textos.obtener(R.string.texto_centro_de_bogota), 4.6486, -74.0813),

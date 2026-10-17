@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -86,13 +87,14 @@ fun ExplorarScreen(
             }
             item {
                 Row(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(text = stringResource(R.string.texto_encuentra_tu_actividad),
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.weight(1f)
                     )
-                    TextButton(onClick = { onNavegar(Buscar) }) { Text(stringResource(R.string.texto_ver_todas)) }
+                    TextButton(onClick = { onNavegar(Buscar) }) { Text(stringResource(R.string.texto_ver_todas), maxLines = 1, softWrap = false) }
                 }
             }
             item {
@@ -115,13 +117,14 @@ fun ExplorarScreen(
             }
             item {
                 Row(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(text = stringResource(R.string.texto_planes_para_esta_semana),
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.weight(1f)
                     )
-                    TextButton(onClick = { onNavegar(Mapa) }) { Text(stringResource(R.string.texto_mapa)) }
+                    TextButton(onClick = { onNavegar(Mapa) }) { Text(stringResource(R.string.texto_mapa), maxLines = 1, softWrap = false) }
                 }
             }
             if (estado.actividades.isEmpty()) {

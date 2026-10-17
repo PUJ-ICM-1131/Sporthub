@@ -45,6 +45,7 @@ object Transferencias {
         }
         val nueva = Transferencia(uid("t"), reservaId, usuarioId, reserva.pagoId ?: "", EstadoTransferencia.PUBLICADA)
         _transferencias.value = _transferencias.value + nueva
+        Notificaciones.evento(usuarioId, R.string.aviso_transferencia_publicada, "transfer", nueva.id)
         return nueva
     }
 
@@ -71,6 +72,9 @@ object Transferencias {
         val nuevo = Postulante(uid("st"), usuarioId, EstadoPostulante.FILA)
         _transferencias.value = _transferencias.value.map { if (it.id == transferenciaId) it.copy(postulantes = it.postulantes + nuevo) else it }
         avanzar(transferenciaId)
+        Notificaciones.evento(usuarioId, R.string.aviso_transferencia_solicitada, "transfer", transferenciaId)
+        Notificaciones.evento(transferencia.propietarioId, R.string.aviso_transferencia_interesado, "transfer", transferenciaId)
+        Notificaciones.evento(Negocios.operadorDe(Negocios.actividadDe(reserva.actividadId)!!.negocioId), R.string.aviso_transferencia_interesado)
     }
 
     fun aprobar(transferenciaId: String, operadorId: String) {
@@ -79,6 +83,7 @@ object Transferencias {
         val actividad = Negocios.actividadDe(reserva.actividadId)!!
         val candidato = transferencia.postulantes.firstOrNull { it.estado == EstadoPostulante.REVISION }
             ?: throw IllegalStateException(Textos.obtener(R.string.texto_no_hay_un_interesado_por_aprobar))
+        Notificaciones.evento(candidato.usuarioId, R.string.aviso_transferencia_aprobada, "transfer", transferenciaId)
         val deadline = minOf(Reservas.ahora() + reserva.politica.payMinutes * 60_000L, Reservas.inicioMillis(reserva.fecha, reserva.hora))
         _transferencias.value = _transferencias.value.map {
             if (it.id == transferenciaId) it.copy(
@@ -96,6 +101,7 @@ object Transferencias {
         _transferencias.value = _transferencias.value.map {
             if (it.id == transferenciaId) it.copy(postulantes = it.postulantes.map { p -> if (p.id == postulanteId) p.copy(estado = EstadoPostulante.RETIRADA) else p }) else it
         }
+        Notificaciones.evento(postulante.usuarioId, R.string.aviso_transferencia_rechazada, "transfer", transferenciaId)
         avanzar(transferenciaId)
     }
 
@@ -123,6 +129,9 @@ object Transferencias {
                 }
             ) else it
         }
+        Notificaciones.evento(usuarioId, R.string.aviso_transferencia_completa, "reservation", reserva.id)
+        Notificaciones.evento(transferencia.propietarioId, R.string.aviso_transferencia_completa, "transfer", transferenciaId)
+        Notificaciones.evento(Negocios.operadorDe(Negocios.actividadDe(reserva.actividadId)!!.negocioId), R.string.aviso_transferencia_completa)
         return reservaActualizada
     }
 
@@ -131,5 +140,8 @@ object Transferencias {
         if (transferencia.propietarioId != usuarioId) throw IllegalStateException(Textos.obtener(R.string.texto_no_puedes_retirar_esta_publicacion))
         if (transferencia.postulantes.any { it.estado == EstadoPostulante.PAGO }) throw IllegalStateException(Textos.obtener(R.string.texto_hay_un_turno_de_pago_activo_espera_su_resultado))
         _transferencias.value = _transferencias.value.map { if (it.id == transferenciaId) it.copy(estado = EstadoTransferencia.RETIRADA) else it }
+        (transferencia.postulantes.map { it.usuarioId } + usuarioId).distinct().forEach {
+            Notificaciones.evento(it, R.string.aviso_transferencia_retirada, "transfer", transferenciaId)
+        }
     }
 }

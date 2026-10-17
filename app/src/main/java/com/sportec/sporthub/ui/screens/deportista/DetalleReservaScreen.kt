@@ -39,6 +39,7 @@ fun DetalleReservaScreen(
     onPublicarTransferencia: (String) -> Unit,
     onVerTransferencia: (String) -> Unit,
     onCalificar: (String) -> Unit,
+    onRegistrarLlegada: (String) -> Unit,
     viewModel: DetalleReservaViewModel = viewModel()
 ) {
     val estado by viewModel.uiState.collectAsState()
@@ -76,6 +77,11 @@ fun DetalleReservaScreen(
                             Textos.obtener(R.string.texto_codigo) to reserva.id.uppercase()
                         )
                     )
+                    if (esCancelable) {
+                        OutlinedButton(onClick = { onRegistrarLlegada(reserva.id) }, modifier = Modifier.fillMaxWidth()) {
+                            Text(stringResource(R.string.texto_registrar_llegada))
+                        }
+                    }
                     if (esCancelable && reserva.politica.transferable && estado.transferenciaId == null) {
                         OutlinedButton(onClick = { onPublicarTransferencia(reserva.id) }, modifier = Modifier.fillMaxWidth()) {
                             Text(stringResource(R.string.texto_publicar_transferencia))

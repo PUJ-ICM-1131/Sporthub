@@ -1,5 +1,6 @@
 package com.sportec.sporthub.ui.screens.establecimiento
 
+import com.sportec.sporthub.ui.components.IlustracionActividad
 import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Textos
 import androidx.compose.ui.res.stringResource
@@ -92,6 +93,7 @@ fun ServiciosScreen(
             ) {
                 items(filtradas, key = { it.id }) { actividad ->
                     ElevatedCard(onClick = { onEditarServicio(actividad.id) }, modifier = Modifier.fillMaxWidth()) {
+                        if (actividad.fotoUri != null) IlustracionActividad(actividad)
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(

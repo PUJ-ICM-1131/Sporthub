@@ -18,6 +18,14 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.stringResource
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import com.sportec.sporthub.domain.Comunidades
+import com.sportec.sporthub.navigation.Comunidad
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -41,31 +49,42 @@ fun NotificacionesScreen(
     onNavegar: (NavKey) -> Unit
 ) {
     val notificaciones by Notificaciones.notificaciones.collectAsState()
+    val invitaciones by Comunidades.invitaciones.collectAsState()
     val propias = notificaciones.filter { it.usuarioId == usuarioId }
-
+    var error by remember { mutableStateOf<String?>(null) }
     PantallaBase(titulo = Textos.obtener(R.string.texto_notificaciones), onBack = onBack) { padding ->
-        if (propias.isEmpty()) {
-            EstadoVacio(mensaje = Textos.obtener(R.string.texto_por_ahora_estas_al_dia), modifier = Modifier.padding(padding))
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                items(propias, key = { it.id }) { notificacion ->
-                    ItemNotificacion(notificacion) {
-                        Notificaciones.marcarLeida(notificacion.id)
-                        val destino = when (notificacion.ruta) {
-                            "request" -> notificacion.argumento?.let { DetalleSolicitud(it) }
-                            "reservation" -> notificacion.argumento?.let { DetalleReserva(it) }
-                            "transfer" -> notificacion.argumento?.let { DetalleTransferencia(it) }
-                            else -> null
-                        }
-                        destino?.let(onNavegar)
+        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp)) {
+            item {
+                Text(stringResource(R.string.avisos_explicacion))
+            }
+            if (error != null) item { Text(error.orEmpty(), color = MaterialTheme.colorScheme.error) }
+            if (propias.isEmpty()) item { Text(stringResource(R.string.texto_por_ahora_estas_al_dia)) }
+            items(propias, key = { it.id }) { aviso ->
+                ItemNotificacion(aviso) {
+                    Notificaciones.marcarLeida(aviso.id)
+                    val destino = when (aviso.ruta) {
+                        "request" -> aviso.argumento?.let { DetalleSolicitud(it) }
+                        "reservation" -> aviso.argumento?.let { DetalleReserva(it) }
+                        "transfer" -> aviso.argumento?.let { DetalleTransferencia(it) }
+                        else -> null
                     }
-                    HorizontalDivider()
+                    destino?.let(onNavegar)
                 }
+                val invitacion = invitaciones.firstOrNull { it.id == aviso.argumento && it.puedeResponder(usuarioId) }
+                if (aviso.ruta == "invitation" && invitacion != null) {
+                    Row {
+                        listOf(true, false).forEach { aceptar ->
+                            TextButton(onClick = {
+                                try {
+                                    Comunidades.responderInvitacion(invitacion.id, usuarioId, aceptar)
+                                    error = null
+                                    if (aceptar) onNavegar(Comunidad(invitacion.comunidadId))
+                                } catch (e: IllegalArgumentException) { error = e.message }
+                            }) { Text(stringResource(if (aceptar) R.string.invitacion_aceptar else R.string.invitacion_rechazar)) }
+                        }
+                    }
+                }
+                HorizontalDivider()
             }
         }
     }

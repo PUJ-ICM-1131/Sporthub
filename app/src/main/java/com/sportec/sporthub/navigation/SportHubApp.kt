@@ -50,7 +50,6 @@ import com.sportec.sporthub.ui.screens.comun.MensajesScreen
 import com.sportec.sporthub.ui.screens.comun.NotificacionesScreen
 import com.sportec.sporthub.ui.screens.comun.NuevoChatScreen
 import com.sportec.sporthub.ui.screens.comun.PantallaPendiente
-import com.sportec.sporthub.ui.screens.comun.PermisoScreen
 import com.sportec.sporthub.ui.screens.comun.PerfilScreen
 import com.sportec.sporthub.ui.screens.comun.SucesionScreen
 import com.sportec.sporthub.ui.screens.comun.ReportarScreen
@@ -95,7 +94,10 @@ import com.sportec.sporthub.ui.screens.establecimiento.ValidacionNegocioScreen
 fun SportHubApp(
     sesionViewModel: SesionViewModel = viewModel()
 ) {
+    val destinatarioAviso by com.sportec.sporthub.utils.EntradaNotificacion.destinatario.collectAsState()
     val cuenta by sesionViewModel.cuenta.collectAsState()
+    com.sportec.sporthub.ui.components.PermisoNotificacionesAlEntrar(cuenta?.id)
+    com.sportec.sporthub.ui.components.AvisosSistema(cuenta?.id)
     val backStack = rememberNavBackStack(Bienvenida)
     val actividad = LocalActivity.current
 
@@ -134,6 +136,13 @@ fun SportHubApp(
     LaunchedEffect(cuenta) {
         if (cuenta == null && backStack.lastOrNull() !is RutaAcceso) {
             reiniciarEn(Bienvenida)
+        }
+    }
+
+    LaunchedEffect(destinatarioAviso, cuenta?.id) {
+        if (destinatarioAviso != null && destinatarioAviso == cuenta?.id) {
+            irA(Notificaciones)
+            com.sportec.sporthub.utils.EntradaNotificacion.destinatario.value = null
         }
     }
 
@@ -347,7 +356,8 @@ fun SportHubApp(
                         onCancelar = { id -> irA(CancelarReserva(id)) },
                         onPublicarTransferencia = { id -> irA(PublicarTransferencia(id)) },
                         onVerTransferencia = { id -> irA(DetalleTransferencia(id)) },
-                        onCalificar = { id -> irA(Resena(id)) }
+                        onCalificar = { id -> irA(Resena(id)) },
+                        onRegistrarLlegada = { id -> irA(CheckIn(id)) }
                     )
                 }
                 entry<Resena> { ruta ->
@@ -389,13 +399,6 @@ fun SportHubApp(
                 }
                 entry<Origen> {
                     OrigenScreen(onBack = { volver() })
-                }
-                entry<Permiso> { ruta ->
-                    PermisoScreen(
-                        tipo = ruta.tipo,
-                        onBack = { volver() },
-                        onResuelto = { volver() }
-                    )
                 }
                 entry<Ruta> { ruta ->
                     RutaScreen(
@@ -549,7 +552,8 @@ fun SportHubApp(
                         chatId = ruta.id,
                         usuarioId = cuenta?.id.orEmpty(),
                         onBack = { volver() },
-                        onReportar = { irA(Reportar("mensaje")) }
+                        onReportar = { irA(Reportar("mensaje")) },
+                        onVerComunidad = { id -> irA(Comunidad(id)) }
                     )
                 }
                 entry<Reportar> { ruta ->

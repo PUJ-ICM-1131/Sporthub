@@ -1,5 +1,6 @@
 package com.sportec.sporthub.domain
 
+import com.sportec.sporthub.utils.FotosLocales
 import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Textos
 
@@ -10,10 +11,9 @@ import kotlinx.coroutines.flow.asStateFlow
 
 object Cuentas {
 
-    private var secuencia = 1000
-    private fun uid() = "u" + (++secuencia)
+    private fun uid() = "u" + java.util.UUID.randomUUID().toString()
 
-    private val _cuentas = MutableStateFlow(DatosMock.cuentas)
+    private val _cuentas = MutableStateFlow(DatosMock.cuentas.map { it.copy(fotoUri = FotosLocales.obtener("cuenta", it.id) ?: it.fotoUri) })
     val cuentas: StateFlow<List<Cuenta>> = _cuentas.asStateFlow()
 
     fun todas(): List<Cuenta> = _cuentas.value
@@ -45,6 +45,7 @@ object Cuentas {
     }
 
     fun actualizar(cuenta: Cuenta) {
+        FotosLocales.asociar("cuenta", cuenta.id, cuenta.fotoUri)
         _cuentas.value = _cuentas.value.map { if (it.id == cuenta.id) cuenta else it }
     }
 

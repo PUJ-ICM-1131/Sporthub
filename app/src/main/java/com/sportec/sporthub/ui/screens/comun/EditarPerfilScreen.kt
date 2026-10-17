@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.comun
 
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Textos
 import androidx.compose.ui.res.stringResource
@@ -41,6 +44,7 @@ fun EditarPerfilScreen(
     viewModel: EditarPerfilViewModel = viewModel()
 ) {
     val estado by viewModel.uiState.collectAsState()
+    var procesandoFoto by remember { mutableStateOf(false) }
 
     LaunchedEffect(cuenta?.id) { cuenta?.let(viewModel::cargar) }
     LaunchedEffect(estado.guardada) {
@@ -72,6 +76,7 @@ fun EditarPerfilScreen(
             SelectorFoto(
                 fotoUri = estado.fotoUri,
                 onFotoSeleccionada = viewModel::onFotoCambiada,
+                onProcesando = { procesandoFoto = it },
                 forma = CircleShape,
                 alto = 120.dp,
                 modifier = Modifier
@@ -135,6 +140,7 @@ fun EditarPerfilScreen(
             }
             Button(
                 onClick = { cuenta?.let(viewModel::guardar) },
+                enabled = !procesandoFoto,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.texto_guardar_cambios))

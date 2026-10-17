@@ -25,13 +25,14 @@ fun PantallaBase(
     titulo: String,
     onBack: (() -> Unit)? = null,
     acciones: @Composable RowScope.() -> Unit = {},
+    tituloContenido: (@Composable () -> Unit)? = null,
     contenido: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
+                    if (tituloContenido != null) tituloContenido() else Text(
                         text = titulo,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,

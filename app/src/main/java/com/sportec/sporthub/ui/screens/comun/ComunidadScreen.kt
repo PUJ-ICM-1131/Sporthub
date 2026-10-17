@@ -1,5 +1,6 @@
 package com.sportec.sporthub.ui.screens.comun
 
+import com.sportec.sporthub.ui.components.AvatarChat
 import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Textos
 import androidx.compose.ui.res.stringResource
@@ -39,10 +40,11 @@ fun ComunidadScreen(
     onCeder: () -> Unit
 ) {
     val comunidades by Comunidades.comunidades.collectAsState()
+    val cuentas by Cuentas.cuentas.collectAsState()
     val comunidad = comunidades.firstOrNull { it.id == comunidadId }
 
     PantallaBase(titulo = Textos.obtener(R.string.comunidad_titulo), onBack = onBack) { padding ->
-        if (comunidad == null) {
+        if (comunidad == null || usuarioId !in comunidad.miembros) {
             EstadoVacio(
                 mensaje = stringResource(R.string.comunidad_no_encontrada),
                 modifier = Modifier.padding(padding)
@@ -57,6 +59,7 @@ fun ComunidadScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item { AvatarChat(comunidad.fotoUri, comunidad.nombre, true, 96.dp) }
             item {
                 Text(
                     text = comunidad.nombre,
@@ -101,8 +104,9 @@ fun ComunidadScreen(
                 )
             }
             items(comunidad.miembros) { miembroId ->
-                val cuenta = Cuentas.porId(miembroId)
+                val cuenta = cuentas.firstOrNull { it.id == miembroId }
                 ListItem(
+                    leadingContent = { AvatarChat(cuenta?.fotoUri, cuenta?.nombre.orEmpty()) },
                     headlineContent = { Text(cuenta?.let { Cuentas.nombreParaMostrar(it) }.orEmpty()) },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                 )

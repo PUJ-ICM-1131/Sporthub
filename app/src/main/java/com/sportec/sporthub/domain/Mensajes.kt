@@ -23,6 +23,7 @@ object Mensajes {
     fun listarDe(usuarioId: String): List<Chat> = _chats.value.filter { esMiembro(it, usuarioId) }
 
     fun crearGrupo(comunidadId: String): Chat {
+        _chats.value.firstOrNull { it.comunidadId == comunidadId }?.let { return it }
         val nuevo = Chat(comunidadId, comunidadId = comunidadId, mensajes = emptyList())
         _chats.value = _chats.value + nuevo
         return nuevo
@@ -52,6 +53,10 @@ object Mensajes {
         if (!esMiembro(chat, autorId)) throw IllegalStateException(Textos.obtener(R.string.texto_no_tienes_acceso_a_esta_conversacion))
         val actualizado = chat.copy(mensajes = chat.mensajes + Mensaje(uid("m"), autorId, texto))
         _chats.value = _chats.value.map { if (it.id == chatId) actualizado else it }
+        val destinatarios = chat.comunidadId?.let { Comunidades.comunidadDe(it)?.miembros } ?: chat.miembros
+        destinatarios.orEmpty().filter { it != autorId }.forEach {
+            Notificaciones.evento(it, R.string.aviso_mensaje_nuevo)
+        }
         return actualizado
     }
 }
