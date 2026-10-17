@@ -19,7 +19,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -67,6 +69,8 @@ fun PerfilScreen(
     onNavegar: (NavKey) -> Unit,
     onCerrarSesion: () -> Unit
 ) {
+    var menuAbierto by rememberSaveable { mutableStateOf(false) }
+    val opciones = opcionesPerfil(cuenta?.rol).filter { it.ruta != Notificaciones }
     var confirmarSalida by rememberSaveable { mutableStateOf(false) }
     val titulo = if (cuenta?.rol == Rol.DEPORTISTA) Textos.obtener(R.string.texto_perfil) else Textos.obtener(R.string.texto_cuenta)
     val negocio = cuenta?.negocioId?.let { Negocios.negocioDe(it) }
@@ -75,9 +79,7 @@ fun PerfilScreen(
     PantallaBase(
         titulo = titulo,
         acciones = {
-            IconButton(onClick = { onNavegar(Notificaciones) }) {
-                Icon(Icons.Filled.Notifications, contentDescription = Textos.obtener(R.string.texto_notificaciones))
-            }
+            com.sportec.sporthub.ui.components.CampanaNotificaciones(cuenta?.id) { onNavegar(Notificaciones) }
         }
     ) { padding ->
         LazyColumn(
@@ -138,6 +140,21 @@ fun PerfilScreen(
                         )
                         Etiqueta(texto = cuenta?.rol?.etiqueta.orEmpty())
                     }
+                    if (opciones.isNotEmpty()) {
+                        Box(Modifier.align(Alignment.TopEnd).padding(4.dp)) {
+                            IconButton(onClick = { menuAbierto = true }) {
+                                Icon(Icons.Filled.MoreVert, stringResource(R.string.perfil_mas_opciones), tint = Color.White)
+                            }
+                            DropdownMenu(expanded = menuAbierto, onDismissRequest = { menuAbierto = false }) {
+                                opciones.forEach { destino ->
+                                    DropdownMenuItem(text = { Text(destino.etiqueta) }, onClick = {
+                                        menuAbierto = false
+                                        onNavegar(destino.ruta)
+                                    })
+                                }
+                            }
+                        }
+                    }
                 }
             }
             if (negocio != null) {
@@ -183,11 +200,6 @@ fun PerfilScreen(
                             if (negocio != null) stringResource(R.string.perfil_editar_cuenta)
                             else stringResource(R.string.texto_editar_mis_datos)
                         )
-                    }
-                    opcionesPerfil(cuenta?.rol).forEach { destino ->
-                        OutlinedButton(onClick = { onNavegar(destino.ruta) }, modifier = Modifier.fillMaxWidth()) {
-                            Text(destino.etiqueta)
-                        }
                     }
                     OutlinedButton(
                         onClick = { confirmarSalida = true },

@@ -810,4 +810,7 @@
     <string name="aviso_mensaje_nuevo">Tienes un mensaje nuevo en SportHub.</string>
     <string name="camara_permiso_denegado">Para tomar una fotografía permite el acceso a la cámara. Puedes cambiarlo en Ajustes o elegir una imagen de la galería.</string>
     <string name="camara_abrir_ajustes">Abrir Ajustes</string>
+    <string name="notificaciones_sin_leer">Notificaciones sin leer</string>
+    <string name="perfil_mas_opciones">Más opciones del perfil</string>
+    <string name="ocultar_horarios">Ocultar horarios</string>
 </resources>

@@ -128,8 +128,10 @@ fun MisReservasScreen(
 
 @Composable
 private fun TarjetaSolicitud(solicitud: Solicitud, onClick: () -> Unit) {
-    val actividad = Negocios.actividadDe(solicitud.actividadId)
+    val actividades by Negocios.actividades.collectAsState()
+    val actividad = actividades.firstOrNull { it.id == solicitud.actividadId }
     ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        actividad?.let { com.sportec.sporthub.ui.components.IlustracionActividad(it) }
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
@@ -152,8 +154,10 @@ private fun TarjetaSolicitud(solicitud: Solicitud, onClick: () -> Unit) {
 
 @Composable
 private fun TarjetaReserva(reserva: Reserva, onClick: () -> Unit) {
-    val actividad = Negocios.actividadDe(reserva.actividadId)
+    val actividades by Negocios.actividades.collectAsState()
+    val actividad = actividades.firstOrNull { it.id == reserva.actividadId }
     ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        actividad?.let { com.sportec.sporthub.ui.components.IlustracionActividad(it) }
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
@@ -177,8 +181,10 @@ private fun TarjetaReserva(reserva: Reserva, onClick: () -> Unit) {
 @Composable
 private fun TarjetaTransferenciaReserva(transferencia: Transferencia, onClick: () -> Unit) {
     val reserva = Reservas.obtenerReserva(transferencia.reservaId)
-    val actividad = reserva?.let { Negocios.actividadDe(it.actividadId) }
+    val actividades by Negocios.actividades.collectAsState()
+    val actividad = actividades.firstOrNull { it.id == reserva?.actividadId }
     ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        actividad?.let { com.sportec.sporthub.ui.components.IlustracionActividad(it) }
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(

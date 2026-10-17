@@ -46,6 +46,7 @@ import com.sportec.sporthub.ui.components.TarjetaTint
 @Composable
 fun ExplorarScreen(
     nombre: String,
+    usuarioId: String,
     onNavegar: (NavKey) -> Unit,
     viewModel: ExplorarViewModel = viewModel()
 ) {
@@ -54,9 +55,7 @@ fun ExplorarScreen(
     PantallaBase(
         titulo = Textos.obtener(R.string.texto_explorar),
         acciones = {
-            IconButton(onClick = { onNavegar(Notificaciones) }) {
-                Icon(Icons.Filled.Notifications, contentDescription = Textos.obtener(R.string.texto_notificaciones))
-            }
+            com.sportec.sporthub.ui.components.CampanaNotificaciones(usuarioId) { onNavegar(Notificaciones) }
         }
     ) { padding ->
         LazyColumn(
