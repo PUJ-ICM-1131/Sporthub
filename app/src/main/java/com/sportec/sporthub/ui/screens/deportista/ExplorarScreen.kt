@@ -135,7 +135,8 @@ fun ExplorarScreen(
                             Box(modifier = Modifier.width(254.dp)) {
                                 TarjetaActividad(
                                     item = item,
-                                    onClick = { onNavegar(DetalleActividad(item.actividad.id)) }
+                                    onClick = { onNavegar(DetalleActividad(item.actividad.id)) },
+                                    uniforme = true
                                 )
                             }
                         }

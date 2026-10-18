@@ -60,12 +60,12 @@ import kotlin.math.roundToInt
 fun RutaScreen(
     negocioId: String,
     onBack: () -> Unit,
-    onCambiarOrigen: () -> Unit,
     onBrujula: () -> Unit
 ) {
     SeguimientoUbicacion()
     val negocio = Negocios.negocioDe(negocioId)
     val origen by Ubicacion.origen.collectAsState()
+    val origenDefinido by Ubicacion.origenDefinido.collectAsState()
     val posicion by Ubicacion.posicionActual.collectAsState()
     val modo by Trayectos.modo.collectAsState()
     val guardado by Trayectos.actual.collectAsState()
@@ -74,11 +74,11 @@ fun RutaScreen(
     var calculando by remember { mutableStateOf(false) }
 
     val inicio = Coordenada(origen.latitud, origen.longitud)
-    val trayecto = if (negocio == null) null else Trayectos.vigente(negocioId, modo, inicio, guardado)
+    val trayecto = if (negocio == null || !origenDefinido) null else Trayectos.vigente(negocioId, modo, inicio, guardado)
 
     LaunchedEffect(negocioId) { Ubicacion.fijarDestino(negocioId) }
-    LaunchedEffect(negocioId, modo, trayecto == null) {
-        if (negocio == null || trayecto != null) return@LaunchedEffect
+    LaunchedEffect(negocioId, modo, origenDefinido, trayecto == null) {
+        if (negocio == null || !origenDefinido || trayecto != null) return@LaunchedEffect
         calculando = true
         try {
             val actual = Ubicacion.origen.value
@@ -98,7 +98,9 @@ fun RutaScreen(
             return@PantallaBase
         }
         val destino = Coordenada(negocio.latitud, negocio.longitud)
-        val encuadre = remember(trayecto) { trayecto?.puntos.orEmpty().ifEmpty { listOf(inicio, destino) } }
+        val encuadre = remember(trayecto, origenDefinido) {
+            trayecto?.puntos.orEmpty().ifEmpty { if (origenDefinido) listOf(inicio, destino) else listOf(destino) }
+        }
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -135,10 +137,12 @@ fun RutaScreen(
                         origenEsPosicionActual = origen.esPosicionActual,
                         marcadores = listOf(MarcadorMapa(negocio.id, destino, resaltado = true, atenuado = false)),
                         trazado = trayecto?.puntos.orEmpty(),
-                        encuadrarEn = encuadre
+                        encuadrarEn = encuadre,
+                        mostrarOrigen = origenDefinido,
+                        onMarcarOrigen = { punto: Coordenada -> Ubicacion.marcarOrigen(punto.latitud, punto.longitud) }.takeIf { posicion == null }
                     )
                 } else {
-                    TrazadoRuta(trayecto?.puntos ?: listOf(inicio, destino))
+                    TrazadoRuta(trayecto?.puntos ?: if (origenDefinido) listOf(inicio, destino) else listOf(destino, destino))
                 }
             }
             if (calculando) item { LinearProgressIndicator(modifier = Modifier.fillMaxWidth()) }
@@ -149,7 +153,7 @@ fun RutaScreen(
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         DatoRuta(stringResource(R.string.ruta_destino), negocio.direccion)
-                        DatoRuta(stringResource(R.string.ruta_origen), origen.nombre)
+                        if (origenDefinido) DatoRuta(stringResource(R.string.ruta_origen), origen.nombre)
                         if (trayecto != null) {
                             DatoRuta(
                                 stringResource(R.string.ruta_distancia),
@@ -163,7 +167,7 @@ fun RutaScreen(
                     }
                 }
             }
-            item { SeguimientoTrayecto(trayecto, destino, origen.esPosicionActual, posicion?.let { Coordenada(it.latitud, it.longitud) }) }
+            if (origenDefinido) item { SeguimientoTrayecto(trayecto, destino, origen.esPosicionActual, posicion?.let { Coordenada(it.latitud, it.longitud) }) }
             if (trayecto != null) {
                 item {
                     Aviso(
@@ -172,12 +176,8 @@ fun RutaScreen(
                     )
                 }
             }
-            item { PermisoSistema() }
-            item {
-                OutlinedButton(onClick = onCambiarOrigen, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.ruta_cambiar_origen))
-                }
-            }
+            if (!origenDefinido) item { Aviso(texto = stringResource(R.string.ruta_marcar_origen), tipo = TipoAviso.NORMAL) }
+            item { PermisoSistema(solicitarAlEntrar = true) }
             item {
                 OutlinedButton(onClick = onBrujula, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.ruta_brujula))

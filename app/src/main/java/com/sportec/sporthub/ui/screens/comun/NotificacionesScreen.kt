@@ -41,6 +41,7 @@ import com.sportec.sporthub.navigation.DetalleSolicitud
 import com.sportec.sporthub.navigation.DetalleTransferencia
 import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.PantallaBase
+import com.sportec.sporthub.ui.components.PermisoNotificaciones
 
 @Composable
 fun NotificacionesScreen(
@@ -57,6 +58,7 @@ fun NotificacionesScreen(
             item {
                 Text(stringResource(R.string.avisos_explicacion))
             }
+            item { PermisoNotificaciones() }
             if (error != null) item { Text(error.orEmpty(), color = MaterialTheme.colorScheme.error) }
             if (propias.isEmpty()) item { Text(stringResource(R.string.texto_por_ahora_estas_al_dia)) }
             items(propias, key = { it.id }) { aviso ->

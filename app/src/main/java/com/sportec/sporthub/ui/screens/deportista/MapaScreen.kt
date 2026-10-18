@@ -74,12 +74,13 @@ private val CirculoRango = Color(0xFF126B47)
 fun MapaScreen(
     onBack: () -> Unit,
     onVerServicios: (String) -> Unit,
-    onElegirOrigen: () -> Unit,
     onComoLlegar: (String) -> Unit
 ) {
     SeguimientoUbicacion()
     val negocios by Negocios.negocios.collectAsState()
     val origen by Ubicacion.origen.collectAsState()
+    val origenDefinido by Ubicacion.origenDefinido.collectAsState()
+    val posicion by Ubicacion.posicionActual.collectAsState()
     val validados = negocios.filter { it.estado == EstadoNegocio.VALIDADO }
     var seleccionado by rememberSaveable { mutableStateOf<String?>(null) }
     var sinLimite by rememberSaveable { mutableStateOf(false) }
@@ -107,14 +108,11 @@ fun MapaScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = stringResource(R.string.texto_origen_valor, origen.nombre),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f)
-                    )
-                    TextButton(onClick = onElegirOrigen) { Text(stringResource(R.string.texto_elegir_origen)) }
-                }
+                Text(
+                    text = if (origenDefinido) stringResource(R.string.texto_origen_valor, origen.nombre) else stringResource(R.string.ruta_marcar_origen),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             item { PermisoSistema() }
             item {
@@ -130,8 +128,10 @@ fun MapaScreen(
                             MarcadorMapa(it.id, Coordenada(it.latitud, it.longitud), resaltado = it.id == seleccionado, atenuado = visibles.none { v -> v.id == it.id })
                         },
                         onSeleccionar = { seleccionado = it },
-                        radioKm = if (sinLimite) null else rango.toDouble(),
-                        encuadrarEn = encuadre
+                        radioKm = if (sinLimite || !origenDefinido) null else rango.toDouble(),
+                        encuadrarEn = encuadre,
+                        mostrarOrigen = origenDefinido,
+                        onMarcarOrigen = { punto: Coordenada -> Ubicacion.marcarOrigen(punto.latitud, punto.longitud) }.takeIf { posicion == null }
                     )
                 } else {
                     MapaEstatico(

@@ -1,43 +1,50 @@
 package com.sportec.sporthub.utils
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.pm.PackageManager
 import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
 import android.os.Looper
-import androidx.core.content.ContextCompat
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.sportec.sporthub.domain.Ubicacion
 
-class RastreadorUbicacion(private val context: Context) {
-    private val gestor = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+/**
+ * Ubicación con FusedLocationProviderClient (sesión 9): publica la última ubicación conocida y
+ * se suscribe a actualizaciones con un LocationRequest mientras la pantalla está visible.
+ * Quien lo usa debe haber verificado antes el permiso con Accompanist.
+ */
+class RastreadorUbicacion(context: Context) {
+    private val cliente = LocationServices.getFusedLocationProviderClient(context)
     private var activo = false
 
-    private val oyente = LocationListener { publicar(it) }
+    private val solicitud = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, INTERVALO_MS)
+        .setMinUpdateDistanceMeters(DISTANCIA_MINIMA_M)
+        .build()
 
-    fun tienePermiso(): Boolean =
-        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    private val callback = object : LocationCallback() {
+        override fun onLocationResult(resultado: LocationResult) {
+            resultado.lastLocation?.let { publicar(it) }
+        }
+    }
 
     @SuppressLint("MissingPermission")
     fun iniciar() {
-        if (activo || !tienePermiso()) return
-        val proveedores = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
-            .filter { runCatching { gestor.isProviderEnabled(it) }.getOrDefault(false) }
-        proveedores.mapNotNull { runCatching { gestor.getLastKnownLocation(it) }.getOrNull() }
-            .maxByOrNull { it.time }
-            ?.let { publicar(it) }
-        proveedores.forEach {
-            runCatching { gestor.requestLocationUpdates(it, INTERVALO_MS, DISTANCIA_MINIMA_M, oyente, Looper.getMainLooper()) }
+        if (activo) return
+        try {
+            cliente.lastLocation.addOnSuccessListener { it?.let(::publicar) }
+            cliente.requestLocationUpdates(solicitud, callback, Looper.getMainLooper())
+            activo = true
+        } catch (_: SecurityException) {
+            activo = false
         }
-        activo = proveedores.isNotEmpty()
     }
 
     fun detener() {
         if (!activo) return
-        runCatching { gestor.removeUpdates(oyente) }
+        cliente.removeLocationUpdates(callback)
         activo = false
     }
 

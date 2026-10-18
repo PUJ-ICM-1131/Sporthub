@@ -39,6 +39,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -104,8 +109,11 @@ fun LoginScreen(
                 ),
                 keyboardActions = KeyboardActions(onDone = { viewModel.iniciarSesion() }),
                 trailingIcon = {
-                    TextButton(onClick = { mostrarContrasena = !mostrarContrasena }) {
-                        Text(if (mostrarContrasena) Textos.obtener(R.string.texto_ocultar) else Textos.obtener(R.string.texto_mostrar))
+                    IconButton(onClick = { mostrarContrasena = !mostrarContrasena }) {
+                        Icon(
+                            imageVector = if (mostrarContrasena) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                            contentDescription = stringResource(if (mostrarContrasena) R.string.texto_ocultar else R.string.texto_mostrar)
+                        )
                     }
                 },
                 modifier = Modifier.fillMaxWidth()

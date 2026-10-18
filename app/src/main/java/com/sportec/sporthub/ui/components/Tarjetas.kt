@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sportec.sporthub.domain.ActividadConNegocio
 import com.sportec.sporthub.domain.EstadoNegocio
@@ -145,11 +146,16 @@ fun TarjetaHechos(
     }
 }
 
+/**
+ * Tarjeta de un servicio. Con [uniforme] el título ocupa siempre dos líneas y el subtítulo una,
+ * para que todas las tarjetas de un carrusel tengan la misma altura sin importar el texto.
+ */
 @Composable
 fun TarjetaActividad(
     item: ActividadConNegocio,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    uniforme: Boolean = false
 ) {
     ElevatedCard(
         onClick = onClick,
@@ -162,6 +168,9 @@ fun TarjetaActividad(
                     text = item.actividad.nombre,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
+                    minLines = if (uniforme) 2 else 1,
+                    maxLines = if (uniforme) 2 else Int.MAX_VALUE,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
@@ -173,7 +182,9 @@ fun TarjetaActividad(
             }
             Text(text = stringResource(R.string.formato_dos_datos, item.negocio.nombre, formatoDuracion(item.actividad.duracionMinutos)),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = if (uniforme) 1 else Int.MAX_VALUE,
+                overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(10.dp))
             Etiqueta(texto = item.actividad.categoria)

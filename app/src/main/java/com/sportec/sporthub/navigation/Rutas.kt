@@ -27,7 +27,6 @@ interface RutaAcceso : NavKey
 @Serializable data object Buscar : NavKey
 @Serializable data object Filtros : NavKey
 @Serializable data object Mapa : NavKey
-@Serializable data object Origen : NavKey
 @Serializable data class DetalleActividad(val id: String) : NavKey
 @Serializable data class DetalleEstablecimiento(val id: String) : NavKey
 

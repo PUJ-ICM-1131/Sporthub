@@ -58,19 +58,14 @@ fun infoDe(ruta: NavKey): InfoPantalla = when (ruta) {
         Textos.obtener(R.string.texto_buscar), listOf("HU-D01", "HU-D02"),
         listOf(Destino(Textos.obtener(R.string.texto_filtros), Filtros), Destino(Textos.obtener(R.string.texto_ver_en_el_mapa), Mapa), Destino(Textos.obtener(R.string.texto_ver_un_resultado), DetalleActividad("a1")))
     )
-    Filtros -> InfoPantalla(
-        Textos.obtener(R.string.texto_filtros), listOf("HU-D02"),
-        listOf(Destino(Textos.obtener(R.string.texto_elegir_origen_manual), Origen))
-    )
+    Filtros -> InfoPantalla(Textos.obtener(R.string.texto_filtros), listOf("HU-D02"))
     Mapa -> InfoPantalla(
         Textos.obtener(R.string.texto_mapa), listOf("HU-D02", "HU-D05", "HU-D27"),
         listOf(
-            Destino(Textos.obtener(R.string.texto_elegir_origen), Origen),
             Destino(Textos.obtener(R.string.texto_ver_establecimiento), DetalleEstablecimiento("b1")),
             Destino(Textos.obtener(R.string.texto_como_llegar), Ruta("b1"))
         )
     )
-    Origen -> InfoPantalla(Textos.obtener(R.string.texto_origen_de_busqueda), listOf("HU-D02", "HU-D05", "HU-D27"))
     is DetalleActividad -> InfoPantalla(
         Textos.obtener(R.string.texto_detalle_del_servicio), listOf("HU-D03", "HU-D04", "HU-D06", "HU-D07", "HU-D14"),
         listOf(Destino(Textos.obtener(R.string.texto_ver_establecimiento), DetalleEstablecimiento("b1")))
@@ -196,7 +191,7 @@ fun infoDe(ruta: NavKey): InfoPantalla = when (ruta) {
 
     is Ruta -> InfoPantalla(
         Textos.obtener(R.string.texto_como_llegar), listOf("HU-D27", "HU-D28"),
-        listOf(Destino(Textos.obtener(R.string.texto_elegir_origen), Origen), Destino(Textos.obtener(R.string.texto_abrir_brujula), Brujula(ruta.negocioId)))
+        listOf(Destino(Textos.obtener(R.string.texto_abrir_brujula), Brujula(ruta.negocioId)))
     )
     is Brujula -> InfoPantalla(Textos.obtener(R.string.texto_brujula), listOf("HU-D28"))
     is CheckIn -> InfoPantalla(

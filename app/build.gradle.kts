@@ -68,4 +68,7 @@ dependencies {
 
     implementation("com.mapbox.maps:android-ndk27:11.33.0")
     implementation("com.mapbox.extension:maps-compose-ndk27:11.33.0")
+
+    implementation("com.google.android.gms:play-services-location:21.4.0")
+    implementation("io.ktor:ktor-client-android:3.5.2")
 }

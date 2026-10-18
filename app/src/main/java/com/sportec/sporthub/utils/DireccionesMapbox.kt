@@ -2,36 +2,48 @@ package com.sportec.sporthub.utils
 
 import com.sportec.sporthub.domain.ModoViaje
 import com.sportec.sporthub.domain.Trayecto
-import java.net.HttpURLConnection
-import java.net.URL
-import java.net.URLEncoder
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.android.Android
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.request.get
+import io.ktor.client.request.parameter
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.CancellationException
 import org.json.JSONObject
 
-/** Cliente mínimo de la Directions API de Mapbox. Devuelve null si no hay token, red o ruta. */
+/**
+ * Cliente de la Directions API de Mapbox con Ktor (sesión 4): consulta GET en una función suspend
+ * y convierte la respuesta en un Trayecto. Devuelve null si no hay token, red o ruta.
+ */
 object DireccionesMapbox {
+    private val cliente by lazy {
+        HttpClient(Android) {
+            install(HttpTimeout) {
+                connectTimeoutMillis = 8000
+                requestTimeoutMillis = 8000
+            }
+        }
+    }
+
     fun tokenValido(token: String): Boolean = token.startsWith("pk.")
 
     suspend fun consultar(token: String, negocioId: String, modo: ModoViaje, origen: Coordenada, destino: Coordenada): Trayecto? {
         if (!tokenValido(token)) return null
-        return withContext(Dispatchers.IO) {
-            runCatching {
-                val coordenadas = "${origen.longitud},${origen.latitud};${destino.longitud},${destino.latitud}"
-                val url = URL(
-                    "https://api.mapbox.com/directions/v5/mapbox/${modo.perfilMapbox}/$coordenadas" +
-                        "?geometries=geojson&overview=full&language=es&access_token=${URLEncoder.encode(token, "UTF-8")}"
-                )
-                val conexion = url.openConnection() as HttpURLConnection
-                try {
-                    conexion.connectTimeout = 8000
-                    conexion.readTimeout = 8000
-                    if (conexion.responseCode != HttpURLConnection.HTTP_OK) return@runCatching null
-                    interpretar(conexion.inputStream.bufferedReader().use { it.readText() }, negocioId, modo, origen)
-                } finally {
-                    conexion.disconnect()
-                }
-            }.getOrNull()
+        return try {
+            val coordenadas = "${origen.longitud},${origen.latitud};${destino.longitud},${destino.latitud}"
+            val respuesta = cliente.get("https://api.mapbox.com/directions/v5/mapbox/${modo.perfilMapbox}/$coordenadas") {
+                parameter("geometries", "geojson")
+                parameter("overview", "full")
+                parameter("language", "es")
+                parameter("access_token", token)
+            }
+            if (respuesta.status != HttpStatusCode.OK) null
+            else interpretar(respuesta.bodyAsText(), negocioId, modo, origen)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
         }
     }
 

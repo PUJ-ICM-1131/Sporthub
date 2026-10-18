@@ -69,7 +69,6 @@ import com.sportec.sporthub.ui.screens.deportista.FotoLlegadaScreen
 import com.sportec.sporthub.ui.screens.deportista.MapaScreen
 import com.sportec.sporthub.ui.screens.deportista.MisReservasScreen
 import com.sportec.sporthub.ui.screens.deportista.MisTransferenciasScreen
-import com.sportec.sporthub.ui.screens.deportista.OrigenScreen
 import com.sportec.sporthub.ui.screens.deportista.PagoExitosoScreen
 import com.sportec.sporthub.ui.screens.deportista.PagoScreen
 import com.sportec.sporthub.ui.screens.deportista.PublicarTransferenciaScreen
@@ -387,18 +386,13 @@ fun SportHubApp(
                     MapaScreen(
                         onBack = { volver() },
                         onVerServicios = { id -> irA(DetalleEstablecimiento(id)) },
-                        onElegirOrigen = { irA(Origen) },
                         onComoLlegar = { id -> irA(Ruta(id)) }
                     )
-                }
-                entry<Origen> {
-                    OrigenScreen(onBack = { volver() })
                 }
                 entry<Ruta> { ruta ->
                     RutaScreen(
                         negocioId = ruta.negocioId,
                         onBack = { volver() },
-                        onCambiarOrigen = { irA(Origen) },
                         onBrujula = { irA(Brujula(ruta.negocioId)) }
                     )
                 }

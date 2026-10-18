@@ -51,6 +51,7 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,6 +61,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 
+/**
+ * Selector de fotografía (sesión 8): cámara con TakePicture y FileProvider, galería con Photo Picker.
+ * El permiso de cámara sigue los 4 pasos de Accompanist (sesión 6): concedido, rationale,
+ * negado de forma permanente (Ajustes) y primera solicitud.
+ */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun SelectorFoto(
@@ -78,6 +84,7 @@ fun SelectorFoto(
     var error by rememberSaveable { mutableStateOf<Int?>(null) }
     var capturaUri by rememberSaveable { mutableStateOf<String?>(null) }
     var capturaNombre by rememberSaveable { mutableStateOf<String?>(null) }
+    var verRationale by rememberSaveable { mutableStateOf(false) }
 
     fun limpiarCaptura() {
         capturaNombre?.let { nombre ->
@@ -142,6 +149,9 @@ fun SelectorFoto(
         preferencias.edit().putBoolean("camara_denegada", !concedido).apply()
         if (concedido) abrirCamara() else error = R.string.camara_permiso_denegado
     }
+    LaunchedEffect(permisoCamara.status.isGranted) {
+        if (permisoCamara.status.isGranted) preferencias.edit().putBoolean("camara_denegada", false).apply()
+    }
     val selector = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) importar(uri, false)
     }
@@ -156,7 +166,8 @@ fun SelectorFoto(
                         val permitido = permisoCamara.status.isGranted
                         when {
                             permitido -> abrirCamara()
-                            preferencias.getBoolean("camara_denegada", false) && !permisoCamara.status.shouldShowRationale -> error = R.string.camara_permiso_denegado
+                            permisoCamara.status.shouldShowRationale -> verRationale = true
+                            preferencias.getBoolean("camara_denegada", false) -> error = R.string.camara_permiso_denegado
                             else -> permisoCamara.launchPermissionRequest()
                         }
                     }) { Text(stringResource(R.string.selector_foto_camara)) }
@@ -176,6 +187,22 @@ fun SelectorFoto(
                 TextButton(onClick = { mostrarOpciones = false }) {
                     Text(stringResource(R.string.selector_foto_cancelar))
                 }
+            }
+        )
+    }
+    if (verRationale) {
+        AlertDialog(
+            onDismissRequest = { verRationale = false },
+            title = { Text(stringResource(R.string.camara_rationale_titulo)) },
+            text = { Text(stringResource(R.string.camara_rationale_detalle)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    verRationale = false
+                    permisoCamara.launchPermissionRequest()
+                }) { Text(stringResource(R.string.permiso_permitir)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { verRationale = false }) { Text(stringResource(R.string.permiso_ahora_no)) }
             }
         )
     }

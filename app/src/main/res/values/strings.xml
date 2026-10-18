@@ -625,7 +625,7 @@
     <string name="ruta_distancia">Distancia del recorrido</string>
     <string name="ruta_distancia_km">%1$s km</string>
     <string name="ruta_aviso_mapbox">Ruta calculada con Mapbox. Respeta siempre las señales de tránsito.</string>
-    <string name="ruta_aviso_estimada">Ruta estimada en línea recta: sin conexión o sin token de Mapbox no se puede calcular el recorrido por calles.</string>
+    <string name="ruta_aviso_estimada">Ruta estimada en línea recta: API no habilitada o sin conexión.</string>
     <string name="ruta_duracion">Tiempo estimado</string>
     <string name="ruta_duracion_min">%1$d min</string>
     <string name="ruta_modo_caminando">A pie</string>
@@ -633,11 +633,11 @@
     <string name="ruta_modo_carro">Carro</string>
     <string name="ruta_calculando">Calculando la ruta…</string>
     <string name="ruta_buscando_posicion">Buscando tu posición para seguir el recorrido…</string>
-    <string name="ruta_sin_seguimiento">Elige «Tu posición actual» como origen para seguir tu desplazamiento.</string>
+    <string name="ruta_sin_seguimiento">Estás usando un punto marcado en el mapa. Activa tu ubicación para seguir tu desplazamiento.</string>
     <string name="ruta_restante_km">Te faltan %1$s km. La ruta se recalcula si te desvías.</string>
     <string name="ruta_llegaste">Llegaste al establecimiento.</string>
-    <string name="mapa_sin_token">Mapa simplificado: agrega MAPBOX_ACCESS_TOKEN en local.properties para ver el mapa de Mapbox.</string>
-    <string name="mapa_leyenda_mapbox">Verde: dentro del rango · Gris: fuera del rango · Punto azul: tu posición · Punto naranja: origen elegido. Distancia geográfica, no recorrido por calles.</string>
+    <string name="mapa_sin_token">API no habilitada</string>
+    <string name="mapa_leyenda_mapbox">Verde: dentro del rango · Gris: fuera del rango · Punto azul: tu posición · Punto naranja: punto marcado. Distancia geográfica, no recorrido por calles.</string>
     <string name="mapa_distancia_km">A %1$s km</string>
     <string name="origen_buscando_posicion">Buscando tu posición…</string>
     <string name="origen_posicion_sin_precision">Posición disponible, precisión desconocida</string>
@@ -831,4 +831,12 @@
     <string name="notificaciones_sin_leer">Notificaciones sin leer</string>
     <string name="perfil_mas_opciones">Más opciones del perfil</string>
     <string name="ocultar_horarios">Ocultar horarios</string>
+    <string name="camara_rationale_titulo">Acceso a la cámara</string>
+    <string name="camara_rationale_detalle">SportHub usa la cámara solo para tomar la fotografía que elijas. También puedes elegir una imagen de la galería.</string>
+    <string name="permiso_ubicacion_apagada">Activa la ubicación del teléfono · Ajustes</string>
+    <string name="permiso_notificaciones_ajustes">Notificaciones desactivadas · Ajustes</string>
+    <string name="origen_punto_marcado">Punto marcado en el mapa</string>
+    <string name="ruta_marcar_origen">Sin tu ubicación: mantén presionado el mapa para marcar tu punto de partida.</string>
+    <string name="mapa_ampliar">Ampliar mapa</string>
+    <string name="mapa_cerrar">Cerrar mapa</string>
 </resources>

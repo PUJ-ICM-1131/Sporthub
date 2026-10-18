@@ -1,20 +1,40 @@
 package com.sportec.sporthub.ui.components
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
 import com.mapbox.geojson.Point
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
 import com.mapbox.maps.extension.compose.annotation.generated.CircleAnnotation
 import com.mapbox.maps.extension.compose.annotation.generated.PolygonAnnotation
 import com.mapbox.maps.extension.compose.annotation.generated.PolylineAnnotation
+import com.mapbox.maps.extension.compose.style.standard.MapboxStandardStyle
+import com.mapbox.maps.extension.compose.style.standard.rememberStandardStyleState
 import com.mapbox.maps.extension.style.layers.properties.generated.LineJoin
 import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
 import com.mapbox.maps.plugin.locationcomponent.location
@@ -22,7 +42,6 @@ import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Coordenada
 import com.sportec.sporthub.utils.DireccionesMapbox
 import com.sportec.sporthub.utils.Geo
-import com.sportec.sporthub.utils.RastreadorUbicacion
 
 data class MarcadorMapa(val id: String, val posicion: Coordenada, val resaltado: Boolean, val atenuado: Boolean)
 
@@ -33,6 +52,10 @@ private val ColorOrigen = Color(0xFFDF854B)
 @Composable
 fun mapboxDisponible(): Boolean = DireccionesMapbox.tokenValido(LocalContext.current.getString(R.string.mapbox_access_token))
 
+/**
+ * Mapa de Mapbox (sesión 10) con botón para ampliarlo a pantalla completa. Si se pasa
+ * [onMarcarOrigen], mantener presionado el mapa marca el punto de partida.
+ */
 @Composable
 fun MapaMapbox(
     modifier: Modifier,
@@ -42,16 +65,70 @@ fun MapaMapbox(
     onSeleccionar: (String) -> Unit = {},
     radioKm: Double? = null,
     trazado: List<Coordenada> = emptyList(),
-    encuadrarEn: List<Coordenada> = emptyList()
+    encuadrarEn: List<Coordenada> = emptyList(),
+    mostrarOrigen: Boolean = true,
+    onMarcarOrigen: ((Coordenada) -> Unit)? = null
 ) {
-    val context = LocalContext.current
-    val versionPermisos by CambiosPermisos.version.collectAsState()
-    val permitido = remember(versionPermisos) { RastreadorUbicacion(context.applicationContext).tienePermiso() }
+    var ampliado by rememberSaveable { mutableStateOf(false) }
+    val contenido: @Composable (Modifier) -> Unit = { m ->
+        ContenidoMapa(m, origen, origenEsPosicionActual, marcadores, onSeleccionar, radioKm, trazado, encuadrarEn, mostrarOrigen, onMarcarOrigen)
+    }
+    Box(modifier = modifier) {
+        contenido(Modifier.fillMaxSize())
+        FilledTonalIconButton(
+            onClick = { ampliado = true },
+            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
+        ) { Icon(Icons.Filled.Fullscreen, contentDescription = stringResource(R.string.mapa_ampliar)) }
+    }
+    if (ampliado) {
+        Dialog(
+            onDismissRequest = { ampliado = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                contenido(Modifier.fillMaxSize())
+                FilledTonalIconButton(
+                    onClick = { ampliado = false },
+                    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+                ) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.mapa_cerrar)) }
+            }
+        }
+    }
+}
+
+/**
+ * Contenido del mapa: cámara, puck del usuario cuando hay permiso (Accompanist), radio de búsqueda,
+ * trazado de la ruta, marcadores y la pulsación larga del estilo estándar para marcar el origen.
+ */
+@OptIn(ExperimentalPermissionsApi::class, MapboxExperimental::class)
+@Composable
+private fun ContenidoMapa(
+    modifier: Modifier,
+    origen: Coordenada,
+    origenEsPosicionActual: Boolean,
+    marcadores: List<MarcadorMapa>,
+    onSeleccionar: (String) -> Unit,
+    radioKm: Double?,
+    trazado: List<Coordenada>,
+    encuadrarEn: List<Coordenada>,
+    mostrarOrigen: Boolean,
+    onMarcarOrigen: ((Coordenada) -> Unit)?
+) {
+    val permisos = rememberPermisosUbicacion()
+    val permitido = permisos.permissions.any { it.status.isGranted }
     val viewport = rememberMapViewportState {
         val (centro, zoom) = Geo.encuadre(encuadrarEn.ifEmpty { listOf(origen) })
         setCameraOptions {
             center(Point.fromLngLat(centro.longitud, centro.latitud))
             zoom(zoom)
+        }
+    }
+    val marcarActual by rememberUpdatedState(onMarcarOrigen)
+    val estiloEstandar = rememberStandardStyleState {
+        interactionsState.onMapLongClicked { contexto ->
+            val punto = contexto.coordinateInfo.coordinate
+            marcarActual?.invoke(Coordenada(punto.latitude(), punto.longitude()))
+            marcarActual != null
         }
     }
     LaunchedEffect(encuadrarEn) {
@@ -65,7 +142,11 @@ fun MapaMapbox(
         )
     }
 
-    MapboxMap(modifier = modifier, mapViewportState = viewport) {
+    MapboxMap(
+        modifier = modifier,
+        mapViewportState = viewport,
+        style = { MapboxStandardStyle(standardStyleState = estiloEstandar) }
+    ) {
         MapEffect(permitido) { mapView ->
             mapView.location.updateSettings {
                 enabled = permitido
@@ -94,7 +175,7 @@ fun MapaMapbox(
                 lineJoin = LineJoin.ROUND
             }
         }
-        if (!origenEsPosicionActual || !permitido) {
+        if (mostrarOrigen && (!origenEsPosicionActual || !permitido)) {
             CircleAnnotation(point = origen.punto()) {
                 circleRadius = 7.0
                 circleColor = ColorOrigen

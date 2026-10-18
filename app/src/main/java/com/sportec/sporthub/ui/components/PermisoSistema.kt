@@ -3,17 +3,20 @@ package com.sportec.sporthub.ui.components
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.location.LocationManager
 import android.net.Uri
 import android.provider.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.location.LocationManagerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
 import com.sportec.sporthub.R
 import com.sportec.sporthub.domain.Ubicacion
@@ -23,60 +26,59 @@ object CambiosPermisos {
 }
 
 /**
- * Permiso de ubicación con Accompanist (sesión 6): si está concedido abre Ajustes;
- * si fue negado una vez muestra el rationale antes de volver a solicitar;
- * si fue negado de forma permanente abre Ajustes; si nunca se pidió, lo solicita.
+ * Permiso de ubicación precisa y aproximada con Accompanist (sesiones 6 y 9), usando solo el
+ * diálogo del sistema. Con [solicitarAlEntrar] lo pide al abrir la pantalla. El botón aparece
+ * únicamente si falta el permiso (lo vuelve a pedir o, si fue negado de forma permanente, abre
+ * Ajustes) o si la ubicación del teléfono está apagada (abre su configuración).
  */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun PermisoSistema() {
+fun PermisoSistema(solicitarAlEntrar: Boolean = false) {
     val context = LocalContext.current
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
     val preferencias = remember { context.getSharedPreferences("permisos_sistema", Context.MODE_PRIVATE) }
+    val gestor = remember { context.getSystemService(Context.LOCATION_SERVICE) as LocationManager }
     var solicitado by remember { mutableStateOf(preferencias.getBoolean("ubicacion", false)) }
-    val permisos = rememberMultiplePermissionsState(
-        listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-    ) { resultado ->
+    var pedidoAlEntrar by rememberSaveable { mutableStateOf(false) }
+    var ubicacionEncendida by remember { mutableStateOf(LocationManagerCompat.isLocationEnabled(gestor)) }
+    val permisos = rememberPermisosUbicacion { resultado ->
         CambiosPermisos.version.value++
         if (resultado.values.none { it }) Ubicacion.borrarPosicion()
     }
     val permitido = permisos.permissions.any { it.status.isGranted }
     val preciso = permisos.permissions.any { it.permission == Manifest.permission.ACCESS_FINE_LOCATION && it.status.isGranted }
-    val mostrarRationale = permisos.shouldShowRationale
-    var verRationale by remember { mutableStateOf(false) }
-    LaunchedEffect(permitido, preciso) {
-        CambiosPermisos.version.value++
-        if (!permitido) Ubicacion.borrarPosicion()
-    }
-    val etiqueta = when {
-        permitido && !preciso -> R.string.permiso_aproximado
-        permitido -> R.string.permiso_ubicacion_activo
-        solicitado && !mostrarRationale -> R.string.permiso_ajustes
-        else -> R.string.permiso_pedir_ubicacion
-    }
     fun solicitar() {
         solicitado = true
         preferencias.edit().putBoolean("ubicacion", true).apply()
         permisos.launchMultiplePermissionRequest()
     }
-    if (verRationale) {
-        AlertDialog(
-            onDismissRequest = { verRationale = false },
-            title = { Text(stringResource(R.string.permiso_ubicacion_titulo)) },
-            text = { Text(stringResource(R.string.permiso_ubicacion_detalle)) },
-            confirmButton = {
-                TextButton(onClick = { verRationale = false; solicitar() }) { Text(stringResource(R.string.permiso_permitir)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { verRationale = false }) { Text(stringResource(R.string.permiso_ahora_no)) }
-            }
-        )
-    }
-    OutlinedButton(onClick = {
-        when {
-            permitido -> context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
-            mostrarRationale -> verRationale = true
-            solicitado -> context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
-            else -> solicitar()
+    DisposableEffect(lifecycle) {
+        val observer = LifecycleEventObserver { _, evento ->
+            if (evento == Lifecycle.Event.ON_RESUME) ubicacionEncendida = LocationManagerCompat.isLocationEnabled(gestor)
         }
-    }) { Text(stringResource(etiqueta)) }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+    LaunchedEffect(permitido, preciso) {
+        CambiosPermisos.version.value++
+        if (!permitido) Ubicacion.borrarPosicion()
+    }
+    LaunchedEffect(solicitarAlEntrar) {
+        if (solicitarAlEntrar && !pedidoAlEntrar && !permitido) {
+            pedidoAlEntrar = true
+            solicitar()
+        }
+    }
+    when {
+        !permitido -> {
+            val puedePedir = !solicitado || permisos.shouldShowRationale
+            OutlinedButton(onClick = {
+                if (puedePedir) solicitar()
+                else context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
+            }) { Text(stringResource(if (puedePedir) R.string.permiso_pedir_ubicacion else R.string.permiso_ajustes)) }
+        }
+        !ubicacionEncendida -> OutlinedButton(onClick = {
+            context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+        }) { Text(stringResource(R.string.permiso_ubicacion_apagada)) }
+    }
 }
