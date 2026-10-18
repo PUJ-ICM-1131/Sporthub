@@ -8,19 +8,9 @@ SportHub es una aplicación Android del equipo **Sportec** que reúne actividade
 
 ## Aplicación y simulaciones
 
-El repositorio contiene la aplicación Android. El prototipo web se distribuye como archivo ZIP desde la sección Diseño de interfaz de la wiki. La autenticación, los servicios de backend y las operaciones financieras se representan con mocks y datos ficticios. Los pagos y reembolsos no operan con dinero real.
+El repositorio contiene la aplicación Android. El prototipo web se distribuye como archivo ZIP desde la sección Diseño de interfaz de la wiki. La autenticación usa Firebase Auth y los perfiles y roles viven en Cloud Firestore (ver `docs/Persona-A-Firebase.md`). El resto de servicios de backend y las operaciones financieras se representan con mocks y datos ficticios. Los pagos y reembolsos no operan con dinero real.
 
 Las [reglas del producto](https://github.com/PUJ-ICM-1131/Sporthub/wiki/Alcance-y-reglas) y los criterios de las historias definen el comportamiento esperado.
-
-## Mapas con Mapbox
-
-El SDK de Mapbox se descarga sin credenciales. Para ver el mapa interactivo y calcular rutas por calles, crea un token público (`pk.…`) en [account.mapbox.com](https://account.mapbox.com/access-tokens/) y agrégalo a `local.properties`, que no se sube al repositorio:
-
-```properties
-MAPBOX_ACCESS_TOKEN=pk.tu_token
-```
-
-Sin token, la aplicación muestra un mapa simplificado y estima las rutas en línea recta.
 
 ## Explorar el prototipo
 

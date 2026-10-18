@@ -1,7 +1,12 @@
 package com.sportec.sporthub.navigation
 
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -30,7 +35,6 @@ import com.sportec.sporthub.ui.SesionViewModel
 import com.sportec.sporthub.ui.screens.acceso.BienvenidaScreen
 import com.sportec.sporthub.ui.screens.acceso.EnlaceRecuperacionScreen
 import com.sportec.sporthub.ui.screens.acceso.LoginScreen
-import com.sportec.sporthub.ui.screens.acceso.NuevaContrasenaScreen
 import com.sportec.sporthub.ui.screens.acceso.RecuperarScreen
 import com.sportec.sporthub.ui.screens.acceso.RegistroDeportistaScreen
 import com.sportec.sporthub.ui.screens.acceso.RegistroEstablecimientoScreen
@@ -95,6 +99,7 @@ fun SportHubApp(
 ) {
     val destinatarioAviso by com.sportec.sporthub.utils.EntradaNotificacion.destinatario.collectAsState()
     val cuenta by sesionViewModel.cuenta.collectAsState()
+    val restaurando by sesionViewModel.restaurando.collectAsState()
     com.sportec.sporthub.ui.components.PermisoNotificacionesAlEntrar(cuenta?.id)
     com.sportec.sporthub.ui.components.AvisosSistema(cuenta?.id)
     val backStack = rememberNavBackStack(Bienvenida)
@@ -138,6 +143,13 @@ fun SportHubApp(
         }
     }
 
+    LaunchedEffect(cuenta?.id) {
+        val activa = cuenta
+        if (activa != null && backStack.lastOrNull() is RutaAcceso) {
+            reiniciarEn(inicioDe(activa.rol))
+        }
+    }
+
     LaunchedEffect(destinatarioAviso, cuenta?.id) {
         if (destinatarioAviso != null && destinatarioAviso == cuenta?.id) {
             irA(Notificaciones)
@@ -169,6 +181,7 @@ fun SportHubApp(
             }
         }
     ) { padding ->
+        Box(Modifier.fillMaxSize()) {
         NavDisplay(
             backStack = backStack,
             modifier = Modifier
@@ -228,14 +241,7 @@ fun SportHubApp(
                     EnlaceRecuperacionScreen(
                         email = ruta.email,
                         onBack = { volver() },
-                        onAbrirEnlace = { irA(NuevaContrasena(ruta.email)) }
-                    )
-                }
-                entry<NuevaContrasena> { ruta ->
-                    NuevaContrasenaScreen(
-                        email = ruta.email,
-                        onBack = { volver() },
-                        onListo = { reiniciarEn(Login) }
+                        onVolverAIniciarSesion = { reiniciarEn(Login) }
                     )
                 }
                 entry<RegistroDeportista> {
@@ -387,8 +393,7 @@ fun SportHubApp(
                     MapaScreen(
                         onBack = { volver() },
                         onVerServicios = { id -> irA(DetalleEstablecimiento(id)) },
-                        onElegirOrigen = { irA(Origen) },
-                        onComoLlegar = { id -> irA(Ruta(id)) }
+                        onElegirOrigen = { irA(Origen) }
                     )
                 }
                 entry<Origen> {
@@ -624,5 +629,12 @@ fun SportHubApp(
                 }
             }
         )
+        if (restaurando) {
+            Box(
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+                contentAlignment = Alignment.Center
+            ) { CircularProgressIndicator() }
+        }
+        }
     }
 }

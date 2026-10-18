@@ -1,16 +1,9 @@
-import java.util.Properties
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("com.google.gms.google-services")
 }
-
-val propiedadesLocales = Properties().apply {
-    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
-}
-val tokenMapbox = propiedadesLocales.getProperty("MAPBOX_ACCESS_TOKEN")
-    ?: System.getenv("MAPBOX_ACCESS_TOKEN").orEmpty()
 
 android {
     namespace = "com.sportec.sporthub"
@@ -22,7 +15,6 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
-        resValue("string", "mapbox_access_token", tokenMapbox)
     }
 
     buildTypes {
@@ -38,12 +30,10 @@ android {
 
     buildFeatures {
         compose = true
-        resValues = true
     }
 }
 
 dependencies {
-    implementation("com.google.accompanist:accompanist-permissions:0.37.3")
     testImplementation("junit:junit:4.13.2")
     implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.compose.ui:ui")
@@ -66,6 +56,8 @@ dependencies {
 
     implementation("io.coil-kt.coil3:coil-compose:3.4.0")
 
-    implementation("com.mapbox.maps:android-ndk27:11.33.0")
-    implementation("com.mapbox.extension:maps-compose-ndk27:11.33.0")
+    implementation(platform("com.google.firebase:firebase-bom:35.0.2"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
 }

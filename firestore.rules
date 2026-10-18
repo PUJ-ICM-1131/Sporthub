@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Perfil y rol de cada usuario. El documento se llama como su UID de Firebase Auth.
+    match /usuarios/{uid} {
+      // Cualquier usuario autenticado puede ver perfiles (chats, contactos, invitaciones).
+      allow read: if request.auth != null;
+
+      // Solo se crea el propio perfil, como deportista o establecimiento y activo.
+      // El administrador se crea a mano desde la consola de Firebase.
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.rol in ['DEPORTISTA', 'ESTABLECIMIENTO']
+        && request.resource.data.activa == true;
+
+      // Solo se edita el propio perfil, sin cambiar el rol ni el estado de la cuenta.
+      allow update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.rol == resource.data.rol
+        && request.resource.data.activa == resource.data.activa;
+
+      allow delete: if false;
+    }
+  }
+}

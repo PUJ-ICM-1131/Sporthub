@@ -12,7 +12,6 @@ interface RutaAcceso : NavKey
 @Serializable data object RegistroEstablecimiento : RutaAcceso
 @Serializable data object Recuperar : RutaAcceso
 @Serializable data class EnlaceRecuperacion(val email: String) : RutaAcceso
-@Serializable data class NuevaContrasena(val email: String) : RutaAcceso
 
 @Serializable data object Explorar : NavKey
 @Serializable data object MisReservas : NavKey

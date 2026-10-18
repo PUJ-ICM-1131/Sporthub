@@ -5,7 +5,6 @@ import com.sportec.sporthub.utils.Textos
 import androidx.compose.ui.res.stringResource
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,15 +25,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sportec.sporthub.domain.Ubicacion
 import com.sportec.sporthub.ui.components.PantallaBase
-import com.sportec.sporthub.ui.components.PermisoSistema
-import com.sportec.sporthub.ui.components.SeguimientoUbicacion
 
 @Composable
 fun OrigenScreen(onBack: () -> Unit) {
-    SeguimientoUbicacion()
     val origenActual by Ubicacion.origen.collectAsState()
-    val siguiendo by Ubicacion.usarPosicionActual.collectAsState()
-    val posicion by Ubicacion.posicionActual.collectAsState()
 
     PantallaBase(titulo = Textos.obtener(R.string.texto_origen_de_busqueda), onBack = onBack) { padding ->
         LazyColumn(
@@ -50,26 +44,6 @@ fun OrigenScreen(onBack: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            item {
-                Card(
-                    onClick = { Ubicacion.seguirPosicionActual() },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(selected = siguiendo, onClick = { Ubicacion.seguirPosicionActual() })
-                        Column {
-                            Text(stringResource(R.string.brujula_posicion_actual), fontWeight = FontWeight.Medium)
-                            val detalle = posicion?.precisionMetros?.let { stringResource(R.string.origen_precision_m, it.toInt()) }
-                                ?: stringResource(if (posicion == null) R.string.origen_buscando_posicion else R.string.origen_posicion_sin_precision)
-                            Text(detalle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
-            }
-            item { PermisoSistema() }
             items(Ubicacion.PRESETS) { preset ->
                 Card(
                     onClick = { Ubicacion.elegir(preset) },
@@ -79,17 +53,9 @@ fun OrigenScreen(onBack: () -> Unit) {
                         modifier = Modifier.padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        RadioButton(selected = !siguiendo && preset == origenActual, onClick = { Ubicacion.elegir(preset) })
+                        RadioButton(selected = preset == origenActual, onClick = { Ubicacion.elegir(preset) })
                         Text(preset.nombre, fontWeight = FontWeight.Medium)
                     }
-                }
-            }
-            if (siguiendo && posicion == null) {
-                item {
-                    Text(stringResource(R.string.origen_respaldo, origenActual.nombre),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
         }

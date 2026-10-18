@@ -50,16 +50,6 @@ import com.sportec.sporthub.domain.Ubicacion
 import com.sportec.sporthub.ui.components.Etiqueta
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.ui.components.TarjetaTint
-import com.sportec.sporthub.ui.components.Aviso
-import com.sportec.sporthub.ui.components.MapaMapbox
-import com.sportec.sporthub.ui.components.MarcadorMapa
-import com.sportec.sporthub.ui.components.PermisoSistema
-import com.sportec.sporthub.ui.components.SeguimientoUbicacion
-import com.sportec.sporthub.ui.components.TipoAviso
-import com.sportec.sporthub.ui.components.mapboxDisponible
-import com.sportec.sporthub.utils.Coordenada
-import androidx.compose.ui.draw.clip
-import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 import androidx.compose.foundation.Canvas
@@ -71,31 +61,19 @@ private val PuntoCentral = Color(0xFFDF854B)
 private val CirculoRango = Color(0xFF126B47)
 
 @Composable
-fun MapaScreen(
-    onBack: () -> Unit,
-    onVerServicios: (String) -> Unit,
-    onElegirOrigen: () -> Unit,
-    onComoLlegar: (String) -> Unit
-) {
-    SeguimientoUbicacion()
+fun MapaScreen(onBack: () -> Unit, onVerServicios: (String) -> Unit, onElegirOrigen: () -> Unit) {
     val negocios by Negocios.negocios.collectAsState()
     val origen by Ubicacion.origen.collectAsState()
     val validados = negocios.filter { it.estado == EstadoNegocio.VALIDADO }
     var seleccionado by rememberSaveable { mutableStateOf<String?>(null) }
     var sinLimite by rememberSaveable { mutableStateOf(false) }
-    val conMapbox = mapboxDisponible()
 
-    val distancias = remember(validados, origen) {
-        validados.associate { it.id to Ubicacion.distanciaKm(origen, it.latitud, it.longitud) }
+    val distanciaMaxima = remember(validados, origen) {
+        validados.maxOfOrNull { Ubicacion.distanciaKm(origen, it.latitud, it.longitud) }?.coerceAtLeast(1.0) ?: 5.0
     }
-    val distanciaMaxima = remember(distancias) { ceil(distancias.values.maxOrNull()?.coerceAtLeast(1.0) ?: 5.0) }
-    var rangoElegido by rememberSaveable { mutableFloatStateOf(-1f) }
-    val rango = if (rangoElegido < 0f) distanciaMaxima.toFloat() else rangoElegido.coerceIn(0.5f, distanciaMaxima.toFloat())
-    val visibles = remember(validados, distancias, rango, sinLimite) {
-        validados.filter { sinLimite || (distancias[it.id] ?: 0.0) <= rango }.sortedBy { distancias[it.id] }
-    }
-    val encuadre = remember(validados.size, origen.esPosicionActual, origen.nombre) {
-        validados.map { Coordenada(it.latitud, it.longitud) } + Coordenada(origen.latitud, origen.longitud)
+    var rango by rememberSaveable(distanciaMaxima) { mutableFloatStateOf(distanciaMaxima.toFloat()) }
+    val visibles = remember(validados, origen, rango, sinLimite) {
+        if (sinLimite) validados else validados.filter { Ubicacion.distanciaKm(origen, it.latitud, it.longitud) <= rango }
     }
 
     PantallaBase(titulo = Textos.obtener(R.string.texto_planes_cerca_de_ti), onBack = onBack) { padding ->
@@ -107,7 +85,7 @@ fun MapaScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(text = stringResource(R.string.texto_origen_valor, origen.nombre),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -116,38 +94,17 @@ fun MapaScreen(
                     TextButton(onClick = onElegirOrigen) { Text(stringResource(R.string.texto_elegir_origen)) }
                 }
             }
-            item { PermisoSistema() }
             item {
-                if (conMapbox) {
-                    MapaMapbox(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(300.dp)
-                            .clip(RoundedCornerShape(20.dp)),
-                        origen = Coordenada(origen.latitud, origen.longitud),
-                        origenEsPosicionActual = origen.esPosicionActual,
-                        marcadores = validados.map {
-                            MarcadorMapa(it.id, Coordenada(it.latitud, it.longitud), resaltado = it.id == seleccionado, atenuado = visibles.none { v -> v.id == it.id })
-                        },
-                        onSeleccionar = { seleccionado = it },
-                        radioKm = if (sinLimite) null else rango.toDouble(),
-                        encuadrarEn = encuadre
-                    )
-                } else {
-                    MapaEstatico(
-                        negocios = validados,
-                        origen = origen,
-                        visibles = visibles.map { it.id }.toSet(),
-                        rango = rango,
-                        distanciaMaxima = distanciaMaxima,
-                        sinLimite = sinLimite,
-                        seleccionado = seleccionado,
-                        onSeleccionar = { seleccionado = it }
-                    )
-                }
-            }
-            if (!conMapbox) {
-                item { Aviso(texto = stringResource(R.string.mapa_sin_token), tipo = TipoAviso.NORMAL) }
+                MapaEstatico(
+                    negocios = validados,
+                    origen = origen,
+                    visibles = visibles.map { it.id }.toSet(),
+                    rango = rango,
+                    distanciaMaxima = distanciaMaxima,
+                    sinLimite = sinLimite,
+                    seleccionado = seleccionado,
+                    onSeleccionar = { seleccionado = it }
+                )
             }
             item {
                 Text(
@@ -160,7 +117,7 @@ fun MapaScreen(
                 item {
                     Slider(
                         value = rango,
-                        onValueChange = { rangoElegido = it },
+                        onValueChange = { rango = it },
                         valueRange = 0.5f..distanciaMaxima.toFloat(),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -174,7 +131,7 @@ fun MapaScreen(
                 )
             }
             item {
-                Text(text = stringResource(if (conMapbox) R.string.mapa_leyenda_mapbox else R.string.texto_verde_dentro_del_rango_gris_fuera_del_rango_punto),
+                Text(text = stringResource(R.string.texto_verde_dentro_del_rango_gris_fuera_del_rango_punto),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -185,11 +142,7 @@ fun MapaScreen(
                     TarjetaTint {
                         Text(elegido.nombre, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Text(elegido.direccion, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(stringResource(R.string.mapa_distancia_km, "%.1f".format(distancias[elegido.id] ?: 0.0)), style = MaterialTheme.typography.bodySmall)
-                        Row {
-                            TextButton(onClick = { onVerServicios(elegido.id) }) { Text(stringResource(R.string.texto_ver_servicios)) }
-                            TextButton(onClick = { onComoLlegar(elegido.id) }) { Text(stringResource(R.string.texto_como_llegar)) }
-                        }
+                        TextButton(onClick = { onVerServicios(elegido.id) }) { Text(stringResource(R.string.texto_ver_servicios)) }
                     }
                 }
             }
@@ -205,16 +158,13 @@ fun MapaScreen(
                         .fillMaxWidth()
                         .clickable { seleccionado = negocio.id }
                         .padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(negocio.nombre, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                         Text(negocio.direccion, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(stringResource(R.string.mapa_distancia_km, "%.1f".format(distancias[negocio.id] ?: 0.0)),
-                            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                     }
-                    TextButton(onClick = { onComoLlegar(negocio.id) }) { Text(stringResource(R.string.texto_como_llegar)) }
+                    TextButton(onClick = { onVerServicios(negocio.id) }) { Text(stringResource(R.string.texto_ver_servicios)) }
                 }
             }
         }
@@ -246,8 +196,7 @@ private fun MapaEstatico(
         modifier = Modifier
             .fillMaxWidth()
             .height(260.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(FondoMapa)
+            .background(FondoMapa, RoundedCornerShape(20.dp))
     ) {
         val anchoPx = maxWidth
         val altoPx = maxHeight

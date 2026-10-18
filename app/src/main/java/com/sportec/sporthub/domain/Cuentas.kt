@@ -1,20 +1,32 @@
 package com.sportec.sporthub.domain
 
-import com.sportec.sporthub.utils.FotosLocales
+import android.util.Log
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.snapshots
 import com.sportec.sporthub.R
+import com.sportec.sporthub.utils.FotosLocales
 import com.sportec.sporthub.utils.Textos
-
 import com.sportec.sporthub.utils.Validaciones
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.tasks.await
 
 object Cuentas {
 
-    private fun uid() = "u" + java.util.UUID.randomUUID().toString()
+    private const val ETIQUETA = "Cuentas"
 
-    private val _cuentas = MutableStateFlow(DatosMock.cuentas.map { it.copy(fotoUri = FotosLocales.obtener("cuenta", it.id) ?: it.fotoUri) })
+    private val _cuentas = MutableStateFlow<List<Cuenta>>(emptyList())
     val cuentas: StateFlow<List<Cuenta>> = _cuentas.asStateFlow()
+
+    private var escucha: Job? = null
 
     fun todas(): List<Cuenta> = _cuentas.value
 
@@ -27,21 +39,52 @@ object Cuentas {
             cuenta.nombre
         }
 
+    private fun aCuenta(doc: DocumentSnapshot): Cuenta? {
+        val rol = doc.getString("rol")?.let { runCatching { Rol.valueOf(it) }.getOrNull() } ?: return null
+        val id = doc.getString("idApp") ?: doc.id
+        return Cuenta(
+            id = id,
+            nombre = doc.getString("nombre").orEmpty(),
+            email = doc.getString("email").orEmpty(),
+            rol = rol,
+            telefono = doc.getString("telefono"),
+            negocioId = doc.getString("negocioId"),
+            activa = doc.getBoolean("activa") ?: true,
+            fotoUri = FotosLocales.obtener("cuenta", id),
+            uid = doc.id
+        )
+    }
+
+    suspend fun cargarPerfil(uid: String): Cuenta? {
+        val doc = FirebaseFirestore.getInstance()
+            .collection(Autenticacion.COLECCION_USUARIOS).document(uid).get().await()
+        return if (doc.exists()) aCuenta(doc) else null
+    }
+
+    fun iniciarEscucha(scope: CoroutineScope, actual: Cuenta) {
+        if (_cuentas.value.none { it.id == actual.id }) _cuentas.value = _cuentas.value + actual
+        escucha?.cancel()
+        escucha = FirebaseFirestore.getInstance()
+            .collection(Autenticacion.COLECCION_USUARIOS)
+            .snapshots()
+            .map { instantanea -> instantanea.documents.mapNotNull { aCuenta(it) } }
+            .onEach { _cuentas.value = it }
+            .catch { Log.w(ETIQUETA, "No se pudo escuchar la colección de usuarios", it) }
+            .launchIn(scope)
+    }
+
+    fun detenerEscucha() {
+        escucha?.cancel()
+        escucha = null
+        _cuentas.value = emptyList()
+    }
+
     fun validarRegistro(nombre: String, email: String, contrasena: String, telefono: String? = null) {
         val correo = email.trim().lowercase()
         if (nombre.isBlank()) throw IllegalArgumentException(Textos.obtener(R.string.texto_el_nombre_es_obligatorio))
         if (!Validaciones.correo(correo)) throw IllegalArgumentException(Textos.obtener(R.string.texto_ingresa_un_correo_valido))
         if (!Validaciones.contrasena(contrasena)) throw IllegalArgumentException(Textos.obtener(R.string.texto_la_contrasena_debe_tener_al_menos_6_caracteres))
-        if (_cuentas.value.any { it.email == correo }) throw IllegalStateException(Textos.obtener(R.string.texto_ya_existe_una_cuenta_con_este_correo))
         if (!Validaciones.telefono(telefono)) throw IllegalArgumentException(Textos.obtener(R.string.error_telefono_formato))
-    }
-
-    fun registrar(nombre: String, email: String, contrasena: String, rol: Rol, telefono: String? = null, negocioId: String? = null): Cuenta {
-        validarRegistro(nombre, email, contrasena, telefono)
-        val correo = email.trim().lowercase()
-        val cuenta = Cuenta(uid(), nombre.trim(), correo, contrasena, rol, telefono?.trim()?.ifBlank { null }, negocioId)
-        _cuentas.value = _cuentas.value + cuenta
-        return cuenta
     }
 
     fun actualizar(cuenta: Cuenta) {
@@ -49,10 +92,11 @@ object Cuentas {
         _cuentas.value = _cuentas.value.map { if (it.id == cuenta.id) cuenta else it }
     }
 
-    fun restablecerContrasena(email: String, nuevaContrasena: String) {
-        val cuenta = _cuentas.value.firstOrNull { it.email == email.trim().lowercase() }
-            ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_no_existe_una_cuenta_con_este_correo))
-        if (!Validaciones.contrasena(nuevaContrasena)) throw IllegalArgumentException(Textos.obtener(R.string.texto_la_contrasena_debe_tener_al_menos_6_caracteres))
-        _cuentas.value = _cuentas.value.map { if (it.id == cuenta.id) it.copy(contrasena = nuevaContrasena) else it }
+    suspend fun guardarPerfil(cuenta: Cuenta) {
+        if (cuenta.uid.isBlank()) return
+        FirebaseFirestore.getInstance()
+            .collection(Autenticacion.COLECCION_USUARIOS).document(cuenta.uid)
+            .update(mapOf("nombre" to cuenta.nombre, "telefono" to cuenta.telefono))
+            .await()
     }
 }

@@ -46,14 +46,12 @@ import com.sportec.sporthub.domain.Origen
 import com.sportec.sporthub.ui.components.Aviso
 import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.PantallaBase
-import com.sportec.sporthub.ui.components.SeguimientoUbicacion
 import com.sportec.sporthub.ui.components.TipoAviso
 import com.sportec.sporthub.utils.CalculosBrujula
 import com.sportec.sporthub.utils.SensoresBrujula
 
 @Composable
 fun BrujulaScreen(negocioId: String, onBack: () -> Unit) {
-    SeguimientoUbicacion()
     var ayuda by remember { mutableStateOf(false) }
     val negocio = Negocios.negocioDe(negocioId)
     val context = LocalContext.current
@@ -125,7 +123,7 @@ fun BrujulaScreen(negocioId: String, onBack: () -> Unit) {
                         Text(stringResource(R.string.brujula_rumbo, rumbo.toInt()))
                     }
                 }
-                com.sportec.sporthub.ui.components.PermisoSistema()
+                com.sportec.sporthub.ui.components.PermisoSistema(ubicacion = true)
                 TextButton(onClick = { ayuda = true }) { Text(stringResource(R.string.brujula_ayuda_titulo)) }
                 OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.brujula_volver_ruta)) }
             }

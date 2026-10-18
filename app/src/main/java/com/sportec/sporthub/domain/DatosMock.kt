@@ -24,10 +24,10 @@ object DatosMock {
     )
 
     val cuentas: List<Cuenta> = listOf(
-        Cuenta("juan", Textos.obtener(R.string.texto_juan_carlos), Textos.obtener(R.string.texto_juan_demo_test), CONTRASENA_DEMO, Rol.DEPORTISTA, telefono = Textos.obtener(R.string.texto_300_123_4567)),
-        Cuenta("camila", Textos.obtener(R.string.texto_camila_torres), Textos.obtener(R.string.texto_camila_demo_test), CONTRASENA_DEMO, Rol.DEPORTISTA),
-        Cuenta("negocio", Textos.obtener(R.string.texto_laura_mendez), Textos.obtener(R.string.texto_negocio_demo_test), CONTRASENA_DEMO, Rol.ESTABLECIMIENTO, telefono = Textos.obtener(R.string.texto_300_444_3322), negocioId = "b1"),
-        Cuenta("admin", Textos.obtener(R.string.texto_ana_administracion), Textos.obtener(R.string.texto_admin_demo_test), CONTRASENA_DEMO, Rol.ADMINISTRADOR)
+        Cuenta("juan", Textos.obtener(R.string.texto_juan_carlos), Textos.obtener(R.string.texto_juan_demo_test), Rol.DEPORTISTA, telefono = Textos.obtener(R.string.texto_300_123_4567)),
+        Cuenta("camila", Textos.obtener(R.string.texto_camila_torres), Textos.obtener(R.string.texto_camila_demo_test), Rol.DEPORTISTA),
+        Cuenta("negocio", Textos.obtener(R.string.texto_laura_mendez), Textos.obtener(R.string.texto_negocio_demo_test), Rol.ESTABLECIMIENTO, telefono = Textos.obtener(R.string.texto_300_444_3322), negocioId = "b1"),
+        Cuenta("admin", Textos.obtener(R.string.texto_ana_administracion), Textos.obtener(R.string.texto_admin_demo_test), Rol.ADMINISTRADOR)
     )
 
     val negocios: List<Negocio> = listOf(

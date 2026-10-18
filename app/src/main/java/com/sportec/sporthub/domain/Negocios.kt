@@ -20,6 +20,10 @@ object Negocios {
     private val _actividades = MutableStateFlow(DatosMock.actividades.map { it.copy(fotoUri = FotosLocales.obtenerGaleria(it.id).firstOrNull() ?: it.fotoUri, fotos = FotosLocales.obtenerGaleria(it.id).ifEmpty { it.fotos }) })
     val actividades: StateFlow<List<Actividad>> = _actividades.asStateFlow()
 
+    fun descartar(id: String) {
+        _negocios.value = _negocios.value.filterNot { it.id == id }
+    }
+
     fun negocioDe(id: String): Negocio? = _negocios.value.firstOrNull { it.id == id }
 
     fun actividadDe(id: String): Actividad? = _actividades.value.firstOrNull { it.id == id }

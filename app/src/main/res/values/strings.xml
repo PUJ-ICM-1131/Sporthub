@@ -20,7 +20,7 @@
     <string name="texto_909000007" formatted="false">"909000007"</string>
     <string name="texto_abrir_brujula" formatted="false">"Abrir brújula"</string>
     <string name="texto_abrir_conversacion" formatted="false">"Abrir conversación"</string>
-    <string name="texto_abrir_enlace_de_recuperacion" formatted="false">"Abrir enlace de recuperación"</string>
+    <string name="texto_abrir_enlace_de_recuperacion" formatted="false">"Volver a iniciar sesión"</string>
     <string name="texto_accede_con_tu_cuenta_de_deportista_establecimiento_o_administrador" formatted="false">"Accede con tu cuenta de deportista, establecimiento o administrador."</string>
     <string name="texto_aceptar_tomar_esta_reserva" formatted="false">"Aceptar tomar esta reserva"</string>
     <string name="texto_actividad_o_establecimiento" formatted="false">"Actividad o establecimiento"</string>
@@ -197,7 +197,7 @@
     <string name="texto_enlace_de_recuperacion" formatted="false">"Enlace de recuperación"</string>
     <string name="texto_entrena_a_tu_ritmo" formatted="false">"Entrena a tu ritmo"</string>
     <string name="texto_entrenamiento_funcional" formatted="false">"Entrenamiento funcional"</string>
-    <string name="texto_enviamos_un_enlace_de_recuperacion_a" formatted="false">"Enlace de recuperación simulado para:"</string>
+    <string name="texto_enviamos_un_enlace_de_recuperacion_a" formatted="false">"Enviamos un enlace de recuperación a:"</string>
     <string name="texto_enviar" formatted="false">"Enviar"</string>
     <string name="texto_enviar_aviso_de_salida" formatted="false">"Enviar aviso de salida"</string>
     <string name="texto_enviar_calificacion" formatted="false">"Enviar calificación"</string>
@@ -210,7 +210,7 @@
     <string name="texto_espacios_para_moverte_a_tu_ritmo_deporte_y_bienestar" formatted="false">"Espacios para moverte a tu ritmo. Deporte y bienestar en el norte de Bogotá."</string>
     <string name="texto_esta_actividad_ya_fue_cerrada" formatted="false">"Esta actividad ya fue cerrada."</string>
     <string name="texto_esta_cuenta_no_tiene_acceso" formatted="false">"Esta cuenta no tiene acceso."</string>
-    <string name="texto_esta_es_una_demostracion_usa_el_boton_para_simular" formatted="false">"Esta es una demostración: usa el botón para simular que abriste el enlace desde tu correo."</string>
+    <string name="texto_esta_es_una_demostracion_usa_el_boton_para_simular" formatted="false">"Abre el correo, toca el enlace, define tu nueva contraseña y vuelve para iniciar sesión. Revisa también la carpeta de spam."</string>
     <string name="texto_esta_es_una_demostracion_usa_los_datos_ficticios_del" formatted="false">"Esta es una demostración. Usa los datos ficticios del panel de cuentas."</string>
     <string name="texto_esta_ficha_corresponde_a_otra_cuenta_de_negocio" formatted="false">"Esta ficha corresponde a otra cuenta de negocio."</string>
     <string name="texto_esta_publicacion_corresponde_a_otra_cuenta_de_negocio" formatted="false">"Esta publicación corresponde a otra cuenta de negocio."</string>
@@ -267,7 +267,7 @@
     <string name="texto_horarios_y_cupos" formatted="false">"Horarios y cupos"</string>
     <string name="texto_importe" formatted="false">"Importe"</string>
     <string name="texto_incompatible" formatted="false">"Incompatible"</string>
-    <string name="texto_ingresa_tu_correo_o_usuario_y_tu_contrasena" formatted="false">"Ingresa tu correo o usuario y tu contraseña."</string>
+    <string name="texto_ingresa_tu_correo_o_usuario_y_tu_contrasena" formatted="false">"Ingresa tu correo y tu contraseña."</string>
     <string name="texto_ingresa_un_correo_valido" formatted="false">"Ingresa un correo válido."</string>
     <string name="texto_ingresar" formatted="false">"Ingresar"</string>
     <string name="texto_ingresos" formatted="false">"Ingresos"</string>
@@ -498,7 +498,7 @@
     <string name="texto_suba" formatted="false">"Suba"</string>
     <string name="texto_sucesion_de_la_comunidad" formatted="false">"Sucesión de la comunidad"</string>
     <string name="texto_tarjeta_1234" formatted="false">"Tarjeta ·•• 1234"</string>
-    <string name="texto_te_enviaremos_un_enlace_de_recuperacion_a_tu_correo" formatted="false">"Simula la recuperación de acceso con un correo de demostración. No se enviará ningún correo."</string>
+    <string name="texto_te_enviaremos_un_enlace_de_recuperacion_a_tu_correo" formatted="false">"Te enviaremos un enlace de recuperación a tu correo."</string>
     <string name="texto_telefono" formatted="false">"Teléfono"</string>
     <string name="texto_tendras_que_ingresar_de_nuevo_para_ver_tus_reservas" formatted="false">"Tendrás que ingresar de nuevo para ver tus reservas y mensajes."</string>
     <string name="texto_tenis" formatted="false">"Tenis"</string>
@@ -622,27 +622,9 @@
     <string name="ruta_titulo">Cómo llegar</string>
     <string name="ruta_destino">Destino</string>
     <string name="ruta_origen">Origen</string>
-    <string name="ruta_distancia">Distancia del recorrido</string>
+    <string name="ruta_distancia">Distancia geográfica</string>
     <string name="ruta_distancia_km">%1$s km</string>
-    <string name="ruta_aviso_mapbox">Ruta calculada con Mapbox. Respeta siempre las señales de tránsito.</string>
-    <string name="ruta_aviso_estimada">Ruta estimada en línea recta: sin conexión o sin token de Mapbox no se puede calcular el recorrido por calles.</string>
-    <string name="ruta_duracion">Tiempo estimado</string>
-    <string name="ruta_duracion_min">%1$d min</string>
-    <string name="ruta_modo_caminando">A pie</string>
-    <string name="ruta_modo_bicicleta">Bicicleta</string>
-    <string name="ruta_modo_carro">Carro</string>
-    <string name="ruta_calculando">Calculando la ruta…</string>
-    <string name="ruta_buscando_posicion">Buscando tu posición para seguir el recorrido…</string>
-    <string name="ruta_sin_seguimiento">Elige «Tu posición actual» como origen para seguir tu desplazamiento.</string>
-    <string name="ruta_restante_km">Te faltan %1$s km. La ruta se recalcula si te desvías.</string>
-    <string name="ruta_llegaste">Llegaste al establecimiento.</string>
-    <string name="mapa_sin_token">Mapa simplificado: agrega MAPBOX_ACCESS_TOKEN en local.properties para ver el mapa de Mapbox.</string>
-    <string name="mapa_leyenda_mapbox">Verde: dentro del rango · Gris: fuera del rango · Punto azul: tu posición · Punto naranja: origen elegido. Distancia geográfica, no recorrido por calles.</string>
-    <string name="mapa_distancia_km">A %1$s km</string>
-    <string name="origen_buscando_posicion">Buscando tu posición…</string>
-    <string name="origen_posicion_sin_precision">Posición disponible, precisión desconocida</string>
-    <string name="origen_precision_m">Precisión aproximada: %1$d m</string>
-    <string name="origen_respaldo">Mientras llega tu posición se usa %1$s.</string>
+    <string name="ruta_aviso">Ruta ilustrativa, no navegación por calles. El proveedor de mapas se integrará más adelante.</string>
     <string name="ruta_cambiar_origen">Cambiar origen</string>
     <string name="ruta_brujula">Orientación con brújula</string>
     <string name="nuevo_chat_titulo">Inicia una conversación</string>

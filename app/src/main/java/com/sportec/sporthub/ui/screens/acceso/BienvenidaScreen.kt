@@ -84,11 +84,6 @@ fun BienvenidaScreen(
                 ) {
                     Text(stringResource(R.string.texto_crear_cuenta))
                 }
-                Text(text = stringResource(R.string.texto_esta_es_una_demostracion_usa_los_datos_ficticios_del),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
             }
         }
     }

@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-data class Origen(val nombre: String, val latitud: Double, val longitud: Double, val esPosicionActual: Boolean = false)
+data class Origen(val nombre: String, val latitud: Double, val longitud: Double)
 
 data class PosicionActual(
     val latitud: Double,
@@ -35,13 +35,11 @@ object Ubicacion {
             val anterior = _posicionActual.value
             if (anterior != null && instante < anterior.instante) return
             _posicionActual.value = PosicionActual(latitud, longitud, instante, precisionMetros)
-            if (_usarPosicionActual.value) _origen.value = origenDesdePosicion(latitud, longitud)
         }
     }
 
     fun borrarPosicion() {
         _posicionActual.value = null
-        if (_origen.value.esPosicionActual) _origen.value = ultimoManual
     }
 
 
@@ -53,33 +51,12 @@ object Ubicacion {
         Origen(Textos.obtener(R.string.texto_suba), 4.7420, -74.0930)
     )
 
-    private var ultimoManual = PRESETS.first()
     private val _origen = MutableStateFlow(PRESETS.first())
     val origen: StateFlow<Origen> = _origen.asStateFlow()
 
-    private val _usarPosicionActual = MutableStateFlow(true)
-    val usarPosicionActual: StateFlow<Boolean> = _usarPosicionActual.asStateFlow()
-
-    private val _destino = MutableStateFlow<String?>(null)
-    val destino: StateFlow<String?> = _destino.asStateFlow()
-
     fun elegir(origen: Origen) {
-        _usarPosicionActual.value = false
-        ultimoManual = origen
         _origen.value = origen
     }
-
-    fun seguirPosicionActual() {
-        _usarPosicionActual.value = true
-        _posicionActual.value?.let { _origen.value = origenDesdePosicion(it.latitud, it.longitud) }
-    }
-
-    fun fijarDestino(negocioId: String?) {
-        _destino.value = negocioId
-    }
-
-    private fun origenDesdePosicion(latitud: Double, longitud: Double) =
-        Origen(Textos.obtener(R.string.brujula_posicion_actual), latitud, longitud, esPosicionActual = true)
 
     fun distanciaKm(origen: Origen, lat: Double, lng: Double): Double {
         val latMedRad = Math.toRadians((origen.latitud + lat) / 2)
