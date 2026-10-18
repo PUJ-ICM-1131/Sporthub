@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.sportec.sporthub.ui.components.PantallaBase
 
 @Composable
-fun EnlaceRecuperacionScreen(email: String, onBack: () -> Unit, onAbrirEnlace: () -> Unit) {
+fun EnlaceRecuperacionScreen(email: String, onBack: () -> Unit, onVolverAIniciarSesion: () -> Unit) {
     PantallaBase(titulo = Textos.obtener(R.string.texto_enlace_de_recuperacion), onBack = onBack) { padding ->
         Column(
             modifier = Modifier
@@ -37,7 +37,7 @@ fun EnlaceRecuperacionScreen(email: String, onBack: () -> Unit, onAbrirEnlace: (
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Button(onClick = onAbrirEnlace, modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = onVolverAIniciarSesion, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.texto_abrir_enlace_de_recuperacion))
             }
         }

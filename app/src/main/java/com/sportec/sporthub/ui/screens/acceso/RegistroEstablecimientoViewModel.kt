@@ -1,16 +1,19 @@
 package com.sportec.sporthub.ui.screens.acceso
 
-import com.sportec.sporthub.R
-import com.sportec.sporthub.utils.Textos
-
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.sportec.sporthub.R
+import com.sportec.sporthub.domain.Autenticacion
 import com.sportec.sporthub.domain.Cuentas
 import com.sportec.sporthub.domain.Negocios
 import com.sportec.sporthub.domain.Rol
+import com.sportec.sporthub.utils.Textos
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 
 data class RegistroEstablecimientoUiState(
     val nombreContacto: String = "",
@@ -21,6 +24,7 @@ data class RegistroEstablecimientoUiState(
     val nit: String = "",
     val direccion: String = "",
     val error: String? = null,
+    val cargando: Boolean = false,
     val registrado: Boolean = false
 )
 
@@ -39,13 +43,28 @@ class RegistroEstablecimientoViewModel : ViewModel() {
 
     fun registrar() {
         val estado = _uiState.value
-        try {
+        if (estado.cargando) return
+        val negocio = try {
             Cuentas.validarRegistro(estado.nombreContacto, estado.email, estado.contrasena, estado.telefono)
-            val negocio = Negocios.crear(estado.nombreNegocio, estado.nit, estado.telefono, estado.direccion)
-            Cuentas.registrar(estado.nombreContacto, estado.email, estado.contrasena, Rol.ESTABLECIMIENTO, estado.telefono, negocio.id)
-            _uiState.update { it.copy(registrado = true) }
+            Negocios.crear(estado.nombreNegocio, estado.nit, estado.telefono, estado.direccion)
         } catch (e: Exception) {
             _uiState.update { it.copy(error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_crear_la_cuenta)) }
+            return
+        }
+        _uiState.update { it.copy(cargando = true, error = null) }
+        viewModelScope.launch {
+            try {
+                Autenticacion.registrar(estado.nombreContacto, estado.email, estado.contrasena, Rol.ESTABLECIMIENTO, estado.telefono, negocio.id)
+                _uiState.update { it.copy(cargando = false, registrado = true) }
+            } catch (e: CancellationException) {
+                Negocios.descartar(negocio.id)
+                throw e
+            } catch (e: Exception) {
+                Negocios.descartar(negocio.id)
+                _uiState.update {
+                    it.copy(cargando = false, error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_crear_la_cuenta))
+                }
+            }
         }
     }
 }

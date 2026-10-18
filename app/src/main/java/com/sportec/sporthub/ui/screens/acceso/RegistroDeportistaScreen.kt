@@ -94,7 +94,7 @@ fun RegistroDeportistaScreen(
             if (estado.error != null) {
                 Aviso(texto = estado.error ?: "", tipo = TipoAviso.ERROR)
             }
-            Button(onClick = viewModel::registrar, modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = viewModel::registrar, enabled = !estado.cargando, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.texto_crear_cuenta))
             }
         }

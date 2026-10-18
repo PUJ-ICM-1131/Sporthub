@@ -89,7 +89,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = estado.usuario,
                 onValueChange = viewModel::onUsuarioCambiado,
-                label = { Text(stringResource(R.string.texto_correo_o_usuario)) },
+                label = { Text(stringResource(R.string.texto_correo_electronico)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
@@ -128,6 +128,7 @@ fun LoginScreen(
             }
             Button(
                 onClick = viewModel::iniciarSesion,
+                enabled = !estado.cargando,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
@@ -139,35 +140,6 @@ fun LoginScreen(
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Text(stringResource(R.string.texto_olvidaste_tu_contrasena))
-            }
-            HorizontalDivider()
-            Text(text = stringResource(R.string.texto_cuentas_de_demostracion),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(text = stringResource(R.string.texto_toca_una_cuenta_para_llenar_el_formulario_contrasena_valor, DatosMock.CONTRASENA_DEMO),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Column {
-                DatosMock.cuentas.forEach { cuenta ->
-                    ListItem(
-                        headlineContent = { Text(cuenta.nombre) },
-                        supportingContent = { Text(stringResource(R.string.formato_dos_datos, cuenta.id, cuenta.rol.etiqueta)) },
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.clickable { viewModel.usarCuentaDemo(cuenta) }
-                    )
-                }
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = stringResource(R.string.texto_simular_fallo_del_servicio),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.weight(1f)
-                )
-                Switch(
-                    checked = estado.simularError,
-                    onCheckedChange = viewModel::onSimularErrorCambiado
-                )
             }
         }
     }

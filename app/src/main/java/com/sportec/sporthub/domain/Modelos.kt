@@ -13,12 +13,12 @@ data class Cuenta(
     val id: String,
     val nombre: String,
     val email: String,
-    val contrasena: String,
     val rol: Rol,
     val telefono: String? = null,
     val negocioId: String? = null,
     val activa: Boolean = true,
-    val fotoUri: String? = null
+    val fotoUri: String? = null,
+    val uid: String = ""
 )
 
 enum class EstadoNegocio(val etiqueta: String) {
