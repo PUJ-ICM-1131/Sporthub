@@ -387,7 +387,8 @@ fun SportHubApp(
                     MapaScreen(
                         onBack = { volver() },
                         onVerServicios = { id -> irA(DetalleEstablecimiento(id)) },
-                        onElegirOrigen = { irA(Origen) }
+                        onElegirOrigen = { irA(Origen) },
+                        onComoLlegar = { id -> irA(Ruta(id)) }
                     )
                 }
                 entry<Origen> {
