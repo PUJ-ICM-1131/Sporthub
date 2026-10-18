@@ -1,8 +1,16 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
+
+val propiedadesLocales = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+val tokenMapbox = propiedadesLocales.getProperty("MAPBOX_ACCESS_TOKEN")
+    ?: System.getenv("MAPBOX_ACCESS_TOKEN").orEmpty()
 
 android {
     namespace = "com.sportec.sporthub"
@@ -14,6 +22,7 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
+        resValue("string", "mapbox_access_token", tokenMapbox)
     }
 
     buildTypes {
@@ -29,6 +38,7 @@ android {
 
     buildFeatures {
         compose = true
+        resValues = true
     }
 }
 
@@ -54,4 +64,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
 
     implementation("io.coil-kt.coil3:coil-compose:3.4.0")
+
+    implementation("com.mapbox.maps:android-ndk27:11.33.0")
+    implementation("com.mapbox.extension:maps-compose-ndk27:11.33.0")
 }
