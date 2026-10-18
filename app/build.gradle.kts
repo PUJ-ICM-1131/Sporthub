@@ -43,6 +43,7 @@ android {
 }
 
 dependencies {
+    implementation("com.google.accompanist:accompanist-permissions:0.37.3")
     testImplementation("junit:junit:4.13.2")
     implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.compose.ui:ui")

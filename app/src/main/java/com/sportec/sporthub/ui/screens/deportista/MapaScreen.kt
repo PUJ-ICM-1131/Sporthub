@@ -116,7 +116,7 @@ fun MapaScreen(
                     TextButton(onClick = onElegirOrigen) { Text(stringResource(R.string.texto_elegir_origen)) }
                 }
             }
-            item { PermisoSistema(ubicacion = true) }
+            item { PermisoSistema() }
             item {
                 if (conMapbox) {
                     MapaMapbox(

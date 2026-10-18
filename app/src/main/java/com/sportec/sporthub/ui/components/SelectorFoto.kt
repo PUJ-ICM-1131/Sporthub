@@ -1,14 +1,14 @@
 package com.sportec.sporthub.ui.components
 
 import android.net.Uri
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.shouldShowRationale
 import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.provider.Settings
-import androidx.core.content.ContextCompat
-import androidx.core.app.ActivityCompat
-import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.material3.CircularProgressIndicator
@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun SelectorFoto(
     fotoUri: String?,
@@ -70,7 +71,6 @@ fun SelectorFoto(
     onProcesando: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
-    val activity = LocalActivity.current
     val preferencias = remember { context.getSharedPreferences("permisos_sistema", Context.MODE_PRIVATE) }
     val scope = rememberCoroutineScope()
     var procesando by remember { mutableStateOf(false) }
@@ -138,7 +138,7 @@ fun SelectorFoto(
             error = R.string.selector_foto_error_captura
         }
     }
-    val permisoCamara = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedido ->
+    val permisoCamara = rememberPermissionState(Manifest.permission.CAMERA) { concedido ->
         preferencias.edit().putBoolean("camara_denegada", !concedido).apply()
         if (concedido) abrirCamara() else error = R.string.camara_permiso_denegado
     }
@@ -153,11 +153,11 @@ fun SelectorFoto(
                 Column {
                     TextButton(onClick = {
                         mostrarOpciones = false
-                        val permitido = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                        val permitido = permisoCamara.status.isGranted
                         when {
                             permitido -> abrirCamara()
-                            preferencias.getBoolean("camara_denegada", false) && activity?.let { !ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.CAMERA) } == true -> error = R.string.camara_permiso_denegado
-                            else -> permisoCamara.launch(Manifest.permission.CAMERA)
+                            preferencias.getBoolean("camara_denegada", false) && !permisoCamara.status.shouldShowRationale -> error = R.string.camara_permiso_denegado
+                            else -> permisoCamara.launchPermissionRequest()
                         }
                     }) { Text(stringResource(R.string.selector_foto_camara)) }
                     TextButton(onClick = {

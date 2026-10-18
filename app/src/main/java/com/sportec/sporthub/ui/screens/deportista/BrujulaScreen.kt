@@ -125,7 +125,7 @@ fun BrujulaScreen(negocioId: String, onBack: () -> Unit) {
                         Text(stringResource(R.string.brujula_rumbo, rumbo.toInt()))
                     }
                 }
-                com.sportec.sporthub.ui.components.PermisoSistema(ubicacion = true)
+                com.sportec.sporthub.ui.components.PermisoSistema()
                 TextButton(onClick = { ayuda = true }) { Text(stringResource(R.string.brujula_ayuda_titulo)) }
                 OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.brujula_volver_ruta)) }
             }

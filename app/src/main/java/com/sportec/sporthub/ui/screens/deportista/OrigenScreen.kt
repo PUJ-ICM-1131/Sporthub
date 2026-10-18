@@ -69,7 +69,7 @@ fun OrigenScreen(onBack: () -> Unit) {
                     }
                 }
             }
-            item { PermisoSistema(ubicacion = true) }
+            item { PermisoSistema() }
             items(Ubicacion.PRESETS) { preset ->
                 Card(
                     onClick = { Ubicacion.elegir(preset) },

@@ -172,7 +172,7 @@ fun RutaScreen(
                     )
                 }
             }
-            item { PermisoSistema(ubicacion = true) }
+            item { PermisoSistema() }
             item {
                 OutlinedButton(onClick = onCambiarOrigen, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.ruta_cambiar_origen))
