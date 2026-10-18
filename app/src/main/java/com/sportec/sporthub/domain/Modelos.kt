@@ -180,7 +180,8 @@ data class Postulante(
     val id: String,
     val usuarioId: String,
     val estado: EstadoPostulante,
-    val deadline: Long? = null
+    val deadline: Long? = null,
+    val aceptadoPorPropietario: Boolean = false
 )
 
 enum class EstadoTransferencia(val etiqueta: String) {

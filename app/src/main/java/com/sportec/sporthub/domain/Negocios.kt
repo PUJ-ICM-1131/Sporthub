@@ -30,7 +30,9 @@ object Negocios {
 
     fun actividadesDe(negocioId: String): List<Actividad> = _actividades.value.filter { it.negocioId == negocioId }
 
-    fun operadorDe(negocioId: String): String? = Cuentas.todas().firstOrNull { it.negocioId == negocioId }?.id
+    fun operadorDe(negocioId: String): String? = Cuentas.todas().firstOrNull {
+        it.negocioId == negocioId && it.rol == Rol.ESTABLECIMIENTO && it.activa
+    }?.id
 
     fun crear(nombre: String, nit: String, contacto: String, direccion: String): Negocio {
         if (nombre.isBlank()) throw IllegalArgumentException(Textos.obtener(R.string.texto_el_nombre_del_negocio_es_obligatorio))

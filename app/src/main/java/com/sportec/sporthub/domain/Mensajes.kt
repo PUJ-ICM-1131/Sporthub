@@ -55,7 +55,7 @@ object Mensajes {
         _chats.value = _chats.value.map { if (it.id == chatId) actualizado else it }
         val destinatarios = chat.comunidadId?.let { Comunidades.comunidadDe(it)?.miembros } ?: chat.miembros
         destinatarios.orEmpty().filter { it != autorId }.forEach {
-            Notificaciones.evento(it, R.string.aviso_mensaje_nuevo)
+            Notificaciones.evento(it, R.string.aviso_mensaje_nuevo, "chat", chatId)
         }
         return actualizado
     }

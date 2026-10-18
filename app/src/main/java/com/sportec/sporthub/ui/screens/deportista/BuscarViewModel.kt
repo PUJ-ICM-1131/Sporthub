@@ -1,6 +1,11 @@
 package com.sportec.sporthub.ui.screens.deportista
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.sportec.sporthub.domain.Cuentas
+import com.sportec.sporthub.domain.Negocios
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
 import com.sportec.sporthub.domain.ActividadConNegocio
 import com.sportec.sporthub.domain.Catalogo
 import com.sportec.sporthub.domain.Categoria
@@ -24,7 +29,10 @@ class BuscarViewModel : ViewModel() {
     val uiState: StateFlow<BuscarUiState> = _uiState.asStateFlow()
 
     init {
-        buscar()
+        viewModelScope.launch {
+            combine(Cuentas.cuentas, Negocios.negocios, Negocios.actividades) { _, _, _ -> Unit }
+                .collect { buscar() }
+        }
     }
 
     fun onTextoCambiado(v: String) {

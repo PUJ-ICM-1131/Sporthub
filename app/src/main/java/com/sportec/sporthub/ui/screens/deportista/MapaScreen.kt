@@ -78,10 +78,12 @@ fun MapaScreen(
 ) {
     SeguimientoUbicacion()
     val negocios by Negocios.negocios.collectAsState()
+    val cuentas by com.sportec.sporthub.domain.Cuentas.cuentas.collectAsState()
     val origen by Ubicacion.origen.collectAsState()
     val origenDefinido by Ubicacion.origenDefinido.collectAsState()
     val posicion by Ubicacion.posicionActual.collectAsState()
-    val validados = negocios.filter { it.estado == EstadoNegocio.VALIDADO }
+    val negociosConCuenta = cuentas.filter { it.activa && it.rol == com.sportec.sporthub.domain.Rol.ESTABLECIMIENTO }.mapNotNull { it.negocioId }.toSet()
+    val validados = negocios.filter { it.estado == EstadoNegocio.VALIDADO && it.id in negociosConCuenta }
     var seleccionado by rememberSaveable { mutableStateOf<String?>(null) }
     var sinLimite by rememberSaveable { mutableStateOf(false) }
     val conMapbox = mapboxDisponible()

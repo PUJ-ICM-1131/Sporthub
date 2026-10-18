@@ -12,7 +12,7 @@ object Catalogo {
 
     fun explorar(categoria: String?): ResultadoExplorar {
         val validados = Negocios.negocios.value
-            .filter { it.estado == EstadoNegocio.VALIDADO }
+            .filter { it.estado == EstadoNegocio.VALIDADO && Negocios.operadorDe(it.id) != null }
             .associateBy { it.id }
         val actividades = Negocios.actividades.value
             .filter { categoria == null || it.categoria == categoria }

@@ -524,7 +524,9 @@ fun SportHubApp(
                         transferenciaId = ruta.id,
                         cuenta = cuenta,
                         onBack = { volver() },
-                        onPagar = { id -> irA(Pago(id)) }
+                        onPagar = { id -> irA(Pago(id)) },
+                        onChat = { id -> irA(Chat(id)) },
+                        onReserva = { id -> irA(DetalleReserva(id)) }
                     )
                 }
                 entry<Mensajes> {

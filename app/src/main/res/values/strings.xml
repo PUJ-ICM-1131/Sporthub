@@ -839,4 +839,14 @@
     <string name="ruta_marcar_origen">Sin tu ubicación: mantén presionado el mapa para marcar tu punto de partida.</string>
     <string name="mapa_ampliar">Ampliar mapa</string>
     <string name="mapa_cerrar">Cerrar mapa</string>
+    <string name="transferencia_sin_autorizacion">No puedes realizar esta acción en el estado actual de la transferencia.</string>
+    <string name="transferencia_aceptada_propietario">El propietario aceptó tu solicitud. Falta la aprobación del establecimiento antes de pagar.</string>
+    <string name="transferencia_mensaje_interes">Hola, estoy interesado en la transferencia de %1$s en %2$s. Horario: %3$s. Importe: %4$s. Te envié la solicitud para que puedas revisarla.</string>
+    <string name="transferencia_rechazada_motivo">La solicitud de transferencia fue rechazada. Motivo: %1$s</string>
+    <string name="transferencia_confirmacion_titular">Transferencia completada y pago simulado registrado. Nuevo titular de la reserva: %1$s.</string>
+    <string name="transferencia_ver_reserva">Ver reserva confirmada</string>
+    <string name="transferencia_abrir_chat">Abrir conversación</string>
+    <string name="transferencia_espera_negocio">Pendiente de aprobación del establecimiento.</string>
+    <string name="transferencia_espera_propietario">Pendiente de aceptación del propietario.</string>
+    <string name="transferencia_aceptar_interesado">Aceptar interesado</string>
 </resources>

@@ -68,6 +68,7 @@ fun NotificacionesScreen(
                         "request" -> aviso.argumento?.let { DetalleSolicitud(it) }
                         "reservation" -> aviso.argumento?.let { DetalleReserva(it) }
                         "transfer" -> aviso.argumento?.let { DetalleTransferencia(it) }
+                        "chat" -> aviso.argumento?.let { com.sportec.sporthub.navigation.Chat(it) }
                         else -> null
                     }
                     destino?.let(onNavegar)
