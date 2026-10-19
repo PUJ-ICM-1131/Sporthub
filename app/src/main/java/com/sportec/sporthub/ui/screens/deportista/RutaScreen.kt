@@ -17,6 +17,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsBike
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -121,7 +128,18 @@ fun RutaScreen(
                         FilterChip(
                             selected = it == modo,
                             onClick = { Trayectos.elegirModo(it) },
-                            label = { Text(stringResource(it.etiqueta)) }
+                            label = { Text(stringResource(it.etiqueta)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = when (it) {
+                                        ModoViaje.CAMINANDO -> Icons.AutoMirrored.Filled.DirectionsWalk
+                                        ModoViaje.BICICLETA -> Icons.AutoMirrored.Filled.DirectionsBike
+                                        ModoViaje.CARRO -> Icons.Filled.DirectionsCar
+                                    },
+                                    contentDescription = null,
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+                            }
                         )
                     }
                 }

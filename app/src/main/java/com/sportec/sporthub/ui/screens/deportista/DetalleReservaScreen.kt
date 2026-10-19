@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -135,8 +136,25 @@ fun DetalleReservaScreen(
                     if (esDueno && (reserva.estado == EstadoReserva.CONFIRMADA || reserva.cerrada)) {
                         val opinion = opiniones.firstOrNull { it.reservaId == reserva.id }
                         if (opinion != null) {
-                            Text(stringResource(R.string.resena_publicada, opinion.puntaje))
-                            if (opinion.comentario.isNotBlank()) Text(opinion.comentario)
+                            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.resena_publicada, opinion.puntaje),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (opinion.comentario.isNotBlank()) {
+                                        Text(
+                                            text = opinion.comentario,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
                         } else {
                             OutlinedButton(onClick = { onCalificar(reserva.id) }, enabled = reserva.cerrada,
                                 modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.texto_calificar)) }
