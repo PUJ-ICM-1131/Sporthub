@@ -92,7 +92,7 @@ fun RutaScreen(
         }
     }
 
-    PantallaBase(titulo = Textos.obtener(R.string.ruta_titulo), onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.ruta_titulo), onBack = onBack, acciones = { PermisoSistema(solicitarAlEntrar = true) }) { padding ->
         if (negocio == null) {
             EstadoVacio(mensaje = stringResource(R.string.texto_el_establecimiento_ya_no_existe), modifier = Modifier.padding(padding))
             return@PantallaBase
@@ -167,17 +167,18 @@ fun RutaScreen(
                     }
                 }
             }
-            if (origenDefinido) item { SeguimientoTrayecto(trayecto, destino, origen.esPosicionActual, posicion?.let { Coordenada(it.latitud, it.longitud) }) }
-            if (trayecto != null) {
-                item {
-                    Aviso(
-                        texto = stringResource(if (trayecto.estimado) R.string.ruta_aviso_estimada else R.string.ruta_aviso_mapbox),
-                        tipo = TipoAviso.NORMAL
-                    )
-                }
+            if (trayecto != null) item {
+                Text(
+                    stringResource(when {
+                        trayecto.estimado -> R.string.ruta_resumen_estimado
+                        origen.esPosicionActual -> R.string.ruta_resumen_actualizacion
+                        else -> R.string.ruta_resumen_manual
+                    }),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             if (!origenDefinido) item { Aviso(texto = stringResource(R.string.ruta_marcar_origen), tipo = TipoAviso.NORMAL) }
-            item { PermisoSistema(solicitarAlEntrar = true) }
             item {
                 OutlinedButton(onClick = onBrujula, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.ruta_brujula))
@@ -185,18 +186,6 @@ fun RutaScreen(
             }
         }
     }
-}
-
-@Composable
-private fun SeguimientoTrayecto(trayecto: Trayecto?, destino: Coordenada, siguiendo: Boolean, posicion: Coordenada?) {
-    val texto = when {
-        !siguiendo -> stringResource(R.string.ruta_sin_seguimiento)
-        posicion == null -> stringResource(R.string.ruta_buscando_posicion)
-        Geo.distanciaMetros(posicion, destino) <= Trayectos.LLEGADA_M -> stringResource(R.string.ruta_llegaste)
-        trayecto == null -> stringResource(R.string.ruta_calculando)
-        else -> stringResource(R.string.ruta_restante_km, String.format("%.2f", Geo.restanteMetros(posicion, trayecto.puntos) / 1000))
-    }
-    Aviso(texto = texto, tipo = TipoAviso.NORMAL)
 }
 
 @Composable

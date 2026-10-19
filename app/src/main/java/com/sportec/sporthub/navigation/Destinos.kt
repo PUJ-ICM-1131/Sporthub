@@ -110,7 +110,7 @@ fun infoDe(ruta: NavKey): InfoPantalla = when (ruta) {
             Destino(Textos.obtener(R.string.texto_cancelar_reserva), CancelarReserva(ruta.id)),
             Destino(Textos.obtener(R.string.texto_publicar_transferencia), PublicarTransferencia(ruta.id)),
             Destino(Textos.obtener(R.string.texto_como_llegar), Ruta("b1")),
-            Destino(Textos.obtener(R.string.texto_registrar_llegada), CheckIn(ruta.id)),
+            Destino(Textos.obtener(R.string.texto_agregar_fotografia), FotoLlegada(ruta.id)),
             Destino(Textos.obtener(R.string.texto_calificar), Resena(ruta.id))
         )
     )
@@ -194,10 +194,6 @@ fun infoDe(ruta: NavKey): InfoPantalla = when (ruta) {
         listOf(Destino(Textos.obtener(R.string.texto_abrir_brujula), Brujula(ruta.negocioId)))
     )
     is Brujula -> InfoPantalla(Textos.obtener(R.string.texto_brujula), listOf("HU-D28"))
-    is CheckIn -> InfoPantalla(
-        Textos.obtener(R.string.texto_registrar_llegada), listOf("HU-D29", "HU-D30"),
-        listOf(Destino(Textos.obtener(R.string.texto_agregar_fotografia), FotoLlegada(ruta.reservaId)))
-    )
     is FotoLlegada -> InfoPantalla(
         Textos.obtener(R.string.texto_fotografia_de_llegada), listOf("HU-D30"),
         listOf()

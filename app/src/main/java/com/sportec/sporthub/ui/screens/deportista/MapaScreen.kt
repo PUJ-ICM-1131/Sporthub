@@ -84,6 +84,7 @@ fun MapaScreen(
     val posicion by Ubicacion.posicionActual.collectAsState()
     val negociosConCuenta = cuentas.filter { it.activa && it.rol == com.sportec.sporthub.domain.Rol.ESTABLECIMIENTO }.mapNotNull { it.negocioId }.toSet()
     val validados = negocios.filter { it.estado == EstadoNegocio.VALIDADO && it.id in negociosConCuenta }
+    var interactuandoMapa by remember { mutableStateOf(false) }
     var seleccionado by rememberSaveable { mutableStateOf<String?>(null) }
     var sinLimite by rememberSaveable { mutableStateOf(false) }
     val conMapbox = mapboxDisponible()
@@ -101,8 +102,9 @@ fun MapaScreen(
         validados.map { Coordenada(it.latitud, it.longitud) } + Coordenada(origen.latitud, origen.longitud)
     }
 
-    PantallaBase(titulo = Textos.obtener(R.string.texto_planes_cerca_de_ti), onBack = onBack) { padding ->
+    PantallaBase(titulo = Textos.obtener(R.string.texto_planes_cerca_de_ti), onBack = onBack, acciones = { PermisoSistema(solicitarAlEntrar = true) }) { padding ->
         LazyColumn(
+            userScrollEnabled = !interactuandoMapa,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
@@ -116,10 +118,10 @@ fun MapaScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            item { PermisoSistema() }
             item {
                 if (conMapbox) {
                     MapaMapbox(
+                        onInteraccion = { interactuandoMapa = it },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(300.dp)

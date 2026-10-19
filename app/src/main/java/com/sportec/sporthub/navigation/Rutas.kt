@@ -54,7 +54,6 @@ interface RutaAcceso : NavKey
 
 @Serializable data class Ruta(val negocioId: String) : NavKey
 @Serializable data class Brujula(val negocioId: String) : NavKey
-@Serializable data class CheckIn(val reservaId: String) : NavKey
 @Serializable data class FotoLlegada(val reservaId: String) : NavKey
 @Serializable data class Resena(val reservaId: String) : NavKey
 @Serializable data object Notificaciones : NavKey

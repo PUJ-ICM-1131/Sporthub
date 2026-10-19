@@ -26,6 +26,7 @@ fun PantallaBase(
     onBack: (() -> Unit)? = null,
     acciones: @Composable RowScope.() -> Unit = {},
     tituloContenido: (@Composable () -> Unit)? = null,
+    botonFlotante: @Composable () -> Unit = {},
     contenido: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
@@ -53,6 +54,7 @@ fun PantallaBase(
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
+        floatingActionButton = botonFlotante,
         content = contenido
     )
 }

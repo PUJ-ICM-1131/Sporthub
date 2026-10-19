@@ -11,6 +11,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
+import com.sportec.sporthub.domain.Reservas
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,12 +49,16 @@ fun DetalleReservaScreen(
     onPublicarTransferencia: (String) -> Unit,
     onVerTransferencia: (String) -> Unit,
     onCalificar: (String) -> Unit,
-    onRegistrarLlegada: (String) -> Unit,
+    onAdjuntarFoto: (String) -> Unit,
     viewModel: DetalleReservaViewModel = viewModel()
 ) {
     val estado by viewModel.uiState.collectAsState()
+    var mostrarLlegada by rememberSaveable(reservaId, usuarioId) { mutableStateOf(false) }
+    var errorLlegada by rememberSaveable(reservaId, usuarioId) { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(reservaId) { viewModel.cargar(reservaId) }
+    val opiniones by com.sportec.sporthub.domain.Resenas.resenas.collectAsState()
+    val reservas by com.sportec.sporthub.domain.Reservas.reservas.collectAsState()
+    LaunchedEffect(reservaId, opiniones, reservas) { viewModel.cargar(reservaId) }
 
     PantallaBase(titulo = Textos.obtener(R.string.texto_reserva), onBack = onBack) { padding ->
         when {
@@ -78,8 +92,29 @@ fun DetalleReservaScreen(
                         )
                     )
                     if (esCancelable) {
-                        OutlinedButton(onClick = { onRegistrarLlegada(reserva.id) }, modifier = Modifier.fillMaxWidth()) {
-                            Text(stringResource(R.string.texto_registrar_llegada))
+                        OutlinedButton(onClick = { mostrarLlegada = !mostrarLlegada }, modifier = Modifier.fillMaxWidth()) {
+                            Text(stringResource(if (mostrarLlegada) R.string.llegada_ocultar_opciones else R.string.texto_registrar_llegada))
+                        }
+                        if (reserva.llegada) Text(stringResource(R.string.checkin_registrada))
+                        AnimatedVisibility(visible = mostrarLlegada) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(enabled = !reserva.llegada, onClick = {
+                                    try {
+                                        Reservas.registrarLlegada(reserva.id, usuarioId)
+                                        errorLlegada = null
+                                    } catch (e: Exception) {
+                                        errorLlegada = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_completar_la_accion)
+                                    }
+                                }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.checkin_registrar)) }
+                                OutlinedButton(onClick = { onAdjuntarFoto(reserva.id) }, modifier = Modifier.fillMaxWidth()) {
+                                    Text(stringResource(R.string.checkin_foto))
+                                }
+                                reserva.fotoLlegada?.let { uri ->
+                                    AsyncImage(model = uri, contentDescription = stringResource(R.string.foto_llegada_titulo),
+                                        contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth().height(180.dp))
+                                }
+                                errorLlegada?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                            }
                         }
                     }
                     if (esCancelable && reserva.politica.transferable && estado.transferenciaId == null) {
@@ -97,9 +132,15 @@ fun DetalleReservaScreen(
                             Text(stringResource(R.string.texto_ver_transferencias_de_esta_reserva))
                         }
                     }
-                    if (esDueno && reserva.cerrada && !estado.yaCalificada) {
-                        OutlinedButton(onClick = { onCalificar(reserva.id) }, modifier = Modifier.fillMaxWidth()) {
-                            Text(stringResource(R.string.texto_calificar))
+                    if (esDueno && (reserva.estado == EstadoReserva.CONFIRMADA || reserva.cerrada)) {
+                        val opinion = opiniones.firstOrNull { it.reservaId == reserva.id }
+                        if (opinion != null) {
+                            Text(stringResource(R.string.resena_publicada, opinion.puntaje))
+                            if (opinion.comentario.isNotBlank()) Text(opinion.comentario)
+                        } else {
+                            OutlinedButton(onClick = { onCalificar(reserva.id) }, enabled = reserva.cerrada,
+                                modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.texto_calificar)) }
+                            if (!reserva.cerrada) Text(stringResource(R.string.resena_disponible_al_cierre))
                         }
                     }
                 }

@@ -8,6 +8,10 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import com.mapbox.maps.plugin.gestures.gestures
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -67,13 +71,25 @@ fun MapaMapbox(
     trazado: List<Coordenada> = emptyList(),
     encuadrarEn: List<Coordenada> = emptyList(),
     mostrarOrigen: Boolean = true,
-    onMarcarOrigen: ((Coordenada) -> Unit)? = null
+    onMarcarOrigen: ((Coordenada) -> Unit)? = null,
+    onInteraccion: (Boolean) -> Unit = {}
 ) {
     var ampliado by rememberSaveable { mutableStateOf(false) }
     val contenido: @Composable (Modifier) -> Unit = { m ->
         ContenidoMapa(m, origen, origenEsPosicionActual, marcadores, onSeleccionar, radioKm, trazado, encuadrarEn, mostrarOrigen, onMarcarOrigen)
     }
-    Box(modifier = modifier) {
+    val interaccionActual by rememberUpdatedState(onInteraccion)
+    DisposableEffect(Unit) { onDispose { interaccionActual(false) } }
+    Box(modifier = modifier.pointerInput(Unit) {
+        try {
+            awaitPointerEventScope {
+                while (true) {
+                    val evento = awaitPointerEvent(PointerEventPass.Initial)
+                    interaccionActual(evento.changes.any { it.pressed })
+                }
+            }
+        } finally { interaccionActual(false) }
+    }) {
         contenido(Modifier.fillMaxSize())
         FilledTonalIconButton(
             onClick = { ampliado = true },
@@ -148,6 +164,13 @@ private fun ContenidoMapa(
         style = { MapboxStandardStyle(standardStyleState = estiloEstandar) }
     ) {
         MapEffect(permitido) { mapView ->
+            mapView.gestures.updateSettings {
+                scrollEnabled = true
+                pinchToZoomEnabled = true
+                rotateEnabled = true
+                pitchEnabled = true
+                doubleTapToZoomInEnabled = true
+            }
             mapView.location.updateSettings {
                 enabled = permitido
                 if (permitido) {

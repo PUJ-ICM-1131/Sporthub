@@ -53,12 +53,11 @@ fun NotificacionesScreen(
     val invitaciones by Comunidades.invitaciones.collectAsState()
     val propias = notificaciones.filter { it.usuarioId == usuarioId }
     var error by remember { mutableStateOf<String?>(null) }
-    PantallaBase(titulo = Textos.obtener(R.string.texto_notificaciones), onBack = onBack) { padding ->
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp)) {
+    PantallaBase(titulo = Textos.obtener(R.string.texto_notificaciones), onBack = onBack, botonFlotante = { PermisoNotificaciones() }) { padding ->
+        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 88.dp)) {
             item {
                 Text(stringResource(R.string.avisos_explicacion))
             }
-            item { PermisoNotificaciones() }
             if (error != null) item { Text(error.orEmpty(), color = MaterialTheme.colorScheme.error) }
             if (propias.isEmpty()) item { Text(stringResource(R.string.texto_por_ahora_estas_al_dia)) }
             items(propias, key = { it.id }) { aviso ->

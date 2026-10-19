@@ -1,5 +1,9 @@
 package com.sportec.sporthub.ui.screens.deportista
 
+import android.Manifest
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.sportec.sporthub.ui.components.rememberPermisosUbicacion
 import android.hardware.GeomagneticField
 import android.view.Surface
 import androidx.compose.foundation.layout.Arrangement
@@ -51,6 +55,7 @@ import com.sportec.sporthub.ui.components.TipoAviso
 import com.sportec.sporthub.utils.CalculosBrujula
 import com.sportec.sporthub.utils.SensoresBrujula
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun BrujulaScreen(negocioId: String, onBack: () -> Unit) {
     SeguimientoUbicacion()
@@ -63,7 +68,9 @@ fun BrujulaScreen(negocioId: String, onBack: () -> Unit) {
     val sensores = remember { SensoresBrujula(context.applicationContext) }
     val estado by sensores.estado.collectAsState()
     val posicion by Ubicacion.posicionActual.collectAsState()
-    val actual = posicion?.takeIf { it.esFiable(ahora) }
+    val permisos = rememberPermisosUbicacion()
+    val precisa = permisos.permissions.any { it.permission == Manifest.permission.ACCESS_FINE_LOCATION && it.status.isGranted }
+    val actual = posicion?.takeIf { precisa && it.esFiable(ahora) }
     val origen = actual?.let { Origen(stringResource(R.string.brujula_posicion_actual), it.latitud, it.longitud) }
 
     DisposableEffect(lifecycle, vista, negocioId) {
@@ -92,7 +99,9 @@ fun BrujulaScreen(negocioId: String, onBack: () -> Unit) {
             Text(stringResource(R.string.brujula_acelerometro, stringResource(if (estado.acelerometroDisponible) R.string.brujula_disponible else R.string.brujula_no_disponible)))
             Text(stringResource(R.string.brujula_magnetometro, stringResource(if (estado.magnetometroDisponible) R.string.brujula_disponible else R.string.brujula_no_disponible)))
         } }, confirmButton = { TextButton(onClick = { ayuda = false }) { Text(stringResource(R.string.selector_foto_aceptar)) } })
-    PantallaBase(titulo = stringResource(R.string.texto_brujula), onBack = onBack) { padding ->
+    PantallaBase(titulo = stringResource(R.string.texto_brujula), onBack = onBack, acciones = {
+        com.sportec.sporthub.ui.components.PermisoSistema(solicitarAlEntrar = true, exigirPrecisa = true)
+    }) { padding ->
         if (negocio == null) {
             EstadoVacio(mensaje = stringResource(R.string.texto_el_establecimiento_ya_no_existe), modifier = Modifier.padding(padding))
         } else {
@@ -107,7 +116,8 @@ fun BrujulaScreen(negocioId: String, onBack: () -> Unit) {
             ) {
                 Text(negocio.nombre, style = MaterialTheme.typography.titleLarge)
                 if (origen != null && distancia != null) Text(stringResource(R.string.formato_distancia_origen).format(distancia, origen.nombre))
-                if (actual == null) Aviso(texto = stringResource(R.string.brujula_sin_posicion_fiable), tipo = TipoAviso.NORMAL)
+                if (!precisa) Aviso(texto = stringResource(R.string.brujula_requiere_precisa), tipo = TipoAviso.NORMAL)
+                else if (actual == null) Aviso(texto = stringResource(R.string.brujula_sin_posicion_fiable), tipo = TipoAviso.NORMAL)
                 when {
                     !estado.acelerometroDisponible || !estado.magnetometroDisponible -> Aviso(texto = stringResource(R.string.brujula_sin_sensores), tipo = TipoAviso.ADVERTENCIA)
                     !estado.lecturaValida || azimut == null -> Aviso(texto = stringResource(R.string.brujula_sin_lectura), tipo = TipoAviso.NORMAL)
@@ -125,7 +135,6 @@ fun BrujulaScreen(negocioId: String, onBack: () -> Unit) {
                         Text(stringResource(R.string.brujula_rumbo, rumbo.toInt()))
                     }
                 }
-                com.sportec.sporthub.ui.components.PermisoSistema()
                 TextButton(onClick = { ayuda = true }) { Text(stringResource(R.string.brujula_ayuda_titulo)) }
                 OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.brujula_volver_ruta)) }
             }

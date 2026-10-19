@@ -59,7 +59,6 @@ import com.sportec.sporthub.ui.screens.comun.SucesionScreen
 import com.sportec.sporthub.ui.screens.comun.ReportarScreen
 import com.sportec.sporthub.ui.screens.deportista.BrujulaScreen
 import com.sportec.sporthub.ui.screens.deportista.BuscarScreen
-import com.sportec.sporthub.ui.screens.deportista.CheckInScreen
 import com.sportec.sporthub.ui.screens.deportista.CancelarReservaScreen
 import com.sportec.sporthub.ui.screens.deportista.DetalleActividadScreen
 import com.sportec.sporthub.ui.screens.deportista.DetalleEstablecimientoScreen
@@ -355,7 +354,7 @@ fun SportHubApp(
                         onPublicarTransferencia = { id -> irA(PublicarTransferencia(id)) },
                         onVerTransferencia = { id -> irA(DetalleTransferencia(id)) },
                         onCalificar = { id -> irA(Resena(id)) },
-                        onRegistrarLlegada = { id -> irA(CheckIn(id)) }
+                        onAdjuntarFoto = { id -> irA(FotoLlegada(id)) }
                     )
                 }
                 entry<Resena> { ruta ->
@@ -445,14 +444,6 @@ fun SportHubApp(
                     FiltrosScreen(
                         onBack = { volver() },
                         onAplicados = { volver() }
-                    )
-                }
-                entry<CheckIn> { ruta ->
-                    CheckInScreen(
-                        reservaId = ruta.reservaId,
-                        usuarioId = cuenta?.id.orEmpty(),
-                        onBack = { volver() },
-                        onAdjuntarFoto = { irA(FotoLlegada(ruta.reservaId)) }
                     )
                 }
                 entry<FotoLlegada> { ruta ->
