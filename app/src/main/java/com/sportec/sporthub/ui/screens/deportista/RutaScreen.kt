@@ -62,6 +62,7 @@ import com.sportec.sporthub.utils.Coordenada
 import com.sportec.sporthub.utils.DireccionesMapbox
 import com.sportec.sporthub.utils.Geo
 import kotlin.math.roundToInt
+import com.sportec.sporthub.utils.formatoDuracion
 
 @Composable
 fun RutaScreen(
@@ -173,14 +174,25 @@ fun RutaScreen(
                         DatoRuta(stringResource(R.string.ruta_destino), negocio.direccion)
                         if (origenDefinido) DatoRuta(stringResource(R.string.ruta_origen), origen.nombre)
                         if (trayecto != null) {
-                            DatoRuta(
-                                stringResource(R.string.ruta_distancia),
-                                stringResource(R.string.ruta_distancia_km, String.format("%.1f", trayecto.distanciaMetros / 1000))
-                            )
-                            DatoRuta(
-                                stringResource(R.string.ruta_duracion),
-                                stringResource(R.string.ruta_duracion_min, (trayecto.duracionSegundos / 60).roundToInt().coerceAtLeast(1))
-                            )
+                            val actual = posicion?.takeIf { origen.esPosicionActual }?.let { Coordenada(it.latitud, it.longitud) }
+                            val restante = actual?.let {
+                                if (trayecto.estimado) Geo.distanciaMetros(it, destino) else Geo.restanteMetros(it, trayecto.puntos)
+                            }
+                            val metros = restante ?: trayecto.distanciaMetros
+                            val segundos = if (restante != null && trayecto.distanciaMetros > 0)
+                                trayecto.duracionSegundos * restante / trayecto.distanciaMetros else trayecto.duracionSegundos
+                            if (restante != null && restante <= Trayectos.LLEGADA_M) {
+                                DatoRuta(stringResource(R.string.ruta_estado), stringResource(R.string.ruta_llegaste))
+                            } else {
+                                DatoRuta(
+                                    stringResource(if (restante != null) R.string.ruta_distancia_restante else R.string.ruta_distancia),
+                                    stringResource(R.string.ruta_distancia_km, String.format("%.1f", metros / 1000))
+                                )
+                                DatoRuta(
+                                    stringResource(if (restante != null) R.string.ruta_tiempo_restante else R.string.ruta_duracion),
+                                    formatoDuracion((segundos / 60).roundToInt().coerceAtLeast(1))
+                                )
+                            }
                         }
                     }
                 }

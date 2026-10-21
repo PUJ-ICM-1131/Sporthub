@@ -751,4 +751,7 @@
     <string name="resena_publicada">Calificación del usuario: %1$d de 5 estrellas</string>
     <string name="resena_disponible_al_cierre">Podrás calificar cuando el establecimiento cierre la actividad. Se permite una reseña por reserva.</string>
     <string name="llegada_ocultar_opciones">Ocultar opciones de llegada</string>
+    <string name="ruta_distancia_restante">Distancia restante</string>
+    <string name="ruta_tiempo_restante">Tiempo restante</string>
+    <string name="ruta_estado">Estado</string>
 </resources>

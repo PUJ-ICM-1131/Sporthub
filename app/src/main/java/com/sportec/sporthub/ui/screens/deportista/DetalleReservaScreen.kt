@@ -6,6 +6,12 @@ import androidx.compose.ui.res.stringResource
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -146,6 +152,16 @@ fun DetalleReservaScreen(
                                         style = MaterialTheme.typography.titleMedium,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
+                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        for (valor in 1..5) {
+                                            Icon(
+                                                imageVector = if (valor <= opinion.puntaje) Icons.Filled.Star else Icons.Filled.StarBorder,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+                                    }
                                     if (opinion.comentario.isNotBlank()) {
                                         Text(
                                             text = opinion.comentario,
