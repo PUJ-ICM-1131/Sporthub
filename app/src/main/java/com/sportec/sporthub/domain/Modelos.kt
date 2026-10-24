@@ -13,12 +13,12 @@ data class Cuenta(
     val id: String,
     val nombre: String,
     val email: String,
-    val contrasena: String,
     val rol: Rol,
     val telefono: String? = null,
     val negocioId: String? = null,
     val activa: Boolean = true,
-    val fotoUri: String? = null
+    val fotoUri: String? = null,
+    val uid: String = ""
 )
 
 enum class EstadoNegocio(val etiqueta: String) {
@@ -82,7 +82,8 @@ data class Actividad(
     val politica: Politica = Politica(),
     val horaApertura: Int = 6,
     val horaCierre: Int = 21,
-    val fotoUri: String? = null
+    val fotoUri: String? = null,
+    val fotos: List<String> = listOfNotNull(fotoUri)
 )
 
 data class ActividadConNegocio(
@@ -179,7 +180,8 @@ data class Postulante(
     val id: String,
     val usuarioId: String,
     val estado: EstadoPostulante,
-    val deadline: Long? = null
+    val deadline: Long? = null,
+    val aceptadoPorPropietario: Boolean = false
 )
 
 enum class EstadoTransferencia(val etiqueta: String) {
@@ -205,7 +207,8 @@ data class Comunidad(
     val descripcion: String,
     val creadorId: String,
     val adminId: String,
-    val miembros: List<String>
+    val miembros: List<String>,
+    val fotoUri: String? = null
 )
 
 data class Mensaje(

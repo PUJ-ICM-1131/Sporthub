@@ -1,6 +1,11 @@
 package com.sportec.sporthub.ui.screens.deportista
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.sportec.sporthub.domain.Cuentas
+import com.sportec.sporthub.domain.Negocios
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
 import com.sportec.sporthub.domain.ActividadConNegocio
 import com.sportec.sporthub.domain.Catalogo
 import com.sportec.sporthub.domain.Categoria
@@ -21,7 +26,10 @@ class ExplorarViewModel : ViewModel() {
     val uiState: StateFlow<ExplorarUiState> = _uiState.asStateFlow()
 
     init {
-        cargar()
+        viewModelScope.launch {
+            combine(Cuentas.cuentas, Negocios.negocios, Negocios.actividades) { _, _, _ -> Unit }
+                .collect { cargar() }
+        }
     }
 
     fun seleccionarCategoria(nombre: String?) {

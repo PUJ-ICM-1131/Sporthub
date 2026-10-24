@@ -1,7 +1,12 @@
 package com.sportec.sporthub.navigation
 
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -30,7 +35,6 @@ import com.sportec.sporthub.ui.SesionViewModel
 import com.sportec.sporthub.ui.screens.acceso.BienvenidaScreen
 import com.sportec.sporthub.ui.screens.acceso.EnlaceRecuperacionScreen
 import com.sportec.sporthub.ui.screens.acceso.LoginScreen
-import com.sportec.sporthub.ui.screens.acceso.NuevaContrasenaScreen
 import com.sportec.sporthub.ui.screens.acceso.RecuperarScreen
 import com.sportec.sporthub.ui.screens.acceso.RegistroDeportistaScreen
 import com.sportec.sporthub.ui.screens.acceso.RegistroEstablecimientoScreen
@@ -50,13 +54,11 @@ import com.sportec.sporthub.ui.screens.comun.MensajesScreen
 import com.sportec.sporthub.ui.screens.comun.NotificacionesScreen
 import com.sportec.sporthub.ui.screens.comun.NuevoChatScreen
 import com.sportec.sporthub.ui.screens.comun.PantallaPendiente
-import com.sportec.sporthub.ui.screens.comun.PermisoScreen
 import com.sportec.sporthub.ui.screens.comun.PerfilScreen
 import com.sportec.sporthub.ui.screens.comun.SucesionScreen
 import com.sportec.sporthub.ui.screens.comun.ReportarScreen
 import com.sportec.sporthub.ui.screens.deportista.BrujulaScreen
 import com.sportec.sporthub.ui.screens.deportista.BuscarScreen
-import com.sportec.sporthub.ui.screens.deportista.CheckInScreen
 import com.sportec.sporthub.ui.screens.deportista.CancelarReservaScreen
 import com.sportec.sporthub.ui.screens.deportista.DetalleActividadScreen
 import com.sportec.sporthub.ui.screens.deportista.DetalleEstablecimientoScreen
@@ -67,11 +69,9 @@ import com.sportec.sporthub.ui.screens.deportista.DetalleTransferenciaScreen
 import com.sportec.sporthub.ui.screens.deportista.ExplorarScreen
 import com.sportec.sporthub.ui.screens.deportista.FiltrosScreen
 import com.sportec.sporthub.ui.screens.deportista.FotoLlegadaScreen
-import com.sportec.sporthub.ui.screens.deportista.HorariosScreen
 import com.sportec.sporthub.ui.screens.deportista.MapaScreen
 import com.sportec.sporthub.ui.screens.deportista.MisReservasScreen
 import com.sportec.sporthub.ui.screens.deportista.MisTransferenciasScreen
-import com.sportec.sporthub.ui.screens.deportista.OrigenScreen
 import com.sportec.sporthub.ui.screens.deportista.PagoExitosoScreen
 import com.sportec.sporthub.ui.screens.deportista.PagoScreen
 import com.sportec.sporthub.ui.screens.deportista.PublicarTransferenciaScreen
@@ -95,7 +95,11 @@ import com.sportec.sporthub.ui.screens.establecimiento.ValidacionNegocioScreen
 fun SportHubApp(
     sesionViewModel: SesionViewModel = viewModel()
 ) {
+    val destinatarioAviso by com.sportec.sporthub.utils.EntradaNotificacion.destinatario.collectAsState()
     val cuenta by sesionViewModel.cuenta.collectAsState()
+    val restaurando by sesionViewModel.restaurando.collectAsState()
+    com.sportec.sporthub.ui.components.PermisoNotificacionesAlEntrar(cuenta?.id)
+    com.sportec.sporthub.ui.components.AvisosSistema(cuenta?.id)
     val backStack = rememberNavBackStack(Bienvenida)
     val actividad = LocalActivity.current
 
@@ -137,6 +141,20 @@ fun SportHubApp(
         }
     }
 
+    LaunchedEffect(cuenta?.id) {
+        val activa = cuenta
+        if (activa != null && backStack.lastOrNull() is RutaAcceso) {
+            reiniciarEn(inicioDe(activa.rol))
+        }
+    }
+
+    LaunchedEffect(destinatarioAviso, cuenta?.id) {
+        if (destinatarioAviso != null && destinatarioAviso == cuenta?.id) {
+            irA(Notificaciones)
+            com.sportec.sporthub.utils.EntradaNotificacion.destinatario.value = null
+        }
+    }
+
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
@@ -161,6 +179,7 @@ fun SportHubApp(
             }
         }
     ) { padding ->
+        Box(Modifier.fillMaxSize()) {
         NavDisplay(
             backStack = backStack,
             modifier = Modifier
@@ -220,14 +239,7 @@ fun SportHubApp(
                     EnlaceRecuperacionScreen(
                         email = ruta.email,
                         onBack = { volver() },
-                        onAbrirEnlace = { irA(NuevaContrasena(ruta.email)) }
-                    )
-                }
-                entry<NuevaContrasena> { ruta ->
-                    NuevaContrasenaScreen(
-                        email = ruta.email,
-                        onBack = { volver() },
-                        onListo = { reiniciarEn(Login) }
+                        onVolverAIniciarSesion = { reiniciarEn(Login) }
                     )
                 }
                 entry<RegistroDeportista> {
@@ -244,6 +256,7 @@ fun SportHubApp(
                 }
                 entry<Explorar> {
                     ExplorarScreen(
+                        usuarioId = cuenta?.id.orEmpty(),
                         nombre = cuenta?.nombre?.substringBefore(" ").orEmpty(),
                         onNavegar = { irA(it) }
                     )
@@ -276,7 +289,7 @@ fun SportHubApp(
                     DetalleActividadScreen(
                         actividadId = ruta.id,
                         onBack = { volver() },
-                        onVerHorarios = { irA(Horarios(ruta.id)) },
+                        onSolicitar = { fecha, hora -> irA(ResumenSolicitud(ruta.id, fecha, hora)) },
                         onVerEstablecimiento = {
                             Negocios.actividadDe(ruta.id)?.negocioId?.let { irA(DetalleEstablecimiento(it)) }
                         }
@@ -292,13 +305,6 @@ fun SportHubApp(
                             irA(Chat(chat.id))
                         },
                         onComoLlegar = { irA(Ruta(ruta.id)) }
-                    )
-                }
-                entry<Horarios> { ruta ->
-                    HorariosScreen(
-                        actividadId = ruta.actividadId,
-                        onBack = { volver() },
-                        onSolicitar = { fecha, hora -> irA(ResumenSolicitud(ruta.actividadId, fecha, hora)) }
                     )
                 }
                 entry<ResumenSolicitud> { ruta ->
@@ -347,7 +353,8 @@ fun SportHubApp(
                         onCancelar = { id -> irA(CancelarReserva(id)) },
                         onPublicarTransferencia = { id -> irA(PublicarTransferencia(id)) },
                         onVerTransferencia = { id -> irA(DetalleTransferencia(id)) },
-                        onCalificar = { id -> irA(Resena(id)) }
+                        onCalificar = { id -> irA(Resena(id)) },
+                        onAdjuntarFoto = { id -> irA(FotoLlegada(id)) }
                     )
                 }
                 entry<Resena> { ruta ->
@@ -384,24 +391,13 @@ fun SportHubApp(
                     MapaScreen(
                         onBack = { volver() },
                         onVerServicios = { id -> irA(DetalleEstablecimiento(id)) },
-                        onElegirOrigen = { irA(Origen) }
-                    )
-                }
-                entry<Origen> {
-                    OrigenScreen(onBack = { volver() })
-                }
-                entry<Permiso> { ruta ->
-                    PermisoScreen(
-                        tipo = ruta.tipo,
-                        onBack = { volver() },
-                        onResuelto = { volver() }
+                        onComoLlegar = { id -> irA(Ruta(id)) }
                     )
                 }
                 entry<Ruta> { ruta ->
                     RutaScreen(
                         negocioId = ruta.negocioId,
                         onBack = { volver() },
-                        onCambiarOrigen = { irA(Origen) },
                         onBrujula = { irA(Brujula(ruta.negocioId)) }
                     )
                 }
@@ -448,14 +444,6 @@ fun SportHubApp(
                     FiltrosScreen(
                         onBack = { volver() },
                         onAplicados = { volver() }
-                    )
-                }
-                entry<CheckIn> { ruta ->
-                    CheckInScreen(
-                        reservaId = ruta.reservaId,
-                        usuarioId = cuenta?.id.orEmpty(),
-                        onBack = { volver() },
-                        onAdjuntarFoto = { irA(FotoLlegada(ruta.reservaId)) }
                     )
                 }
                 entry<FotoLlegada> { ruta ->
@@ -527,7 +515,9 @@ fun SportHubApp(
                         transferenciaId = ruta.id,
                         cuenta = cuenta,
                         onBack = { volver() },
-                        onPagar = { id -> irA(Pago(id)) }
+                        onPagar = { id -> irA(Pago(id)) },
+                        onChat = { id -> irA(Chat(id)) },
+                        onReserva = { id -> irA(DetalleReserva(id)) }
                     )
                 }
                 entry<Mensajes> {
@@ -549,7 +539,8 @@ fun SportHubApp(
                         chatId = ruta.id,
                         usuarioId = cuenta?.id.orEmpty(),
                         onBack = { volver() },
-                        onReportar = { irA(Reportar("mensaje")) }
+                        onReportar = { irA(Reportar("mensaje")) },
+                        onVerComunidad = { id -> irA(Comunidad(id)) }
                     )
                 }
                 entry<Reportar> { ruta ->
@@ -626,5 +617,12 @@ fun SportHubApp(
                 }
             }
         )
+        if (restaurando) {
+            Box(
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+                contentAlignment = Alignment.Center
+            ) { CircularProgressIndicator() }
+        }
+        }
     }
 }

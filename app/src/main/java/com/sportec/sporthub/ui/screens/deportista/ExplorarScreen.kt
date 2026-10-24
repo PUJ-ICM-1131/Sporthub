@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -16,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -45,6 +49,7 @@ import com.sportec.sporthub.ui.components.TarjetaTint
 @Composable
 fun ExplorarScreen(
     nombre: String,
+    usuarioId: String,
     onNavegar: (NavKey) -> Unit,
     viewModel: ExplorarViewModel = viewModel()
 ) {
@@ -53,9 +58,7 @@ fun ExplorarScreen(
     PantallaBase(
         titulo = Textos.obtener(R.string.texto_explorar),
         acciones = {
-            IconButton(onClick = { onNavegar(Notificaciones) }) {
-                Icon(Icons.Filled.Notifications, contentDescription = Textos.obtener(R.string.texto_notificaciones))
-            }
+            com.sportec.sporthub.ui.components.CampanaNotificaciones(usuarioId) { onNavegar(Notificaciones) }
         }
     ) { padding ->
         LazyColumn(
@@ -86,13 +89,14 @@ fun ExplorarScreen(
             }
             item {
                 Row(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(text = stringResource(R.string.texto_encuentra_tu_actividad),
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.weight(1f)
                     )
-                    TextButton(onClick = { onNavegar(Buscar) }) { Text(stringResource(R.string.texto_ver_todas)) }
+                    TextButton(onClick = { onNavegar(Buscar) }) { Text(stringResource(R.string.texto_ver_todas), maxLines = 1, softWrap = false) }
                 }
             }
             item {
@@ -115,13 +119,18 @@ fun ExplorarScreen(
             }
             item {
                 Row(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(text = stringResource(R.string.texto_planes_para_esta_semana),
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.weight(1f)
                     )
-                    TextButton(onClick = { onNavegar(Mapa) }) { Text(stringResource(R.string.texto_mapa)) }
+                    TextButton(onClick = { onNavegar(Mapa) }) {
+                        Icon(Icons.Filled.Map, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(stringResource(R.string.texto_mapa), maxLines = 1, softWrap = false)
+                    }
                 }
             }
             if (estado.actividades.isEmpty()) {
@@ -133,7 +142,8 @@ fun ExplorarScreen(
                             Box(modifier = Modifier.width(254.dp)) {
                                 TarjetaActividad(
                                     item = item,
-                                    onClick = { onNavegar(DetalleActividad(item.actividad.id)) }
+                                    onClick = { onNavegar(DetalleActividad(item.actividad.id)) },
+                                    uniforme = true
                                 )
                             }
                         }

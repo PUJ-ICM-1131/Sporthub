@@ -19,6 +19,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.animation.animateContentSize
+import androidx.compose.material3.Card
+import androidx.compose.material3.TextButton
+import com.sportec.sporthub.domain.Cuentas
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +50,8 @@ fun DetalleEstablecimientoScreen(
     val negocios by Negocios.negocios.collectAsState()
     val actividades by Negocios.actividades.collectAsState()
     val resenas by Resenas.resenas.collectAsState()
+    val cuentas by Cuentas.cuentas.collectAsState()
+    var mostrarTodas by rememberSaveable(negocioId) { mutableStateOf(false) }
     val negocio = negocios.firstOrNull { it.id == negocioId }
     val servicios = remember(actividades, negocioId) { actividades.filter { it.negocioId == negocioId } }
     val resenasNegocio = remember(resenas, negocioId) { Resenas.listarDeNegocio(negocioId) }
@@ -70,6 +79,28 @@ fun DetalleEstablecimientoScreen(
                         add(Textos.obtener(R.string.texto_calificacion) to (promedio?.let { Textos.obtener(R.string.formato_promedio_resenas, "%.1f".format(it), resenasNegocio.size) } ?: Textos.obtener(R.string.texto_sin_resenas_todavia)))
                     }
                 )
+                Column(modifier = Modifier.fillMaxWidth().animateContentSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.resenas_titulo), style = MaterialTheme.typography.titleMedium)
+                    if (resenasNegocio.isEmpty()) Text(stringResource(R.string.texto_sin_resenas_todavia))
+                    val opiniones = resenasNegocio.asReversed()
+                    opiniones.take(if (mostrarTodas) opiniones.size else 1).forEach { opinion ->
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(cuentas.firstOrNull { it.id == opinion.usuarioId }?.nombre
+                                    ?: stringResource(R.string.resena_usuario), fontWeight = FontWeight.SemiBold)
+                                Text(stringResource(R.string.resena_puntuacion, opinion.puntaje))
+                                if (opinion.comentario.isNotBlank()) Text(opinion.comentario)
+                                opinion.respuesta?.takeIf { it.isNotBlank() }?.let {
+                                    Text(stringResource(R.string.resena_respuesta_negocio, it), style = MaterialTheme.typography.bodyMedium)
+                                }
+                            }
+                        }
+                    }
+                    if (opiniones.size > 1) TextButton(onClick = { mostrarTodas = !mostrarTodas }) {
+                        Text(if (mostrarTodas) stringResource(R.string.resenas_contraer)
+                            else stringResource(R.string.resenas_ver_todas, opiniones.size))
+                    }
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = onEnviarMensaje, modifier = Modifier.weight(1f)) {
                         Text(stringResource(R.string.texto_enviar_mensaje))

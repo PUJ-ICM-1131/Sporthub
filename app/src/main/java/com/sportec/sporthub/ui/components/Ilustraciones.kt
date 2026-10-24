@@ -107,7 +107,7 @@ fun IlustracionActividad(actividad: Actividad, modifier: Modifier = Modifier) {
         Etiqueta(
             texto = if (esEspacio) Textos.obtener(R.string.texto_espacio_completo) else Textos.cantidad(R.plurals.clase_cupos, actividad.capacidad, actividad.capacidad),
             contenedor = Color.White.copy(alpha = 0.94f),
-            contenido = MaterialTheme.colorScheme.onSurface,
+            contenido = com.sportec.sporthub.ui.theme.Tinta,
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(12.dp)

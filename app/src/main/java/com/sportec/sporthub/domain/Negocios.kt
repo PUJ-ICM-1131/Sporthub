@@ -1,5 +1,6 @@
 package com.sportec.sporthub.domain
 
+import com.sportec.sporthub.utils.FotosLocales
 import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Textos
 
@@ -11,14 +12,17 @@ import kotlinx.coroutines.flow.asStateFlow
 
 object Negocios {
 
-    private var secuencia = 900
-    private fun uid(prefijo: String) = prefijo + (++secuencia)
+    private fun uid(prefijo: String) = prefijo + java.util.UUID.randomUUID().toString()
 
     private val _negocios = MutableStateFlow(DatosMock.negocios)
     val negocios: StateFlow<List<Negocio>> = _negocios.asStateFlow()
 
-    private val _actividades = MutableStateFlow(DatosMock.actividades)
+    private val _actividades = MutableStateFlow(DatosMock.actividades.map { it.copy(fotoUri = FotosLocales.obtenerGaleria(it.id).firstOrNull() ?: it.fotoUri, fotos = FotosLocales.obtenerGaleria(it.id).ifEmpty { it.fotos }) })
     val actividades: StateFlow<List<Actividad>> = _actividades.asStateFlow()
+
+    fun descartar(id: String) {
+        _negocios.value = _negocios.value.filterNot { it.id == id }
+    }
 
     fun negocioDe(id: String): Negocio? = _negocios.value.firstOrNull { it.id == id }
 
@@ -26,7 +30,9 @@ object Negocios {
 
     fun actividadesDe(negocioId: String): List<Actividad> = _actividades.value.filter { it.negocioId == negocioId }
 
-    fun operadorDe(negocioId: String): String? = Cuentas.todas().firstOrNull { it.negocioId == negocioId }?.id
+    fun operadorDe(negocioId: String): String? = Cuentas.todas().firstOrNull {
+        it.negocioId == negocioId && it.rol == Rol.ESTABLECIMIENTO && it.activa
+    }?.id
 
     fun crear(nombre: String, nit: String, contacto: String, direccion: String): Negocio {
         if (nombre.isBlank()) throw IllegalArgumentException(Textos.obtener(R.string.texto_el_nombre_del_negocio_es_obligatorio))
@@ -103,7 +109,8 @@ object Negocios {
         horaApertura: Int,
         horaCierre: Int,
         politica: Politica,
-        fotoUri: String? = null
+        fotoUri: String? = null,
+        fotos: List<String>? = null
     ): Actividad {
         if (negocioDe(negocioId)?.estado != EstadoNegocio.VALIDADO) throw IllegalStateException(Textos.obtener(R.string.texto_el_negocio_debe_estar_validado_para_publicar_servicios))
         if (nombre.isBlank()) throw IllegalArgumentException(Textos.obtener(R.string.texto_el_nombre_es_obligatorio))
@@ -119,6 +126,9 @@ object Negocios {
         if (politica.refundHours <= 0) throw IllegalArgumentException(Textos.obtener(R.string.texto_el_plazo_de_devolucion_debe_ser_mayor_a_cero))
 
         val existente = id?.let { actividadDe(it) }
+        require(Cuentas.porId(operadorId)?.negocioId == negocioId && (existente == null || existente.negocioId == negocioId)) { Textos.obtener(R.string.fotos_sin_acceso) }
+        val galeria = (fotos ?: listOfNotNull(fotoUri ?: existente?.fotoUri)).distinct()
+        require(galeria.size <= 8) { Textos.obtener(R.string.fotos_limite) }
         if (existente != null) {
             val cambiaCompromiso = existente.duracionMinutos != duracionMinutos || existente.capacidad != capacidad || existente.tipo != tipo
             if (cambiaCompromiso && Reservas.tieneCompromisos(existente.id)) {
@@ -128,8 +138,9 @@ object Negocios {
                 nombre = nombre, categoria = categoria, tipo = tipo, precio = precio,
                 duracionMinutos = duracionMinutos, capacidad = capacidad, descripcion = descripcion,
                 horaApertura = horaApertura, horaCierre = horaCierre, politica = politica,
-                fotoUri = fotoUri ?: existente.fotoUri
+                fotoUri = galeria.firstOrNull(), fotos = galeria
             )
+            FotosLocales.guardarGaleria(actualizada.id, galeria)
             _actividades.value = _actividades.value.map { if (it.id == existente.id) actualizada else it }
             return actualizada
         }
@@ -137,8 +148,9 @@ object Negocios {
             id = uid("a"), negocioId = negocioId, nombre = nombre, categoria = categoria, tipo = tipo,
             precio = precio, duracionMinutos = duracionMinutos, capacidad = capacidad, descripcion = descripcion,
             horaApertura = horaApertura, horaCierre = horaCierre, politica = politica,
-            fotoUri = fotoUri
+            fotoUri = galeria.firstOrNull(), fotos = galeria
         )
+        FotosLocales.guardarGaleria(nueva.id, galeria)
         _actividades.value = _actividades.value + nueva
         return nueva
     }

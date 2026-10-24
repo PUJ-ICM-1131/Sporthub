@@ -14,14 +14,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material3.FilterChip
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -64,26 +66,27 @@ fun MisReservasScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            SingleChoiceSegmentedButtonRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                PestanaReservas.entries.forEachIndexed { index, pestana ->
-                    SegmentedButton(
+                items(PestanaReservas.entries) { pestana ->
+                    FilterChip(
                         selected = estado.pestana == pestana,
                         onClick = { viewModel.seleccionarPestana(pestana) },
-                        shape = SegmentedButtonDefaults.itemShape(index, PestanaReservas.entries.size)
-                    ) {
-                        Text(
-                            when (pestana) {
-                                PestanaReservas.SOLICITUDES -> Textos.obtener(R.string.texto_solicitudes)
-                                PestanaReservas.PROXIMAS -> Textos.obtener(R.string.texto_proximas)
-                                PestanaReservas.HISTORIAL -> Textos.obtener(R.string.texto_historial)
-                                PestanaReservas.TRANSFERENCIAS -> Textos.obtener(R.string.texto_transferencias)
-                            }
-                        )
-                    }
+                        label = {
+                            Text(
+                                text = when (pestana) {
+                                    PestanaReservas.SOLICITUDES -> stringResource(R.string.texto_solicitudes)
+                                    PestanaReservas.PROXIMAS -> stringResource(R.string.texto_proximas)
+                                    PestanaReservas.HISTORIAL -> stringResource(R.string.texto_historial)
+                                    PestanaReservas.TRANSFERENCIAS -> stringResource(R.string.texto_transferencias)
+                                },
+                                maxLines = 1
+                            )
+                        }
+                    )
                 }
             }
             LazyColumn(
@@ -128,14 +131,18 @@ fun MisReservasScreen(
 
 @Composable
 private fun TarjetaSolicitud(solicitud: Solicitud, onClick: () -> Unit) {
-    val actividad = Negocios.actividadDe(solicitud.actividadId)
+    val actividades by Negocios.actividades.collectAsState()
+    val actividad = actividades.firstOrNull { it.id == solicitud.actividadId }
     ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        actividad?.let { com.sportec.sporthub.ui.components.IlustracionActividad(it) }
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                 Text(
                     text = actividad?.nombre.orEmpty(),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
                 Etiqueta(texto = solicitud.estado.etiqueta, tono = solicitud.estado.tono)
@@ -152,14 +159,18 @@ private fun TarjetaSolicitud(solicitud: Solicitud, onClick: () -> Unit) {
 
 @Composable
 private fun TarjetaReserva(reserva: Reserva, onClick: () -> Unit) {
-    val actividad = Negocios.actividadDe(reserva.actividadId)
+    val actividades by Negocios.actividades.collectAsState()
+    val actividad = actividades.firstOrNull { it.id == reserva.actividadId }
     ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        actividad?.let { com.sportec.sporthub.ui.components.IlustracionActividad(it) }
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                 Text(
                     text = actividad?.nombre.orEmpty(),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
                 Etiqueta(texto = if (reserva.cerrada) Textos.obtener(R.string.texto_cerrada) else reserva.estado.etiqueta, tono = if (reserva.cerrada) TonoEtiqueta.GRIS else reserva.estado.tono)
@@ -177,14 +188,18 @@ private fun TarjetaReserva(reserva: Reserva, onClick: () -> Unit) {
 @Composable
 private fun TarjetaTransferenciaReserva(transferencia: Transferencia, onClick: () -> Unit) {
     val reserva = Reservas.obtenerReserva(transferencia.reservaId)
-    val actividad = reserva?.let { Negocios.actividadDe(it.actividadId) }
+    val actividades by Negocios.actividades.collectAsState()
+    val actividad = actividades.firstOrNull { it.id == reserva?.actividadId }
     ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        actividad?.let { com.sportec.sporthub.ui.components.IlustracionActividad(it) }
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                 Text(
                     text = actividad?.nombre.orEmpty(),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
                 Etiqueta(texto = transferencia.estado.etiqueta, tono = transferencia.estado.tono)

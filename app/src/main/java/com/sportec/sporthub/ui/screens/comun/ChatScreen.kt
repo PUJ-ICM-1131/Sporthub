@@ -1,5 +1,8 @@
 package com.sportec.sporthub.ui.screens.comun
 
+import com.sportec.sporthub.ui.components.AvatarChat
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.ui.text.style.TextOverflow
 import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Textos
 import androidx.compose.ui.res.stringResource
@@ -44,30 +47,45 @@ fun ChatScreen(
     chatId: String,
     usuarioId: String,
     onBack: () -> Unit,
-    onReportar: () -> Unit
+    onReportar: () -> Unit,
+    onVerComunidad: (String) -> Unit
 ) {
     val chats by Mensajes.chats.collectAsState()
     val chat = chats.firstOrNull { it.id == chatId }
+    val cuentas by Cuentas.cuentas.collectAsState()
+    val comunidades by Comunidades.comunidades.collectAsState()
+    val grupo = comunidades.firstOrNull { it.id == chat?.comunidadId }
+    val persona = cuentas.firstOrNull { it.id == chat?.miembros?.firstOrNull { id -> id != usuarioId } }
     var texto by rememberSaveable { mutableStateOf("") }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
 
     val titulo = if (chat?.comunidadId != null) {
-        Comunidades.comunidadDe(chat.comunidadId)?.nombre ?: Textos.obtener(R.string.texto_comunidad)
+        grupo?.nombre ?: Textos.obtener(R.string.texto_comunidad)
     } else {
-        val otroId = chat?.miembros?.firstOrNull { it != usuarioId }
-        Cuentas.porId(otroId.orEmpty())?.let { Cuentas.nombreParaMostrar(it) } ?: Textos.obtener(R.string.texto_conversacion)
+        persona?.let { Cuentas.nombreParaMostrar(it) } ?: Textos.obtener(R.string.texto_conversacion)
     }
 
     PantallaBase(
         titulo = titulo,
         onBack = onBack,
+        tituloContenido = {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                AvatarChat(if (chat?.comunidadId != null) grupo?.fotoUri else persona?.fotoUri, titulo, chat?.comunidadId != null, 40.dp)
+                Text(titulo, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        },
         acciones = {
+            chat?.comunidadId?.let { id ->
+                IconButton(onClick = { onVerComunidad(id) }) {
+                    Icon(Icons.Filled.Info, contentDescription = stringResource(R.string.comunidad_ver_informacion))
+                }
+            }
             IconButton(onClick = onReportar) {
                 Icon(Icons.Filled.Flag, contentDescription = Textos.obtener(R.string.texto_reportar))
             }
         }
     ) { padding ->
-        if (chat == null) {
+        if (chat == null || !Mensajes.esMiembro(chat, usuarioId)) {
             EstadoError(mensaje = Textos.obtener(R.string.texto_la_conversacion_ya_no_existe), onReintentar = {}, modifier = Modifier.padding(padding))
         } else {
             Column(modifier = Modifier.fillMaxSize().padding(padding)) {

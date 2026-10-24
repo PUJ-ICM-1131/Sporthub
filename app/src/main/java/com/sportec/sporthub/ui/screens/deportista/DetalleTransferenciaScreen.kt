@@ -49,6 +49,8 @@ fun DetalleTransferenciaScreen(
     cuenta: Cuenta?,
     onBack: () -> Unit,
     onPagar: (String) -> Unit,
+    onChat: (String) -> Unit,
+    onReserva: (String) -> Unit,
     viewModel: DetalleTransferenciaViewModel = viewModel()
 ) {
     val estado by viewModel.uiState.collectAsState()
@@ -96,8 +98,46 @@ fun DetalleTransferenciaScreen(
                     Aviso(texto = estado.error ?: "", tipo = TipoAviso.ERROR)
                 }
 
-                if (esOperador) {
-                    val candidato = transferencia.postulantes.firstOrNull { it.estado == EstadoPostulante.REVISION }
+                if (transferencia.estado == EstadoTransferencia.COMPLETADA) {
+                    val titularTransferencia = transferencia.postulantes.firstOrNull { it.estado == EstadoPostulante.ATENDIDA }?.usuarioId ?: reserva.usuarioId
+                    Text(stringResource(R.string.transferencia_confirmacion_titular,
+                        com.sportec.sporthub.domain.Cuentas.porId(titularTransferencia)?.nombre ?: titularTransferencia))
+                    if (cuenta?.id == reserva.usuarioId || esOperador) {
+                        Button(onClick = { onReserva(reserva.id) }, modifier = Modifier.fillMaxWidth()) {
+                            Text(stringResource(R.string.transferencia_ver_reserva))
+                        }
+                    }
+                }
+                if (!esPropietario && interes != null && cuenta != null) {
+                    OutlinedButton(onClick = {
+                        onChat(com.sportec.sporthub.domain.Mensajes.chatEntre(cuenta.id, transferencia.propietarioId).id)
+                    }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.transferencia_abrir_chat)) }
+                    if (interes.estado == EstadoPostulante.REVISION) {
+                        Text(stringResource(if (interes.aceptadoPorPropietario) R.string.transferencia_espera_negocio else R.string.transferencia_espera_propietario))
+                    }
+                }
+                if (esPropietario) {
+                    transferencia.postulantes.forEach { postulante ->
+                        Text(com.sportec.sporthub.domain.Cuentas.porId(postulante.usuarioId)?.nombre ?: postulante.usuarioId,
+                            style = MaterialTheme.typography.titleMedium)
+                        Text(if (postulante.estado == EstadoPostulante.REVISION)
+                            stringResource(if (postulante.aceptadoPorPropietario) R.string.transferencia_espera_negocio else R.string.transferencia_espera_propietario)
+                            else postulante.estado.etiqueta)
+                        OutlinedButton(onClick = {
+                            onChat(com.sportec.sporthub.domain.Mensajes.chatEntre(cuenta.id, postulante.usuarioId).id)
+                        }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.transferencia_abrir_chat)) }
+                        if (vigente && postulante.estado == EstadoPostulante.REVISION && !postulante.aceptadoPorPropietario) {
+                            Button(onClick = { viewModel.aceptarInteresado(cuenta.id) }, modifier = Modifier.fillMaxWidth()) {
+                                Text(stringResource(R.string.transferencia_aceptar_interesado))
+                            }
+                            OutlinedButton(onClick = { motivo = ""; dialogoRechazo = postulante.id }, modifier = Modifier.fillMaxWidth()) {
+                                Text(stringResource(R.string.texto_rechazar_con_motivo))
+                            }
+                        }
+                    }
+                }
+                if (esOperador && vigente) {
+                    val candidato = transferencia.postulantes.firstOrNull { it.estado == EstadoPostulante.REVISION && it.aceptadoPorPropietario }
                     if (candidato != null) {
                         Button(onClick = { viewModel.aprobar(cuenta.id) }, modifier = Modifier.fillMaxWidth()) {
                             Text(stringResource(R.string.texto_aprobar_y_habilitar_pago))

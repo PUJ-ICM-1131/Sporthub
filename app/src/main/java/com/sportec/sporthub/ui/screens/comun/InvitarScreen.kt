@@ -40,6 +40,7 @@ fun InvitarScreen(
     usuarioId: String,
     onBack: () -> Unit
 ) {
+    val invitaciones by Comunidades.invitaciones.collectAsState()
     val comunidades by Comunidades.comunidades.collectAsState()
     val cuentas by Cuentas.cuentas.collectAsState()
     val comunidad = comunidades.firstOrNull { it.id == comunidadId }
@@ -84,7 +85,9 @@ fun InvitarScreen(
                         headlineContent = { Text(Cuentas.nombreParaMostrar(candidato)) },
                         supportingContent = { Text(candidato.email) },
                         trailingContent = {
+                            val pendiente = invitaciones.any { it.comunidadId == comunidadId && it.invitadoId == candidato.id && it.estado == com.sportec.sporthub.domain.EstadoInvitacion.PENDIENTE }
                             TextButton(
+                                enabled = !pendiente,
                                 onClick = {
                                     try {
                                         Comunidades.invitar(comunidadId, candidato.id, usuarioId)
@@ -94,7 +97,7 @@ fun InvitarScreen(
                                     }
                                 }
                             ) {
-                                Text(stringResource(R.string.invitar_accion))
+                                Text(stringResource(if (pendiente) R.string.invitacion_pendiente else R.string.invitar_accion))
                             }
                         },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent)

@@ -34,6 +34,8 @@ class DetalleTransferenciaViewModel : ViewModel() {
         refrescar()
     }
 
+    fun aceptarInteresado(propietarioId: String) = ejecutar { Transferencias.aceptarInteresado(transferenciaId!!, propietarioId) }
+
     fun aprobar(operadorId: String) = ejecutar { Transferencias.aprobar(transferenciaId!!, operadorId) }
 
     fun rechazar(postulanteId: String, motivo: String, operadorId: String) = ejecutar {

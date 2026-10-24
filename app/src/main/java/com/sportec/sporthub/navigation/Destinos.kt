@@ -58,39 +58,27 @@ fun infoDe(ruta: NavKey): InfoPantalla = when (ruta) {
         Textos.obtener(R.string.texto_buscar), listOf("HU-D01", "HU-D02"),
         listOf(Destino(Textos.obtener(R.string.texto_filtros), Filtros), Destino(Textos.obtener(R.string.texto_ver_en_el_mapa), Mapa), Destino(Textos.obtener(R.string.texto_ver_un_resultado), DetalleActividad("a1")))
     )
-    Filtros -> InfoPantalla(
-        Textos.obtener(R.string.texto_filtros), listOf("HU-D02"),
-        listOf(Destino(Textos.obtener(R.string.texto_elegir_origen_manual), Origen))
-    )
+    Filtros -> InfoPantalla(Textos.obtener(R.string.texto_filtros), listOf("HU-D02"))
     Mapa -> InfoPantalla(
         Textos.obtener(R.string.texto_mapa), listOf("HU-D02", "HU-D05", "HU-D27"),
         listOf(
-            Destino(Textos.obtener(R.string.texto_elegir_origen), Origen),
             Destino(Textos.obtener(R.string.texto_ver_establecimiento), DetalleEstablecimiento("b1")),
-            Destino(Textos.obtener(R.string.texto_como_llegar), Ruta("b1")),
-            Destino(Textos.obtener(R.string.texto_permiso_de_ubicacion), Permiso("ubicacion"))
+            Destino(Textos.obtener(R.string.texto_como_llegar), Ruta("b1"))
         )
     )
-    Origen -> InfoPantalla(Textos.obtener(R.string.texto_origen_de_busqueda), listOf("HU-D02", "HU-D05", "HU-D27"))
     is DetalleActividad -> InfoPantalla(
-        Textos.obtener(R.string.texto_detalle_del_servicio), listOf("HU-D03"),
-        listOf(Destino(Textos.obtener(R.string.texto_ver_establecimiento), DetalleEstablecimiento("b1")), Destino(Textos.obtener(R.string.texto_ver_horarios), Horarios(ruta.id)))
+        Textos.obtener(R.string.texto_detalle_del_servicio), listOf("HU-D03", "HU-D04", "HU-D06", "HU-D07", "HU-D14"),
+        listOf(Destino(Textos.obtener(R.string.texto_ver_establecimiento), DetalleEstablecimiento("b1")))
     )
     is DetalleEstablecimiento -> InfoPantalla(
         Textos.obtener(R.string.texto_establecimiento), listOf("HU-D03", "HU-D05", "HU-D14", "HU-D19"),
         listOf(
             Destino(Textos.obtener(R.string.texto_ver_servicio), DetalleActividad("a1")),
-            Destino(Textos.obtener(R.string.texto_ver_horarios), Horarios("a1")),
             Destino(Textos.obtener(R.string.texto_enviar_mensaje), Chat("c2")),
             Destino(Textos.obtener(R.string.texto_como_llegar), Ruta(ruta.id)),
             Destino(Textos.obtener(R.string.texto_reportar), Reportar("negocio"))
         )
     )
-    is Horarios -> InfoPantalla(
-        Textos.obtener(R.string.texto_horarios_y_cupos), listOf("HU-D04", "HU-D06", "HU-D07", "HU-D14"),
-        listOf(Destino(Textos.obtener(R.string.texto_solicitar_este_horario), ResumenSolicitud(ruta.actividadId, java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")).toString(), 10)))
-    )
-
     is ResumenSolicitud -> InfoPantalla(
         Textos.obtener(R.string.texto_resumen_de_la_solicitud), listOf("HU-D06", "HU-D07"),
         listOf(Destino(Textos.obtener(R.string.texto_enviar_solicitud), DetalleSolicitud("s1")))
@@ -122,7 +110,7 @@ fun infoDe(ruta: NavKey): InfoPantalla = when (ruta) {
             Destino(Textos.obtener(R.string.texto_cancelar_reserva), CancelarReserva(ruta.id)),
             Destino(Textos.obtener(R.string.texto_publicar_transferencia), PublicarTransferencia(ruta.id)),
             Destino(Textos.obtener(R.string.texto_como_llegar), Ruta("b1")),
-            Destino(Textos.obtener(R.string.texto_registrar_llegada), CheckIn(ruta.id)),
+            Destino(Textos.obtener(R.string.texto_agregar_fotografia), FotoLlegada(ruta.id)),
             Destino(Textos.obtener(R.string.texto_calificar), Resena(ruta.id))
         )
     )
@@ -196,28 +184,19 @@ fun infoDe(ruta: NavKey): InfoPantalla = when (ruta) {
     )
     is Invitar -> InfoPantalla(
         Textos.obtener(R.string.texto_invitar_integrantes), listOf("HU-D21", "HU-D24", "HU-D26"),
-        listOf(Destino(Textos.obtener(R.string.texto_elegir_desde_contactos), Contactos), Destino(Textos.obtener(R.string.texto_permiso_de_contactos), Permiso("contactos")))
+        listOf(Destino(Textos.obtener(R.string.texto_elegir_desde_contactos), Contactos))
     )
     is Sucesion -> InfoPantalla(Textos.obtener(R.string.texto_sucesion_de_la_comunidad), listOf("HU-D24", "HU-D25"))
     Contactos -> InfoPantalla(Textos.obtener(R.string.texto_contactos), listOf("HU-D26"))
 
-    is Permiso -> InfoPantalla(when (ruta.tipo) {
-        "camara" -> Textos.obtener(R.string.texto_permiso_de_camara)
-        "contactos" -> Textos.obtener(R.string.texto_permiso_de_contactos)
-        else -> Textos.obtener(R.string.texto_permiso_de_ubicacion)
-    }, listOf("HU-D26", "HU-D27", "HU-D29", "HU-D30"))
     is Ruta -> InfoPantalla(
         Textos.obtener(R.string.texto_como_llegar), listOf("HU-D27", "HU-D28"),
-        listOf(Destino(Textos.obtener(R.string.texto_elegir_origen), Origen), Destino(Textos.obtener(R.string.texto_abrir_brujula), Brujula(ruta.negocioId)))
+        listOf(Destino(Textos.obtener(R.string.texto_abrir_brujula), Brujula(ruta.negocioId)))
     )
     is Brujula -> InfoPantalla(Textos.obtener(R.string.texto_brujula), listOf("HU-D28"))
-    is CheckIn -> InfoPantalla(
-        Textos.obtener(R.string.texto_registrar_llegada), listOf("HU-D29", "HU-D30"),
-        listOf(Destino(Textos.obtener(R.string.texto_permiso_de_ubicacion), Permiso("ubicacion")), Destino(Textos.obtener(R.string.texto_agregar_fotografia), FotoLlegada(ruta.reservaId)))
-    )
     is FotoLlegada -> InfoPantalla(
         Textos.obtener(R.string.texto_fotografia_de_llegada), listOf("HU-D30"),
-        listOf(Destino(Textos.obtener(R.string.texto_permiso_de_camara), Permiso("camara")))
+        listOf()
     )
     is Resena -> InfoPantalla(Textos.obtener(R.string.texto_calificar), listOf("HU-D31"))
     Notificaciones -> InfoPantalla(
@@ -231,7 +210,7 @@ fun infoDe(ruta: NavKey): InfoPantalla = when (ruta) {
     is Reportar -> InfoPantalla(Textos.obtener(R.string.texto_reportar_incidencia), listOf("HU-C08"))
     EditarPerfil -> InfoPantalla(
         Textos.obtener(R.string.texto_editar_perfil), listOf("HU-C05"),
-        listOf(Destino(Textos.obtener(R.string.texto_permiso_de_camara), Permiso("camara")))
+        listOf()
     )
     Perfil -> InfoPantalla(Textos.obtener(R.string.texto_perfil), listOf("HU-C05", "HU-C06"))
 

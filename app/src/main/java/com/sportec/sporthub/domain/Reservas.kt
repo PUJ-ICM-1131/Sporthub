@@ -1,5 +1,6 @@
 package com.sportec.sporthub.domain
 
+import com.sportec.sporthub.utils.FotosLocales
 import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Textos
 
@@ -17,12 +18,18 @@ data class FranjaHoraria(val hora: Int, val cuposLibres: Int)
 object Reservas {
 
     private var secuencia = 100
-    private fun uid(prefijo: String) = prefijo + (++secuencia)
+    private fun uid(prefijo: String): String {
+        secuencia++
+        return prefijo + java.util.UUID.randomUUID().toString()
+    }
 
     private val _solicitudes = MutableStateFlow(DatosMock.solicitudes)
     val solicitudes: StateFlow<List<Solicitud>> = _solicitudes.asStateFlow()
 
-    private val _reservas = MutableStateFlow(DatosMock.reservas)
+    private val _reservas = MutableStateFlow(DatosMock.reservas.map { reserva ->
+        val foto = FotosLocales.obtener("reserva", reserva.id + ":" + reserva.usuarioId)
+        reserva.copy(fotoLlegada = foto ?: reserva.fotoLlegada, llegada = reserva.llegada || foto != null)
+    })
     val reservas: StateFlow<List<Reserva>> = _reservas.asStateFlow()
 
     private val _pagos = MutableStateFlow(DatosMock.pagos)
@@ -86,6 +93,8 @@ object Reservas {
             politica = actividad.politica
         )
         _solicitudes.value = _solicitudes.value + nueva
+        Notificaciones.evento(usuarioId, R.string.aviso_solicitud_enviada, "request", nueva.id)
+        Notificaciones.evento(Negocios.operadorDe(actividad.negocioId), R.string.aviso_solicitud_recibida)
         return _solicitudes.value.first { it.id == nueva.id }
     }
 
@@ -126,6 +135,7 @@ object Reservas {
             deadline = minOf(ahora() + solicitud.politica.payMinutes * 60_000L, inicioMillis(solicitud.fecha, solicitud.hora))
         )
         _solicitudes.value = _solicitudes.value.map { if (it.id == id) actualizada else it }
+        Notificaciones.evento(solicitud.usuarioId, R.string.aviso_solicitud_aprobada, "request", id)
         return actualizada
     }
 
@@ -147,6 +157,8 @@ object Reservas {
             throw IllegalStateException(Textos.obtener(R.string.texto_no_tienes_acceso_a_esta_solicitud))
         }
         if (solicitud.estado !in ACTIVAS) throw IllegalStateException(Textos.obtener(R.string.texto_la_solicitud_ya_no_esta_activa))
+        Notificaciones.evento(solicitud.usuarioId, if (rechazadaPor != null) R.string.aviso_solicitud_rechazada else R.string.aviso_solicitud_retirada, "request", id)
+        Notificaciones.evento(Negocios.operadorDe(actividad.negocioId), R.string.aviso_solicitud_actualizada)
         val nuevoEstado = if (rechazadaPor != null) EstadoSolicitud.RECHAZADA else EstadoSolicitud.RETIRADA
         _solicitudes.value = _solicitudes.value.map { if (it.id == id) it.copy(estado = nuevoEstado) else it }
     }
@@ -154,6 +166,7 @@ object Reservas {
     fun registrarPago(usuarioId: String, monto: Int, medio: String): Pago {
         val pago = Pago(uid("p"), usuarioId, monto, EstadoPago.EXITOSO, medio)
         _pagos.value = _pagos.value + pago
+        Notificaciones.evento(usuarioId, R.string.aviso_pago_simulado)
         return pago
     }
 
@@ -168,6 +181,7 @@ object Reservas {
             plazo = ahora() + refundHours * 3_600_000L
         )
         _reembolsos.value = _reembolsos.value + reembolso
+        Notificaciones.evento(usuarioId, R.string.aviso_reembolso_pendiente)
         return reembolso
     }
 
@@ -185,8 +199,7 @@ object Reservas {
         val actividad = Negocios.actividadDe(reserva.actividadId)!!
         val actualizado = reembolso.copy(estado = if (exitoso) EstadoReembolso.REALIZADO else EstadoReembolso.FALLIDO)
         _reembolsos.value = _reembolsos.value.map { if (it.id == id) actualizado else it }
-        if (exitoso) {
-        }
+        Notificaciones.evento(reembolso.usuarioId, if (exitoso) R.string.aviso_reembolso_ok else R.string.aviso_reembolso_fallo)
     }
 
     fun pagarSolicitud(id: String, medio: String, usuarioId: String): Reserva {
@@ -211,6 +224,8 @@ object Reservas {
         _reservas.value = _reservas.value + reserva
         _solicitudes.value = _solicitudes.value.map { if (it.id == id) it.copy(estado = EstadoSolicitud.ATENDIDA) else it }
         val actividad = Negocios.actividadDe(solicitud.actividadId)!!
+        Notificaciones.evento(usuarioId, R.string.aviso_reserva_confirmada, "reservation", reserva.id)
+        Notificaciones.evento(Negocios.operadorDe(actividad.negocioId), R.string.aviso_pago_recibido)
         return reserva
     }
 
@@ -229,11 +244,13 @@ object Reservas {
             registrarReembolso(id, usuarioId, reserva.pagoId, monto, Textos.obtener(R.string.texto_cancelacion), reserva.politica.refundHours)
         }
         val actividad = Negocios.actividadDe(reserva.actividadId)!!
+        Notificaciones.evento(usuarioId, R.string.aviso_reserva_cancelada, "reservation", id)
+        Notificaciones.evento(Negocios.operadorDe(actividad.negocioId), R.string.aviso_reserva_cancelada)
     }
 
     fun cambiarTitular(reservaId: String, nuevoUsuarioId: String, nuevoPagoId: String): Reserva {
         val reserva = obtenerReserva(reservaId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_reserva_ya_no_existe))
-        val actualizada = reserva.copy(usuarioId = nuevoUsuarioId, pagoId = nuevoPagoId)
+        val actualizada = reserva.copy(usuarioId = nuevoUsuarioId, pagoId = nuevoPagoId, llegada = false, fotoLlegada = null)
         _reservas.value = _reservas.value.map { if (it.id == reservaId) actualizada else it }
         _pagos.value = _pagos.value.map { if (it.id == nuevoPagoId) it.copy(reservaId = reservaId) else it }
         return actualizada
@@ -256,6 +273,7 @@ object Reservas {
         if (reserva.usuarioId != usuarioId) {
             throw IllegalArgumentException(Textos.obtener(R.string.reserva_no_es_tuya))
         }
+        FotosLocales.asociar("reserva", reservaId + ":" + usuarioId, uri)
         _reservas.value = _reservas.value.map {
             if (it.id == reservaId) it.copy(llegada = true, fotoLlegada = uri) else it
         }
@@ -267,10 +285,13 @@ object Reservas {
         if (ahora() < finMillis(reserva.fecha, reserva.hora, reserva.duracionHoras)) throw IllegalStateException(Textos.obtener(R.string.texto_el_horario_todavia_no_ha_finalizado))
         if (reserva.cerrada) throw IllegalStateException(Textos.obtener(R.string.texto_esta_actividad_ya_fue_cerrada))
         _reservas.value = _reservas.value.map { if (it.id == reservaId) it.copy(cerrada = true) else it }
+        Notificaciones.evento(reserva.usuarioId, R.string.aviso_reserva_cerrada, "reservation", reservaId)
     }
 
     fun enviarAvisoSalida(reservaId: String, operadorId: String) {
         val reserva = obtenerReserva(reservaId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_reserva_ya_no_existe))
         val actividad = Negocios.actividadDe(reserva.actividadId)!!
+        require(Negocios.operadorDe(actividad.negocioId) == operadorId) { Textos.obtener(R.string.fotos_sin_acceso) }
+        Notificaciones.evento(reserva.usuarioId, R.string.aviso_salida, "reservation", reservaId)
     }
 }

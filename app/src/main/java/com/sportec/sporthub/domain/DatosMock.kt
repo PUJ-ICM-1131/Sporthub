@@ -23,13 +23,6 @@ object DatosMock {
         Categoria(Textos.obtener(R.string.texto_entrenamiento_funcional), Segmento.BIENESTAR)
     )
 
-    val cuentas: List<Cuenta> = listOf(
-        Cuenta("juan", Textos.obtener(R.string.texto_juan_carlos), Textos.obtener(R.string.texto_juan_demo_test), CONTRASENA_DEMO, Rol.DEPORTISTA, telefono = Textos.obtener(R.string.texto_300_123_4567)),
-        Cuenta("camila", Textos.obtener(R.string.texto_camila_torres), Textos.obtener(R.string.texto_camila_demo_test), CONTRASENA_DEMO, Rol.DEPORTISTA),
-        Cuenta("negocio", Textos.obtener(R.string.texto_laura_mendez), Textos.obtener(R.string.texto_negocio_demo_test), CONTRASENA_DEMO, Rol.ESTABLECIMIENTO, telefono = Textos.obtener(R.string.texto_300_444_3322), negocioId = "b1"),
-        Cuenta("admin", Textos.obtener(R.string.texto_ana_administracion), Textos.obtener(R.string.texto_admin_demo_test), CONTRASENA_DEMO, Rol.ADMINISTRADOR)
-    )
-
     val negocios: List<Negocio> = listOf(
         Negocio("b1", Textos.obtener(R.string.texto_distrito_activo), Textos.obtener(R.string.texto_900123456), Textos.obtener(R.string.texto_300_555_0123), Textos.obtener(R.string.texto_calle_120_15_40_bogota), Textos.obtener(R.string.texto_espacios_para_moverte_a_tu_ritmo_deporte_y_bienestar), EstadoNegocio.VALIDADO, 4.70, -74.04),
         Negocio("b2", Textos.obtener(R.string.texto_movimiento_chapinero), Textos.obtener(R.string.texto_901222333), Textos.obtener(R.string.texto_300_444_3322), Textos.obtener(R.string.texto_carrera_7_60_12_bogota), Textos.obtener(R.string.texto_clases_de_bienestar), EstadoNegocio.PENDIENTE, 4.64, -74.06),

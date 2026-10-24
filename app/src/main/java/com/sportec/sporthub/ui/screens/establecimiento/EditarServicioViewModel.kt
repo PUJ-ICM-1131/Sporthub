@@ -25,6 +25,7 @@ data class EditarServicioUiState(
     val capacidad: String = "1",
     val descripcion: String = "",
     val fotoUri: String? = null,
+    val fotos: List<String> = emptyList(),
     val horaApertura: Int = 6,
     val horaCierre: Int = 21,
     val payMinutes: String = "10",
@@ -47,7 +48,11 @@ class EditarServicioViewModel : ViewModel() {
 
     private var actividadId: String? = null
 
+    private var servicioCargado: String? = null
+
     fun cargar(id: String) {
+        if (servicioCargado == id) return
+        servicioCargado = id
         if (id == "nuevo") {
             actividadId = null
             _uiState.value = EditarServicioUiState()
@@ -66,6 +71,7 @@ class EditarServicioViewModel : ViewModel() {
             capacidad = actividad.capacidad.toString(),
             descripcion = actividad.descripcion,
             fotoUri = actividad.fotoUri,
+            fotos = actividad.fotos,
             horaApertura = actividad.horaApertura,
             horaCierre = actividad.horaCierre,
             payMinutes = politica.payMinutes.toString(),
@@ -84,7 +90,14 @@ class EditarServicioViewModel : ViewModel() {
     fun onDuracionCambiada(v: String) = _uiState.update { it.copy(duracionMinutos = v.filter(Char::isDigit), error = null) }
     fun onCapacidadCambiada(v: String) = _uiState.update { it.copy(capacidad = v.filter(Char::isDigit), error = null) }
     fun onDescripcionCambiada(v: String) = _uiState.update { it.copy(descripcion = v) }
-    fun onFotoCambiada(v: String) = _uiState.update { it.copy(fotoUri = v) }
+    fun onFotoCambiada(v: String) = _uiState.update {
+        val fotos = (it.fotos + v).distinct().take(8)
+        it.copy(fotos = fotos, fotoUri = fotos.firstOrNull())
+    }
+    fun quitarFoto(v: String) = _uiState.update {
+        val fotos = it.fotos - v
+        it.copy(fotos = fotos, fotoUri = fotos.firstOrNull())
+    }
 
     fun onHoraAperturaCambiada(v: Int) = _uiState.update { it.copy(horaApertura = v, error = null) }
     fun onHoraCierreCambiada(v: Int) = _uiState.update { it.copy(horaCierre = v, error = null) }
@@ -120,7 +133,7 @@ class EditarServicioViewModel : ViewModel() {
                     transferable = estado.transferable,
                     extra = estado.extra.trim()
                 ),
-                fotoUri = estado.fotoUri
+                fotoUri = estado.fotoUri, fotos = estado.fotos
             )
             actividadId = actividad.id
             _uiState.update { it.copy(esNuevo = false, guardado = actividad) }

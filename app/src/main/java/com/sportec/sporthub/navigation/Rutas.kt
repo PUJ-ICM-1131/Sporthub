@@ -12,7 +12,6 @@ interface RutaAcceso : NavKey
 @Serializable data object RegistroEstablecimiento : RutaAcceso
 @Serializable data object Recuperar : RutaAcceso
 @Serializable data class EnlaceRecuperacion(val email: String) : RutaAcceso
-@Serializable data class NuevaContrasena(val email: String) : RutaAcceso
 
 @Serializable data object Explorar : NavKey
 @Serializable data object MisReservas : NavKey
@@ -27,10 +26,8 @@ interface RutaAcceso : NavKey
 @Serializable data object Buscar : NavKey
 @Serializable data object Filtros : NavKey
 @Serializable data object Mapa : NavKey
-@Serializable data object Origen : NavKey
 @Serializable data class DetalleActividad(val id: String) : NavKey
 @Serializable data class DetalleEstablecimiento(val id: String) : NavKey
-@Serializable data class Horarios(val actividadId: String) : NavKey
 
 @Serializable data class ResumenSolicitud(val actividadId: String, val fecha: String, val hora: Int) : NavKey
 @Serializable data class DetalleSolicitud(val id: String) : NavKey
@@ -55,10 +52,8 @@ interface RutaAcceso : NavKey
 @Serializable data class Sucesion(val comunidadId: String) : NavKey
 @Serializable data object Contactos : NavKey
 
-@Serializable data class Permiso(val tipo: String) : NavKey
 @Serializable data class Ruta(val negocioId: String) : NavKey
 @Serializable data class Brujula(val negocioId: String) : NavKey
-@Serializable data class CheckIn(val reservaId: String) : NavKey
 @Serializable data class FotoLlegada(val reservaId: String) : NavKey
 @Serializable data class Resena(val reservaId: String) : NavKey
 @Serializable data object Notificaciones : NavKey

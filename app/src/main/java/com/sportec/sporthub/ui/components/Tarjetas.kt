@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sportec.sporthub.domain.ActividadConNegocio
 import com.sportec.sporthub.domain.EstadoNegocio
@@ -114,7 +115,7 @@ fun Etiqueta(texto: String, tono: TonoEtiqueta, modifier: Modifier = Modifier) {
     val oscuro = isSystemInDarkTheme()
     val (contenedor, contenido) = when (tono) {
         TonoEtiqueta.VERDE -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
-        TonoEtiqueta.AMBAR -> (if (oscuro) CalidoOscuro else Calido) to CalidoTexto
+        TonoEtiqueta.AMBAR -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
         TonoEtiqueta.ROJO -> (if (oscuro) RojoTenueOscuro else RojoTenue) to (if (oscuro) RojoClaro else RojoTenueTexto)
         TonoEtiqueta.GRIS -> (if (oscuro) GrisTenueOscuro else GrisTenue) to (if (oscuro) TenueOscuro else GrisTenueTexto)
     }
@@ -145,11 +146,16 @@ fun TarjetaHechos(
     }
 }
 
+/**
+ * Tarjeta de un servicio. Con [uniforme] el título ocupa siempre dos líneas y el subtítulo una,
+ * para que todas las tarjetas de un carrusel tengan la misma altura sin importar el texto.
+ */
 @Composable
 fun TarjetaActividad(
     item: ActividadConNegocio,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    uniforme: Boolean = false
 ) {
     ElevatedCard(
         onClick = onClick,
@@ -157,11 +163,14 @@ fun TarjetaActividad(
     ) {
         IlustracionActividad(item.actividad)
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = item.actividad.nombre,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
+                    minLines = if (uniforme) 2 else 1,
+                    maxLines = if (uniforme) 2 else Int.MAX_VALUE,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
@@ -173,7 +182,9 @@ fun TarjetaActividad(
             }
             Text(text = stringResource(R.string.formato_dos_datos, item.negocio.nombre, formatoDuracion(item.actividad.duracionMinutos)),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = if (uniforme) 1 else Int.MAX_VALUE,
+                overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(10.dp))
             Etiqueta(texto = item.actividad.categoria)
@@ -189,7 +200,8 @@ fun TarjetaTint(
     contenido: @Composable ColumnScope.() -> Unit
 ) {
     Surface(
-        color = VerdeTinte,
+        color = if (isSystemInDarkTheme()) MaterialTheme.colorScheme.surfaceContainerHigh else VerdeTinte,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         shape = RoundedCornerShape(17.dp),
         modifier = modifier.fillMaxWidth()
     ) {
