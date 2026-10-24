@@ -11,11 +11,6 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.sportec.sporthub.domain.Ubicacion
 
-/**
- * Ubicación con FusedLocationProviderClient (sesión 9): publica la última ubicación conocida y
- * se suscribe a actualizaciones con un LocationRequest mientras la pantalla está visible.
- * Quien lo usa debe haber verificado antes el permiso con Accompanist.
- */
 class RastreadorUbicacion(context: Context) {
     private val cliente = LocationServices.getFusedLocationProviderClient(context)
     private var activo = false

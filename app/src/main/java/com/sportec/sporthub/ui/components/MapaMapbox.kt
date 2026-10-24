@@ -56,10 +56,6 @@ private val ColorOrigen = Color(0xFFDF854B)
 @Composable
 fun mapboxDisponible(): Boolean = DireccionesMapbox.tokenValido(LocalContext.current.getString(R.string.mapbox_access_token))
 
-/**
- * Mapa de Mapbox (sesión 10) con botón para ampliarlo a pantalla completa. Si se pasa
- * [onMarcarOrigen], mantener presionado el mapa marca el punto de partida.
- */
 @Composable
 fun MapaMapbox(
     modifier: Modifier,

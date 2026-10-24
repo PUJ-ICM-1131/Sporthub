@@ -12,10 +12,6 @@ import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CancellationException
 import org.json.JSONObject
 
-/**
- * Cliente de la Directions API de Mapbox con Ktor (sesión 4): consulta GET en una función suspend
- * y convierte la respuesta en un Trayecto. Devuelve null si no hay token, red o ruta.
- */
 object DireccionesMapbox {
     private val cliente by lazy {
         HttpClient(Android) {

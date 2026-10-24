@@ -23,10 +23,6 @@ fun rememberPermisosUbicacion(onResultado: (Map<String, Boolean>) -> Unit = {}):
         onResultado
     )
 
-/**
- * Mantiene la posición actual al día mientras la pantalla está visible (sesión 9): solo inicia
- * cuando Accompanist indica que hay permiso, y se suscribe al reanudar y se cancela al pausar o salir.
- */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun SeguimientoUbicacion() {

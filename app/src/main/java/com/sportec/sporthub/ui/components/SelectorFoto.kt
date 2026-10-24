@@ -61,11 +61,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 
-/**
- * Selector de fotografía (sesión 8): cámara con TakePicture y FileProvider, galería con Photo Picker.
- * El permiso de cámara sigue los 4 pasos de Accompanist (sesión 6): concedido, rationale,
- * negado de forma permanente (Ajustes) y primera solicitud.
- */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun SelectorFoto(
