@@ -45,6 +45,8 @@ class SensoresBrujula(context: Context) : SensorEventListener {
     fun actualizarRotacion(nueva: Int) {
         if (rotacion != nueva) {
             rotacion = nueva
+            tiempoAceleracion = 0L
+            tiempoMagnetico = 0L
             _estado.value = _estado.value.copy(azimut = null, lecturaValida = false)
         }
     }
@@ -94,7 +96,10 @@ class SensoresBrujula(context: Context) : SensorEventListener {
             else -> SensorManager.AXIS_X to SensorManager.AXIS_Y
         }
         val ajustada = FloatArray(9)
-        if (!SensorManager.remapCoordinateSystem(matriz, ejes.first, ejes.second, ajustada)) return
+        if (!SensorManager.remapCoordinateSystem(matriz, ejes.first, ejes.second, ajustada)) {
+            _estado.value = _estado.value.copy(azimut = null, lecturaValida = false)
+            return
+        }
         val angulos = FloatArray(3)
         SensorManager.getOrientation(ajustada, angulos)
         val nuevo = CalculosBrujula.normalizar(Math.toDegrees(angulos[0].toDouble()).toFloat())
