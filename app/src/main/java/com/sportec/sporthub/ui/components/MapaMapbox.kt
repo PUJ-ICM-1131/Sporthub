@@ -54,7 +54,7 @@ private val ColorAtenuado = Color(0xFFADB7AC)
 private val ColorOrigen = Color(0xFFDF854B)
 
 @Composable
-fun mapboxDisponible(): Boolean = DireccionesMapbox.tokenValido(LocalContext.current.getString(R.string.mapbox_access_token))
+fun mapboxDisponible(): Boolean = DireccionesMapbox.tokenValido(stringResource(R.string.mapbox_access_token))
 
 @Composable
 fun MapaMapbox(

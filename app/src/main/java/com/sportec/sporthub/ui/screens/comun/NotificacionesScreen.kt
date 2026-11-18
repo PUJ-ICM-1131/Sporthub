@@ -63,14 +63,13 @@ fun NotificacionesScreen(
             items(propias, key = { it.id }) { aviso ->
                 ItemNotificacion(aviso) {
                     Notificaciones.marcarLeida(aviso.id)
-                    val destino = when (aviso.ruta) {
-                        "request" -> aviso.argumento?.let { DetalleSolicitud(it) }
-                        "reservation" -> aviso.argumento?.let { DetalleReserva(it) }
-                        "transfer" -> aviso.argumento?.let { DetalleTransferencia(it) }
-                        "chat" -> aviso.argumento?.let { com.sportec.sporthub.navigation.Chat(it) }
-                        else -> null
+                    val destino = com.sportec.sporthub.navigation.destinoNotificacion(aviso, usuarioId)
+                    if (destino != null) {
+                        error = null
+                        onNavegar(destino)
+                    } else if (aviso.ruta != null) {
+                        error = Textos.obtener(R.string.aviso_destino_no_disponible)
                     }
-                    destino?.let(onNavegar)
                 }
                 val invitacion = invitaciones.firstOrNull { it.id == aviso.argumento && it.puedeResponder(usuarioId) }
                 if (aviso.ruta == "invitation" && invitacion != null) {

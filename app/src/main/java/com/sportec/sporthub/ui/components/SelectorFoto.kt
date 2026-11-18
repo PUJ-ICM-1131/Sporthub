@@ -97,14 +97,23 @@ fun SelectorFoto(
         procesando = true
         onProcesando(true)
         scope.launch {
+            var importada: String? = null
             try {
-                val local = withContext(Dispatchers.IO) { FotosLocales.importar(uri) }
+                val local = withContext(Dispatchers.IO) {
+                    FotosLocales.importar(uri).also { importada = it }
+                }
                 onFotoSeleccionada(local)
+                importada = null
             } catch (_: IOException) {
                 error = R.string.selector_foto_error_lectura
             } catch (_: SecurityException) {
                 error = R.string.selector_foto_error_lectura
             } finally {
+                importada?.let { pendiente ->
+                    withContext(Dispatchers.IO + kotlinx.coroutines.NonCancellable) {
+                        Uri.parse(pendiente).path?.let { File(it).delete() }
+                    }
+                }
                 if (esCaptura) limpiarCaptura()
                 procesando = false
                 onProcesando(false)

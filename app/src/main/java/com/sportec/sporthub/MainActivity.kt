@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Textos.iniciar(this)
         com.sportec.sporthub.utils.FotosLocales.iniciar(this)
-        if (savedInstanceState == null) EntradaNotificacion.destinatario.value = intent.getStringExtra(EntradaNotificacion.USUARIO)
+        if (savedInstanceState == null) EntradaNotificacion.recibir(intent)
         enableEdgeToEdge()
         setContent {
             SportHubTheme {
@@ -26,6 +26,6 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        EntradaNotificacion.destinatario.value = intent.getStringExtra(EntradaNotificacion.USUARIO)
+        EntradaNotificacion.recibir(intent)
     }
 }
