@@ -754,4 +754,5 @@
     <string name="ruta_distancia_restante">Distancia restante</string>
     <string name="ruta_tiempo_restante">Tiempo restante</string>
     <string name="ruta_estado">Estado</string>
+    <string name="aviso_destino_no_disponible">Este contenido ya no está disponible o no tienes acceso.</string>
 </resources>
