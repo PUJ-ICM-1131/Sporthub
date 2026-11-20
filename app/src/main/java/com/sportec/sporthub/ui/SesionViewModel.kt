@@ -3,6 +3,8 @@ package com.sportec.sporthub.ui
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sportec.sporthub.data.Semilla
+import com.sportec.sporthub.data.Sincronizacion
 import com.sportec.sporthub.domain.Autenticacion
 import com.sportec.sporthub.domain.Cuenta
 import com.sportec.sporthub.domain.Cuentas
@@ -41,6 +43,8 @@ class SesionViewModel : ViewModel() {
     fun iniciar(cuenta: Cuenta) {
         _cuenta.value = cuenta
         Cuentas.iniciarEscucha(viewModelScope, cuenta)
+        Sincronizacion.iniciar(viewModelScope, cuenta)
+        Semilla.cargarSiHaceFalta(viewModelScope, cuenta)
     }
 
     fun actualizar(cuenta: Cuenta) {
@@ -58,6 +62,7 @@ class SesionViewModel : ViewModel() {
     }
 
     fun cerrar() {
+        Sincronizacion.detener()
         Cuentas.detenerEscucha()
         Autenticacion.cerrarSesion()
         _cuenta.value = null

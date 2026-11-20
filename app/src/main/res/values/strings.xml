@@ -755,4 +755,9 @@
     <string name="ruta_tiempo_restante">Tiempo restante</string>
     <string name="ruta_estado">Estado</string>
     <string name="aviso_destino_no_disponible">Este contenido ya no está disponible o no tienes acceso.</string>
+
+    <string name="nube_conflicto">Otra persona modificó esto al mismo tiempo. Revisa el estado actual e inténtalo de nuevo.</string>
+    <string name="nube_sin_permiso">No tienes permiso para realizar esta acción.</string>
+    <string name="nube_sin_conexion">No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.</string>
+    <string name="nube_sin_cupos">Ya no quedan cupos para este horario.</string>
 </resources>

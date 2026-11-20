@@ -15,6 +15,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Textos.iniciar(this)
         com.sportec.sporthub.utils.FotosLocales.iniciar(this)
+        com.sportec.sporthub.data.FotosRemotas.iniciar(this)
         if (savedInstanceState == null) EntradaNotificacion.recibir(intent)
         enableEdgeToEdge()
         setContent {

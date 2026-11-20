@@ -15,7 +15,7 @@
 | negocioId | String? | Solo establecimientos |
 | activa | Boolean | `false` bloquea el acceso |
 | creadoEn | Timestamp | Hora del servidor |
-| idApp | String? | Solo cuentas de demostración (`juan`, `camila`, `negocio`, `admin`) |
+| idApp | String? | Heredado de la entrega 2; **la aplicación ya no lo usa** (el identificador de cuenta es el uid) |
 
 No se guarda ninguna contraseña en Firestore. La foto de perfil sigue siendo local y privada (Persona B).
 
@@ -37,3 +37,6 @@ En todos: `email` igual al correo, `activa` = true (boolean).
 
 ## Pruebas manuales
 Registro (deportista y establecimiento), correo duplicado, contraseña de menos de 6 caracteres, inicio de sesión correcto e incorrecto, cerrar y reabrir la app (la sesión se restaura), correo de recuperación real, cerrar sesión, sin red (mensaje de servicio no disponible).
+
+
+> Entrega 3: la sincronización multiusuario, las reglas completas y el paso a paso de la consola están en `docs/Persona-A-Entrega3.md`.

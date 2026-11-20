@@ -3,22 +3,30 @@ package com.sportec.sporthub.domain
 import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Textos
 
+import com.sportec.sporthub.data.Escritura
+import com.sportec.sporthub.data.Mapeos
+import com.sportec.sporthub.data.Nube
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 object Resenas {
 
-    private var secuencia = 800
-    private fun uid(prefijo: String) = prefijo + (++secuencia)
-
-    private val _resenas = MutableStateFlow(DatosMock.resenas)
+    private val _resenas = MutableStateFlow<List<Resena>>(emptyList())
     val resenas: StateFlow<List<Resena>> = _resenas.asStateFlow()
 
-    fun listarDeNegocio(negocioId: String): List<Resena> {
-        val actividadesNegocio = Negocios.actividadesDe(negocioId).map { it.id }.toSet()
-        return _resenas.value.filter { Reservas.obtenerReserva(it.reservaId)?.actividadId in actividadesNegocio }
+    /** Negocio al que pertenece cada reseña (id de la reseña = id de la reserva). */
+    private var negocioPorResena: Map<String, String> = emptyMap()
+
+    internal fun cargar(lista: List<Mapeos.ResenaLeida>) {
+        negocioPorResena = lista.associate { it.resena.id to it.negocioId }
+        _resenas.value = lista.map { it.resena }
     }
+
+    internal fun vaciar() { _resenas.value = emptyList(); negocioPorResena = emptyMap() }
+
+    fun listarDeNegocio(negocioId: String): List<Resena> =
+        _resenas.value.filter { negocioPorResena[it.id] == negocioId }
 
     fun crear(reservaId: String, usuarioId: String, puntaje: Int, comentario: String): Resena {
         val reserva = Reservas.obtenerReserva(reservaId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_reserva_ya_no_existe))
@@ -26,8 +34,12 @@ object Resenas {
         if (!reserva.cerrada) throw IllegalStateException(Textos.obtener(R.string.texto_la_reserva_debe_estar_cerrada_por_el_establecimiento))
         if (puntaje !in 1..5) throw IllegalArgumentException(Textos.obtener(R.string.texto_la_calificacion_debe_estar_entre_1_y_5))
         if (_resenas.value.any { it.reservaId == reservaId }) throw IllegalStateException(Textos.obtener(R.string.texto_ya_calificaste_esta_reserva))
-        val nueva = Resena(uid("res"), reservaId, usuarioId, puntaje, comentario)
+        // El id de la reseña es el de la reserva: Firestore impide una segunda reseña para la misma reserva.
+        val nueva = Resena(reservaId, reservaId, usuarioId, puntaje, comentario)
+        val negocioId = Negocios.actividadDe(reserva.actividadId)?.negocioId.orEmpty()
+        negocioPorResena = negocioPorResena + (nueva.id to negocioId)
         _resenas.value = _resenas.value + nueva
+        Nube.escribir(Escritura.Crear("resenas/${nueva.id}", Mapeos.mapa(nueva, negocioId)))
         return nueva
     }
 
@@ -38,6 +50,7 @@ object Resenas {
         if (respuesta.isBlank()) throw IllegalArgumentException(Textos.obtener(R.string.texto_la_respuesta_no_puede_estar_vacia))
         val actualizada = resena.copy(respuesta = respuesta)
         _resenas.value = _resenas.value.map { if (it.id == id) actualizada else it }
+        Nube.escribir(Escritura.Actualizar("resenas/$id", mapOf("respuesta" to respuesta)))
         return actualizada
     }
 }

@@ -3,16 +3,22 @@ package com.sportec.sporthub.domain
 import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Textos
 
+import com.sportec.sporthub.data.Escritura
+import com.sportec.sporthub.data.Mapeos
+import com.sportec.sporthub.data.Nube
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 object Reportes {
 
-    private var secuencia = 1100
-    private fun uid() = "rep" + (++secuencia)
+    internal fun cargar(lista: List<Reporte>) { _reportes.value = lista }
+    internal fun vaciar() { _reportes.value = emptyList() }
 
-    private val _reportes = MutableStateFlow(DatosMock.reportes)
+    private var secuencia = 1100
+    private fun uid() = "rep" + java.util.UUID.randomUUID().toString()
+
+    private val _reportes = MutableStateFlow<List<Reporte>>(emptyList())
     val reportes: StateFlow<List<Reporte>> = _reportes.asStateFlow()
 
     fun obtener(id: String): Reporte? = _reportes.value.firstOrNull { it.id == id }
@@ -32,11 +38,13 @@ object Reportes {
             tipoObjetivo = tipoObjetivo
         )
         _reportes.value = _reportes.value + nuevo
+        Nube.escribir(Escritura.Crear("reportes/${nuevo.id}", Mapeos.mapa(nuevo)))
         return nuevo
     }
 
     fun resolver(id: String) {
         val reporte = obtener(id) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_el_reporte_ya_no_existe))
         _reportes.value = _reportes.value.map { if (it.id == id) it.copy(estado = EstadoReporte.RESUELTO) else it }
+        Nube.escribir(Escritura.Actualizar("reportes/$id", mapOf("estado" to EstadoReporte.RESUELTO.name)))
     }
 }
