@@ -41,7 +41,9 @@ object Cuentas {
 
     private fun aCuenta(doc: DocumentSnapshot): Cuenta? {
         val rol = doc.getString("rol")?.let { runCatching { Rol.valueOf(it) }.getOrNull() } ?: return null
-        val id = doc.getString("idApp") ?: doc.id
+        // El identificador de la cuenta es siempre el uid de Firebase Auth: las reglas de Firestore
+        // comparan con request.auth.uid. El campo heredado "idApp" ya no se usa.
+        val id = doc.id
         return Cuenta(
             id = id,
             nombre = doc.getString("nombre").orEmpty(),
