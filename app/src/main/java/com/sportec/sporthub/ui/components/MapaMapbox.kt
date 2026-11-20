@@ -35,6 +35,7 @@ import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
 import com.mapbox.maps.extension.compose.annotation.generated.CircleAnnotation
+import com.mapbox.maps.extension.compose.annotation.generated.PointAnnotation
 import com.mapbox.maps.extension.compose.annotation.generated.PolygonAnnotation
 import com.mapbox.maps.extension.compose.annotation.generated.PolylineAnnotation
 import com.mapbox.maps.extension.compose.style.standard.MapboxStandardStyle
@@ -47,7 +48,16 @@ import com.sportec.sporthub.utils.Coordenada
 import com.sportec.sporthub.utils.DireccionesMapbox
 import com.sportec.sporthub.utils.Geo
 
-data class MarcadorMapa(val id: String, val posicion: Coordenada, val resaltado: Boolean, val atenuado: Boolean)
+data class MarcadorMapa(
+    val id: String,
+    val posicion: Coordenada,
+    val resaltado: Boolean,
+    val atenuado: Boolean,
+    /** Texto bajo el marcador (por ejemplo, el nombre de un participante). */
+    val etiqueta: String? = null,
+    /** Color propio; si es nulo se usa el verde de los establecimientos. */
+    val color: Color? = null
+)
 
 private val ColorMarcador = Color(0xFF126B47)
 private val ColorAtenuado = Color(0xFFADB7AC)
@@ -205,9 +215,19 @@ private fun ContenidoMapa(
         marcadores.forEach { marcador ->
             CircleAnnotation(point = marcador.posicion.punto(), onClick = { onSeleccionar(marcador.id); true }) {
                 circleRadius = if (marcador.resaltado) 12.0 else 9.0
-                circleColor = if (marcador.atenuado) ColorAtenuado else ColorMarcador
+                circleColor = if (marcador.atenuado) ColorAtenuado else marcador.color ?: ColorMarcador
                 circleStrokeColor = Color.White
                 circleStrokeWidth = 2.0
+            }
+            marcador.etiqueta?.let { texto ->
+                PointAnnotation(point = marcador.posicion.punto()) {
+                    textField = texto
+                    textSize = 12.0
+                    textOffset = listOf(0.0, 1.6)
+                    textColor = Color(0xFF1E2A22)
+                    textHaloColor = Color.White
+                    textHaloWidth = 1.5
+                }
             }
         }
     }

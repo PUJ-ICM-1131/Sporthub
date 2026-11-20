@@ -480,7 +480,8 @@ fun SportHubApp(
                         onAbrirChat = { irA(Chat(MensajesDominio.crearGrupo(ruta.id).id)) },
                         onEditar = { irA(EditarComunidad(ruta.id)) },
                         onInvitar = { irA(Invitar(ruta.id)) },
-                        onCeder = { irA(Sucesion(ruta.id)) }
+                        onCeder = { irA(Sucesion(ruta.id)) },
+                        onEncontrarnos = { irA(Encontrarnos(ruta.id)) }
                     )
                 }
                 entry<EditarComunidad> { ruta ->
@@ -548,7 +549,15 @@ fun SportHubApp(
                         usuarioId = cuenta?.id.orEmpty(),
                         onBack = { volver() },
                         onReportar = { irA(Reportar("mensaje")) },
-                        onVerComunidad = { id -> irA(Comunidad(id)) }
+                        onVerComunidad = { id -> irA(Comunidad(id)) },
+                        onEncontrarnos = { irA(Encontrarnos(ruta.id)) }
+                    )
+                }
+                entry<Encontrarnos> { ruta ->
+                    com.sportec.sporthub.ui.screens.comun.EncontrarnosScreen(
+                        origenId = ruta.origenId,
+                        usuarioId = cuenta?.id.orEmpty(),
+                        onBack = { volver() }
                     )
                 }
                 entry<Reportar> { ruta ->

@@ -10,7 +10,7 @@ fun destinoNotificacion(
 ): NavKey? {
     if (usuarioId.isBlank() || aviso.usuarioId != usuarioId || aviso.id.isBlank()) return null
     val id = aviso.argumento?.takeIf { it.isNotBlank() } ?: return null
-    val tipo = aviso.ruta?.takeIf { it in setOf("chat", "request", "reservation", "transfer", "invitation") } ?: return null
+    val tipo = aviso.ruta?.takeIf { it in setOf("chat", "request", "reservation", "transfer", "invitation", "meetup") } ?: return null
     return resolver(tipo, id, usuarioId)
 }
 
@@ -31,6 +31,11 @@ private fun destinoAutorizado(tipo: String, id: String, usuarioId: String): NavK
             if (it.puedeResponder(usuarioId)) Notificaciones
             else if (it.estado == EstadoInvitacion.ACEPTADA && Comunidades.esMiembro(it.comunidadId, usuarioId)) Comunidad(it.comunidadId)
             else null
+        }
+        "meetup" -> Encontrarnos(id).takeIf {
+            Comunidades.comunidadDe(id)?.let { Comunidades.esMiembro(id, usuarioId) }
+                ?: com.sportec.sporthub.domain.Mensajes.chatDe(id)?.let { it.comunidadId == null && it.miembros.contains(usuarioId) }
+                ?: false
         }
         else -> null
     }

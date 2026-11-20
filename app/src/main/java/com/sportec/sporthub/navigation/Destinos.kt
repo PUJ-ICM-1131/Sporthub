@@ -188,6 +188,7 @@ fun infoDe(ruta: NavKey): InfoPantalla = when (ruta) {
     )
     is Sucesion -> InfoPantalla(Textos.obtener(R.string.texto_sucesion_de_la_comunidad), listOf("HU-D24", "HU-D25"))
     Contactos -> InfoPantalla(Textos.obtener(R.string.texto_contactos), listOf("HU-D26"))
+    is Encontrarnos -> InfoPantalla(Textos.obtener(R.string.encuentro_titulo), emptyList())
 
     is Ruta -> InfoPantalla(
         Textos.obtener(R.string.texto_como_llegar), listOf("HU-D27", "HU-D28"),

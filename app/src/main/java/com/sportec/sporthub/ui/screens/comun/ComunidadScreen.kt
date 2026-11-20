@@ -37,7 +37,8 @@ fun ComunidadScreen(
     onAbrirChat: () -> Unit,
     onEditar: () -> Unit,
     onInvitar: () -> Unit,
-    onCeder: () -> Unit
+    onCeder: () -> Unit,
+    onEncontrarnos: () -> Unit = {}
 ) {
     val comunidades by Comunidades.comunidades.collectAsState()
     val cuentas by Cuentas.cuentas.collectAsState()
@@ -77,6 +78,11 @@ fun ComunidadScreen(
             item {
                 OutlinedButton(onClick = onAbrirChat, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.comunidad_abrir_chat))
+                }
+            }
+            item {
+                OutlinedButton(onClick = onEncontrarnos, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.comunidad_encontrarnos))
                 }
             }
             item {

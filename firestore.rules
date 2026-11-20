@@ -316,7 +316,10 @@ service cloud.firestore {
     }
 
     match /encuentros/{encId} {
-      allow read: if signedIn() && participaEn(resource.data.origenTipo, resource.data.origenId);
+      // resource == null: el encuentro aún no existe. Encuentros.abrir lo lee antes de crearlo y, sin
+      // esta condición, la primera apertura fallaría con PERMISSION_DENIED. Solo revela que no existe.
+      allow read: if signedIn()
+        && (resource == null || participaEn(resource.data.origenTipo, resource.data.origenId));
       allow create: if signedIn()
         && request.resource.data.creadorId == yo()
         && encId == 'e_' + request.resource.data.origenId
