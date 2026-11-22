@@ -6,16 +6,21 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,6 +30,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -329,7 +335,7 @@ fun EncontrarnosScreen(
 
     val conMapbox = mapboxDisponible()
     PantallaBase(
-        titulo = stringResource(R.string.encuentro_titulo),
+        titulo = Textos.obtener(R.string.encuentro_titulo_con, nombreOrigen),
         onBack = { detener(); onBack() },
         acciones = { PermisoSistema() }
     ) { padding ->
@@ -401,36 +407,64 @@ fun EncontrarnosScreen(
                 ?: Trayectos.estimado(encuentroId.orEmpty(), modo, desde, hasta)
         }
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item {
-                Text(
-                    text = stringResource(R.string.encuentro_en, nombreOrigen),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (!abierto) {
-                item { Aviso(texto = stringResource(R.string.encuentro_finalizado), tipo = TipoAviso.ADVERTENCIA) }
-                item {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Aviso(texto = stringResource(R.string.encuentro_finalizado), tipo = TipoAviso.ADVERTENCIA)
                     Button(onClick = { encuentroId = null; intento++ }, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.encuentro_reabrir))
                     }
-                }
-                item {
                     OutlinedButton(onClick = { detener(); onBack() }, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.encuentro_salir))
                     }
                 }
-                return@LazyColumn
+                return@Column
             }
-            item {
+
+            // ---------- Cabecera: el interruptor y quiénes se ven ----------
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.encuentro_compartir), style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        text = if (visibles.isEmpty()) stringResource(R.string.encuentro_nadie_visible)
+                            else stringResource(R.string.encuentro_personas_visibles, visibles.size),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = compartiendo || pendienteActivar,
+                    enabled = actual.sesion.isNotBlank(),
+                    onCheckedChange = { if (it) activar() else detener() }
+                )
+            }
+
+            // Avisos cortos, solo cuando hacen falta: no le quitan sitio al mapa.
+            val aviso = when {
+                mensaje != null -> mensaje to TipoAviso.ERROR
+                compartiendo && !ubicacionActiva -> stringResource(R.string.encuentro_gps_apagado) to TipoAviso.ADVERTENCIA
+                compartiendo && propia == null -> stringResource(R.string.encuentro_esperando_lectura) to TipoAviso.ADVERTENCIA
+                !conectado -> stringResource(R.string.encuentro_sin_conexion) to TipoAviso.ADVERTENCIA
+                compartiendo && soloAproximada -> stringResource(R.string.encuentro_aproximada) to TipoAviso.NORMAL
+                else -> null
+            }
+            aviso?.let { (texto, tipo) ->
+                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                    Aviso(texto = texto.orEmpty(), tipo = tipo)
+                }
+            }
+
+            // ---------- El mapa manda: ocupa todo el espacio que sobra ----------
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 if (conMapbox) {
                     MapaMapbox(
-                        modifier = Modifier.fillMaxWidth().height(320.dp).clip(RoundedCornerShape(20.dp)),
+                        modifier = Modifier.fillMaxSize(),
                         origen = centro,
                         origenEsPosicionActual = propia != null,
                         marcadores = marcadores,
@@ -440,159 +474,118 @@ fun EncontrarnosScreen(
                         onMarcarOrigen = { candidato = it }
                     )
                 } else {
-                    Aviso(texto = stringResource(R.string.encuentro_mapa_no_disponible), tipo = TipoAviso.ADVERTENCIA)
-                }
-            }
-            if (!conectado) item { Aviso(texto = stringResource(R.string.encuentro_sin_conexion), tipo = TipoAviso.ADVERTENCIA) }
-            mensaje?.let { item { Aviso(texto = it, tipo = TipoAviso.ERROR) } }
-
-            item {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(stringResource(R.string.encuentro_compartir), style = MaterialTheme.typography.titleSmall)
-                                Text(
-                                    stringResource(if (compartiendo) R.string.encuentro_compartiendo else R.string.encuentro_no_compartiendo),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Switch(
-                                checked = compartiendo || pendienteActivar,
-                                enabled = actual.sesion.isNotBlank(),
-                                onCheckedChange = { if (it) activar() else detener() }
-                            )
-                        }
-                        if (compartiendo && !ubicacionActiva) {
-                            Aviso(texto = stringResource(R.string.encuentro_gps_apagado), tipo = TipoAviso.ADVERTENCIA)
-                        } else if (compartiendo && propia == null) {
-                            Aviso(texto = stringResource(R.string.encuentro_esperando_lectura), tipo = TipoAviso.ADVERTENCIA)
-                        }
-                        if (compartiendo && soloAproximada) {
-                            Aviso(texto = stringResource(R.string.encuentro_aproximada), tipo = TipoAviso.NORMAL)
-                        }
+                    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                        Aviso(texto = stringResource(R.string.encuentro_mapa_no_disponible), tipo = TipoAviso.ADVERTENCIA)
                     }
                 }
             }
 
-            item {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Filled.Flag, contentDescription = null, tint = ColorPunto)
-                            Text(stringResource(R.string.encuentro_punto), style = MaterialTheme.typography.titleSmall)
+            HorizontalDivider()
+
+            // ---------- Franja inferior: el punto elegido en el mapa y cómo llegar ----------
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 260.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (candidato != null) {
+                    // Se eligió un lugar en el mapa: confirmarlo es lo único que falta.
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = { candidato?.let(::proponer) }, modifier = Modifier.weight(1f)) {
+                            Text(stringResource(R.string.encuentro_nos_encontramos_aqui))
                         }
-                        if (actual.punto != null && punto != null) {
+                        if (propia == null) {
+                            OutlinedButton(onClick = { candidato?.let { Ubicacion.marcarOrigen(it.latitud, it.longitud) } }) {
+                                Text(stringResource(R.string.encuentro_marcar_partida))
+                            }
+                        }
+                        TextButton(onClick = { candidato = null }) {
+                            Text(stringResource(R.string.encuentro_descartar_candidato))
+                        }
+                    }
+                }
+
+                if (actual.punto != null && punto != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Filled.Flag, contentDescription = null, tint = ColorPunto, modifier = Modifier.size(18.dp))
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 stringResource(R.string.encuentro_punto_autor, nombreDe(actual.punto.autorId).takeIf { actual.punto.autorId != usuarioId }
                                     ?: stringResource(R.string.encuentro_tu)),
                                 style = MaterialTheme.typography.bodyMedium
                             )
-                            miPunto?.let {
-                                Text(
-                                    stringResource(R.string.encuentro_a_distancia, distanciaTexto(Geo.distanciaMetros(it, punto))),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                            val resumen = rutaAlPunto?.let {
+                                stringResource(R.string.encuentro_ruta_resumen, distanciaTexto(it.distanciaMetros), (it.duracionSegundos / 60).roundToInt())
+                            } ?: miPunto?.let { stringResource(R.string.encuentro_a_distancia, distanciaTexto(Geo.distanciaMetros(it, punto))) }
+                            resumen?.let {
+                                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                    if (miPunto != null) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ModoViaje.entries.forEach { modo ->
+                                FilterChip(
+                                    selected = modoRuta == modo,
+                                    onClick = { modoRuta = if (modoRuta == modo) null else modo },
+                                    label = { Text(stringResource(modo.etiqueta)) }
                                 )
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    ModoViaje.entries.forEach { modo ->
-                                        FilterChip(
-                                            selected = modoRuta == modo,
-                                            onClick = { modoRuta = if (modoRuta == modo) null else modo },
-                                            label = { Text(stringResource(modo.etiqueta)) }
+                            }
+                        }
+                    }
+                } else if (candidato == null) {
+                    Text(
+                        stringResource(if (conMapbox) R.string.encuentro_como_elegir else R.string.encuentro_como_elegir_sin_mapa),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (visibles.isNotEmpty()) {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(visibles, key = { it.uid }) { p ->
+                            val estado = LogicaEncuentro.estado(p, ahora)
+                            val distancia = miPunto?.let { Geo.distanciaMetros(it, Coordenada(p.latitud, p.longitud)) }
+                            Surface(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.widthIn(max = 220.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Surface(color = colorDe(p.uid), shape = CircleShape, modifier = Modifier.size(12.dp)) {}
+                                    Column {
+                                        Text(nombreDe(p.uid), style = MaterialTheme.typography.bodyMedium)
+                                        val textoEstado = if (estado == EstadoPosicion.EN_VIVO) stringResource(R.string.encuentro_en_vivo)
+                                            else stringResource(R.string.encuentro_desactualizada, hace(LogicaEncuentro.antiguedadSegundos(p, ahora)))
+                                        Text(
+                                            distancia?.let { stringResource(R.string.encuentro_estado_distancia, textoEstado, distanciaTexto(it)) } ?: textoEstado,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
-                                rutaAlPunto?.let { ruta ->
-                                    Text(
-                                        stringResource(
-                                            R.string.encuentro_ruta_resumen,
-                                            distanciaTexto(ruta.distanciaMetros),
-                                            (ruta.duracionSegundos / 60).roundToInt()
-                                        ),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        } else {
-                            Text(stringResource(R.string.encuentro_sin_punto), style = MaterialTheme.typography.bodyMedium)
-                        }
-                        Text(
-                            stringResource(if (conMapbox) R.string.encuentro_como_elegir else R.string.encuentro_como_elegir_sin_mapa),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        if (propia != null) {
-                            OutlinedButton(onClick = { candidato = propia }, modifier = Modifier.fillMaxWidth()) {
-                                Icon(Icons.Filled.MyLocation, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Text(stringResource(R.string.encuentro_usar_mi_ubicacion), modifier = Modifier.padding(start = 8.dp))
-                            }
-                        } else {
-                            // Sin permiso o sin lectura: el punto marcado hace de partida para medir distancias.
-                            OutlinedButton(
-                                onClick = { candidato?.let { Ubicacion.marcarOrigen(it.latitud, it.longitud) } },
-                                enabled = candidato != null,
-                                modifier = Modifier.fillMaxWidth()
-                            ) { Text(stringResource(R.string.encuentro_marcar_partida)) }
-                        }
-                        Button(
-                            onClick = { candidato?.let(::proponer) },
-                            enabled = candidato != null,
-                            modifier = Modifier.fillMaxWidth()
-                        ) { Text(stringResource(R.string.encuentro_nos_encontramos_aqui)) }
-                        if (candidato != null) {
-                            TextButton(onClick = { candidato = null }, modifier = Modifier.fillMaxWidth()) {
-                                Text(stringResource(R.string.encuentro_descartar_candidato))
                             }
                         }
                     }
                 }
-            }
 
-            item {
-                Text(
-                    stringResource(R.string.encuentro_quienes_comparten),
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-            if (visibles.isEmpty()) {
-                item { Aviso(texto = stringResource(R.string.encuentro_esperando), tipo = TipoAviso.NORMAL) }
-            } else {
-                items(visibles, key = { it.uid }) { p ->
-                    val estado = LogicaEncuentro.estado(p, ahora)
-                    val distancia = miPunto?.let { Geo.distanciaMetros(it, Coordenada(p.latitud, p.longitud)) }
-                    ListItem(
-                        leadingContent = { Surface(color = colorDe(p.uid), shape = CircleShape, modifier = Modifier.size(14.dp)) {} },
-                        headlineContent = { Text(nombreDe(p.uid)) },
-                        supportingContent = {
-                            val textoEstado = if (estado == EstadoPosicion.EN_VIVO) stringResource(R.string.encuentro_en_vivo)
-                                else stringResource(R.string.encuentro_desactualizada, hace(LogicaEncuentro.antiguedadSegundos(p, ahora)))
-                            Text(distancia?.let { stringResource(R.string.encuentro_estado_distancia, textoEstado, distanciaTexto(it)) } ?: textoEstado)
-                        },
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(onClick = { detener(); onBack() }, modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.encuentro_salir))
+                    }
+                    if (puedeFinalizar) {
+                        TextButton(onClick = { confirmarFin = true }) {
+                            Text(stringResource(R.string.encuentro_finalizar), color = MaterialTheme.colorScheme.error)
+                        }
+                    }
                 }
-            }
-
-            item {
-                OutlinedButton(onClick = { detener(); onBack() }, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.encuentro_salir))
-                }
-            }
-            if (puedeFinalizar) item {
-                TextButton(onClick = { confirmarFin = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.encuentro_finalizar), color = MaterialTheme.colorScheme.error)
-                }
-            }
-            item {
-                Text(
-                    stringResource(R.string.encuentro_privacidad),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }

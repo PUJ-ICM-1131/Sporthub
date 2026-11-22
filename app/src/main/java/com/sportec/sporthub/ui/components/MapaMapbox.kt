@@ -209,20 +209,22 @@ private fun ContenidoMapa(
             }
         }
         marcadores.forEach { marcador ->
+            // Marcadores grandes y con borde blanco: se tienen que distinguir sobre cualquier estilo
+            // del mapa, claro u oscuro, y sobre fotografía aérea.
             CircleAnnotation(point = marcador.posicion.punto(), onClick = { onSeleccionar(marcador.id); true }) {
-                circleRadius = if (marcador.resaltado) 12.0 else 9.0
+                circleRadius = if (marcador.resaltado) 16.0 else 13.0
                 circleColor = if (marcador.atenuado) ColorAtenuado else marcador.color ?: ColorMarcador
                 circleStrokeColor = Color.White
-                circleStrokeWidth = 2.0
+                circleStrokeWidth = 3.5
             }
             marcador.etiqueta?.let { texto ->
                 PointAnnotation(point = marcador.posicion.punto()) {
                     textField = texto
-                    textSize = 12.0
-                    textOffset = listOf(0.0, 1.6)
-                    textColor = Color(0xFF1E2A22)
+                    textSize = 14.0
+                    textOffset = listOf(0.0, 1.5)
+                    textColor = Color(0xFF14211A)
                     textHaloColor = Color.White
-                    textHaloWidth = 1.5
+                    textHaloWidth = 2.5
                 }
             }
         }

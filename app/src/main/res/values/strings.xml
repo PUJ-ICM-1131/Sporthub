@@ -809,4 +809,7 @@
     <string name="encuentro_marcar_partida">Usar este punto como mi partida</string>
     <string name="encuentro_sin_sesion">Vuelve a iniciar sesión para abrir el encuentro.</string>
     <string name="encuentro_ruta_resumen">%1$s · %2$d min</string>
+    <string name="encuentro_nadie_visible">Nadie más está compartiendo su ubicación todavía.</string>
+    <string name="encuentro_personas_visibles">%1$d persona(s) compartiendo ahora.</string>
+    <string name="encuentro_titulo_con">Encontrarnos · %1$s</string>
 </resources>
