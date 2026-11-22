@@ -42,6 +42,7 @@ import com.sportec.sporthub.domain.Mensaje
 import com.sportec.sporthub.domain.Mensajes
 import com.sportec.sporthub.ui.components.EstadoError
 import com.sportec.sporthub.ui.components.PantallaBase
+import com.sportec.sporthub.domain.AccesoEncuentros
 
 @Composable
 fun ChatScreen(
@@ -77,7 +78,7 @@ fun ChatScreen(
             }
         },
         acciones = {
-            if (chat != null && Mensajes.esMiembro(chat, usuarioId)) {
+            if (AccesoEncuentros.puedeEntrar(chatId, usuarioId)) {
                 IconButton(onClick = onEncontrarnos) {
                     Icon(Icons.Filled.LocationOn, contentDescription = stringResource(R.string.encuentro_abrir))
                 }

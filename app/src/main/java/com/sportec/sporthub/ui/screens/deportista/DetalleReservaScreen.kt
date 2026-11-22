@@ -46,6 +46,7 @@ import com.sportec.sporthub.ui.components.TarjetaHechos
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.utils.formatoIntervalo
 import com.sportec.sporthub.utils.formatoPesos
+import com.sportec.sporthub.domain.Resenas
 
 @Composable
 fun DetalleReservaScreen(
@@ -63,8 +64,8 @@ fun DetalleReservaScreen(
     var mostrarLlegada by rememberSaveable(reservaId, usuarioId) { mutableStateOf(false) }
     var errorLlegada by rememberSaveable(reservaId, usuarioId) { mutableStateOf<String?>(null) }
 
-    val opiniones by com.sportec.sporthub.domain.Resenas.resenas.collectAsState()
-    val reservas by com.sportec.sporthub.domain.Reservas.reservas.collectAsState()
+    val opiniones by Resenas.resenas.collectAsState()
+    val reservas by Reservas.reservas.collectAsState()
     LaunchedEffect(reservaId, opiniones, reservas) { viewModel.cargar(reservaId) }
 
     PantallaBase(titulo = Textos.obtener(R.string.texto_reserva), onBack = onBack) { padding ->

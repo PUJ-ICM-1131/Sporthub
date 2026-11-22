@@ -101,7 +101,7 @@ fun ValidacionesScreen(onAbrir: (String) -> Unit) {
 @Composable
 private fun DatoCambio(etiqueta: String, valor: String) {
     Text(
-        text = etiqueta + ": " + valor,
+        text = stringResource(R.string.etiqueta_valor, etiqueta, valor),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )

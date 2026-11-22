@@ -3,7 +3,6 @@ package com.sportec.sporthub.data
 import com.google.firebase.firestore.DocumentSnapshot
 import com.sportec.sporthub.domain.*
 
-/** Conversión explícita entre los modelos del dominio y los documentos de Firestore. */
 object Mapeos {
 
     private fun DocumentSnapshot.texto(c: String): String? = getString(c)
@@ -16,7 +15,6 @@ object Mapeos {
     private fun DocumentSnapshot.lista(c: String): List<String> =
         (get(c) as? List<*>)?.filterIsInstance<String>() ?: emptyList()
 
-    // ---------- Política ----------
     private fun politica(m: Map<*, *>?): Politica {
         if (m == null) return Politica()
         return Politica(
@@ -34,7 +32,6 @@ object Mapeos {
         "refundHours" to p.refundHours, "transferable" to p.transferable, "extra" to p.extra
     )
 
-    // ---------- Negocios y actividades ----------
     fun negocio(d: DocumentSnapshot): Negocio? {
         val estado = d.enumerado<EstadoNegocio>("estado") ?: return null
         val cambio = (d.get("cambioPendiente") as? Map<*, *>)?.let {
@@ -69,7 +66,6 @@ object Mapeos {
         )
     }
 
-    /** [refsFotos] son referencias remotas ya subidas (ver [FotosRemotas]). */
     fun mapa(a: Actividad, refsFotos: List<String>): Map<String, Any?> = mapOf(
         "negocioId" to a.negocioId, "nombre" to a.nombre, "categoria" to a.categoria, "tipo" to a.tipo.name,
         "precio" to a.precio, "duracionMinutos" to a.duracionMinutos, "capacidad" to a.capacidad,
@@ -77,7 +73,6 @@ object Mapeos {
         "horaApertura" to a.horaApertura, "horaCierre" to a.horaCierre, "fotos" to refsFotos
     )
 
-    // ---------- Solicitudes y reservas ----------
     fun solicitud(d: DocumentSnapshot): Solicitud? {
         val estado = d.enumerado<EstadoSolicitud>("estado") ?: return null
         return Solicitud(
@@ -115,7 +110,6 @@ object Mapeos {
         "enTransferencia" to enTransferencia, "creadaEn" to Nube.ahora()
     )
 
-    // ---------- Pagos y reembolsos ----------
     fun pago(d: DocumentSnapshot): Pago? {
         val estado = d.enumerado<EstadoPago>("estado") ?: return null
         return Pago(
@@ -145,7 +139,6 @@ object Mapeos {
         "creadoEn" to Nube.ahora()
     )
 
-    // ---------- Transferencias ----------
     class TransferenciaLeida(val transferencia: Transferencia, val version: Long)
 
     fun transferencia(d: DocumentSnapshot): TransferenciaLeida? {
@@ -168,7 +161,6 @@ object Mapeos {
         return TransferenciaLeida(t, d.largo("version") ?: 0L)
     }
 
-    /** [version] es la que se escribe (la anterior + 1). */
     fun mapa(t: Transferencia, negocioId: String, version: Long): Map<String, Any?> = mapOf(
         "reservaId" to t.reservaId, "propietarioId" to t.propietarioId, "pagoId" to t.pagoId,
         "estado" to t.estado.name, "negocioId" to negocioId, "version" to version,
@@ -181,7 +173,6 @@ object Mapeos {
         "postulantesUids" to t.postulantes.map { it.usuarioId }.distinct()
     )
 
-    // ---------- Comunidades, invitaciones, chats ----------
     fun comunidad(d: DocumentSnapshot): Comunidad? {
         val nombre = d.texto("nombre") ?: return null
         return Comunidad(
@@ -209,7 +200,6 @@ object Mapeos {
         "estado" to i.estado.name, "actualizadaEn" to Nube.ahora()
     )
 
-    /** Chat sin mensajes; los mensajes viven en la subcolección `mensajes`. */
     fun chat(d: DocumentSnapshot): Chat {
         val comunidad = d.texto("comunidadId")
         return Chat(
@@ -234,7 +224,6 @@ object Mapeos {
     fun marcaTiempo(d: DocumentSnapshot, campo: String): Long =
         d.getTimestamp(campo)?.toDate()?.time ?: Long.MAX_VALUE
 
-    // ---------- Reseñas, notificaciones, reportes ----------
     class ResenaLeida(val resena: Resena, val negocioId: String)
 
     fun resena(d: DocumentSnapshot): ResenaLeida? {
@@ -254,7 +243,6 @@ object Mapeos {
         "creadaEn" to Nube.ahora()
     )
 
-    /** La marca de tiempo sirve para ordenar de la más reciente a la más antigua. */
     fun notificacion(d: DocumentSnapshot): Pair<Notificacion, Long>? {
         val destinatario = d.texto("usuarioId") ?: return null
         return Pair(

@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-
 object Negocios {
 
     private fun uid(prefijo: String) = prefijo + java.util.UUID.randomUUID().toString()
@@ -26,7 +25,6 @@ object Negocios {
     private val _actividades = MutableStateFlow<List<Actividad>>(emptyList())
     val actividades: StateFlow<List<Actividad>> = _actividades.asStateFlow()
 
-    /** Negocios creados en el registro que aún no se han publicado en Firestore. */
     private val sinPublicar = mutableSetOf<String>()
 
     internal fun cargarNegocios(lista: List<Negocio>) {
@@ -34,7 +32,7 @@ object Negocios {
     }
 
     internal fun cargarActividades(lista: List<Actividad>) {
-        // Las fotos compartidas llegan por referencia; mientras se descargan se usa la galería local si existe.
+
         _actividades.value = lista.map { a ->
             if (a.fotos.isNotEmpty()) a else {
                 val locales = FotosLocales.obtenerGaleria(a.id)
@@ -47,10 +45,6 @@ object Negocios {
         _negocios.value = emptyList(); _actividades.value = emptyList(); sinPublicar.clear()
     }
 
-    /**
-     * Publica en Firestore el negocio creado durante el registro. Debe llamarse con la sesión del
-     * nuevo usuario ya iniciada y después de crear su perfil (las reglas comprueban `negocioId`).
-     */
     suspend fun publicar(negocioId: String) {
         val negocio = negocioDe(negocioId) ?: return
         Nube.db.collection("negocios").document(negocioId).set(Mapeos.mapa(negocio)).await()
@@ -206,13 +200,12 @@ object Negocios {
         return nueva
     }
 
-    /** Guarda el servicio y, en segundo plano, sube las fotos y actualiza sus referencias compartidas. */
     private fun persistirServicio(actividad: Actividad, galeria: List<String>) {
         val ruta = "actividades/${actividad.id}"
         Nube.escribir(Escritura.Mezclar(ruta, Mapeos.mapa(actividad, emptyList()) - "fotos"))
-        Nube.alcance.launch {
+        Nube.ejecutar(R.string.nube_error_foto) {
             val refs = FotosRemotas.subirTodas(galeria)
-            // Si alguna subida falló no se tocan las referencias existentes para no perder fotos.
+
             if (refs.size == galeria.size) Nube.escribir(Escritura.Mezclar(ruta, mapOf("fotos" to refs)))
         }
     }

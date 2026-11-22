@@ -14,7 +14,6 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.sportec.sporthub.utils.RastreadorUbicacion
 
-/** Estado de los permisos de ubicación (precisa y aproximada) con Accompanist. */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun rememberPermisosUbicacion(onResultado: (Map<String, Boolean>) -> Unit = {}): MultiplePermissionsState =

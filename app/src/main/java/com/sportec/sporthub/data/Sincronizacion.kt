@@ -17,10 +17,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-/**
- * Mantiene los almacenes del dominio (Reservas, Mensajes, Comunidades…) alimentados por
- * Firestore. Las consultas se limitan a lo que cada cuenta puede leer según `firestore.rules`.
- */
 object Sincronizacion {
     private const val ETIQUETA = "Sincronizacion"
 
@@ -42,7 +38,6 @@ object Sincronizacion {
         arrancar()
     }
 
-    /** Vuelve a leer desde Firestore; se usa tras una escritura rechazada para descartar lo optimista. */
     fun reiniciar() {
         if (cuenta != null) arrancar()
     }
@@ -90,7 +85,6 @@ object Sincronizacion {
         val db = Nube.db
         val uid = c.uid.ifBlank { c.id }
 
-        // Catálogo compartido
         escuchar(ambito, db.collection("negocios"), "negocios", Mapeos::negocio, Negocios::cargarNegocios)
         escuchar(ambito, db.collection("actividades"), "actividades", Mapeos::actividad, Negocios::cargarActividades)
         escuchar(ambito, db.collection("ocupacion"), "ocupacion", { it }) { docs ->
@@ -98,11 +92,9 @@ object Sincronizacion {
         }
         escuchar(ambito, db.collection("resenas"), "resenas", Mapeos::resena, Resenas::cargar)
 
-        // Notificaciones propias
         escuchar(ambito, db.collection("notificaciones").whereEqualTo("usuarioId", uid), "notificaciones",
             Mapeos::notificacion, Notificaciones::cargar)
 
-        // Comunidades, invitaciones y chats
         escucharComunidades(ambito, uid)
         escucharChats(ambito, uid)
 
@@ -160,7 +152,7 @@ object Sincronizacion {
             .map { s -> s.documents.mapNotNull(Mapeos::invitacion) }
             .onEach { recibidas ->
                 invitaciones.poner("recibidas", recibidas)
-                // Para mostrar el nombre de la comunidad a la que me invitan sin ser miembro todavía.
+
                 val pendientes = recibidas.filter { it.estado == EstadoInvitacion.PENDIENTE }.map { it.comunidadId }.toSet()
                 (comunidadesInvitadas.keys - pendientes).forEach { comunidadesInvitadas.remove(it)?.cancel() }
                 (pendientes - comunidadesInvitadas.keys).forEach { id ->

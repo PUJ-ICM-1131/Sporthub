@@ -53,9 +53,9 @@ data class MarcadorMapa(
     val posicion: Coordenada,
     val resaltado: Boolean,
     val atenuado: Boolean,
-    /** Texto bajo el marcador (por ejemplo, el nombre de un participante). */
+
     val etiqueta: String? = null,
-    /** Color propio; si es nulo se usa el verde de los establecimientos. */
+
     val color: Color? = null
 )
 
@@ -118,10 +118,6 @@ fun MapaMapbox(
     }
 }
 
-/**
- * Contenido del mapa: cámara, puck del usuario cuando hay permiso (Accompanist), radio de búsqueda,
- * trazado de la ruta, marcadores y la pulsación larga del estilo estándar para marcar el origen.
- */
 @OptIn(ExperimentalPermissionsApi::class, MapboxExperimental::class)
 @Composable
 private fun ContenidoMapa(

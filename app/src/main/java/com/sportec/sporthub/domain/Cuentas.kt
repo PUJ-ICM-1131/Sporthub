@@ -1,6 +1,8 @@
 package com.sportec.sporthub.domain
 
 import android.util.Log
+import com.sportec.sporthub.data.FotosRemotas
+import kotlinx.coroutines.flow.combine
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.snapshots
@@ -41,8 +43,7 @@ object Cuentas {
 
     private fun aCuenta(doc: DocumentSnapshot): Cuenta? {
         val rol = doc.getString("rol")?.let { runCatching { Rol.valueOf(it) }.getOrNull() } ?: return null
-        // El identificador de la cuenta es siempre el uid de Firebase Auth: las reglas de Firestore
-        // comparan con request.auth.uid. El campo heredado "idApp" ya no se usa.
+
         val id = doc.id
         return Cuenta(
             id = id,
@@ -52,7 +53,7 @@ object Cuentas {
             telefono = doc.getString("telefono"),
             negocioId = doc.getString("negocioId"),
             activa = doc.getBoolean("activa") ?: true,
-            fotoUri = FotosLocales.obtener("cuenta", id),
+            fotoUri = doc.getString("foto")?.let { FotosRemotas.resolver(it) } ?: FotosLocales.obtener("cuenta", id),
             uid = doc.id
         )
     }
@@ -69,7 +70,7 @@ object Cuentas {
         escucha = FirebaseFirestore.getInstance()
             .collection(Autenticacion.COLECCION_USUARIOS)
             .snapshots()
-            .map { instantanea -> instantanea.documents.mapNotNull { aCuenta(it) } }
+            .combine(FotosRemotas.version) { instantanea, _ -> instantanea.documents.mapNotNull { aCuenta(it) } }
             .onEach { _cuentas.value = it }
             .catch { Log.w(ETIQUETA, "No se pudo escuchar la colección de usuarios", it) }
             .launchIn(scope)
@@ -96,9 +97,10 @@ object Cuentas {
 
     suspend fun guardarPerfil(cuenta: Cuenta) {
         if (cuenta.uid.isBlank()) return
+        val foto = cuenta.fotoUri?.let { FotosRemotas.subir(it) }
         FirebaseFirestore.getInstance()
             .collection(Autenticacion.COLECCION_USUARIOS).document(cuenta.uid)
-            .update(mapOf("nombre" to cuenta.nombre, "telefono" to cuenta.telefono))
+            .update(mapOf("nombre" to cuenta.nombre, "telefono" to cuenta.telefono, "foto" to foto))
             .await()
     }
 }

@@ -42,6 +42,7 @@ import com.sportec.sporthub.navigation.DetalleTransferencia
 import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.ui.components.PermisoNotificaciones
+import com.sportec.sporthub.navigation.destinoNotificacion
 
 @Composable
 fun NotificacionesScreen(
@@ -63,7 +64,7 @@ fun NotificacionesScreen(
             items(propias, key = { it.id }) { aviso ->
                 ItemNotificacion(aviso) {
                     Notificaciones.marcarLeida(aviso.id)
-                    val destino = com.sportec.sporthub.navigation.destinoNotificacion(aviso, usuarioId)
+                    val destino = destinoNotificacion(aviso, usuarioId)
                     if (destino != null) {
                         error = null
                         onNavegar(destino)

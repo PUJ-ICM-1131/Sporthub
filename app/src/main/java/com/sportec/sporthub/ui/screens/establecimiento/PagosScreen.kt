@@ -36,6 +36,7 @@ import com.sportec.sporthub.ui.components.Etiqueta
 import com.sportec.sporthub.ui.components.tono
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.utils.formatoPesos
+import com.sportec.sporthub.domain.Pago
 
 @Composable
 fun PagosScreen(negocioId: String) {
@@ -44,7 +45,7 @@ fun PagosScreen(negocioId: String) {
     val servicios = remember(negocioId) { Negocios.actividadesDe(negocioId) }
     var servicioFiltro by rememberSaveable { mutableStateOf<String?>(null) }
 
-    fun actividadDe(pago: com.sportec.sporthub.domain.Pago) =
+    fun actividadDe(pago: Pago) =
         pago.reservaId?.let { Reservas.obtenerReserva(it) }?.let { Negocios.actividadDe(it.actividadId) }
 
     val filtrados = remember(propios, servicioFiltro) {

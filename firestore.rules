@@ -2,53 +2,47 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ---------------------------------------------------------------------------------
-    // Utilidades
-    // ---------------------------------------------------------------------------------
     function signedIn() { return request.auth != null; }
     function yo() { return request.auth.uid; }
     function perfil() { return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data; }
+
+    function esDeportista(uid) {
+      let cuenta = get(/databases/$(database)/documents/usuarios/$(uid)).data;
+      return cuenta.rol == 'DEPORTISTA' && cuenta.activa == true;
+    }
     function esAdmin() { return signedIn() && perfil().rol == 'ADMINISTRADOR'; }
     function esOperadorDe(negocioId) {
       return signedIn() && perfil().rol == 'ESTABLECIMIENTO' && perfil().negocioId == negocioId;
     }
+
     function cambia(campos) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(campos);
     }
 
-    // ---------------------------------------------------------------------------------
-    // Perfil y rol (Persona A, entrega 2)
-    // ---------------------------------------------------------------------------------
     match /usuarios/{uid} {
-      // Cualquier usuario autenticado puede ver perfiles (chats, contactos, invitaciones).
       allow read: if signedIn();
-
-      // Solo se crea el propio perfil, como deportista o establecimiento y activo.
-      // El administrador se crea a mano desde la consola de Firebase.
       allow create: if signedIn()
         && request.auth.uid == uid
         && request.resource.data.rol in ['DEPORTISTA', 'ESTABLECIMIENTO']
-        && request.resource.data.activa == true;
+        && request.resource.data.activa == true
+        && (request.resource.data.rol == 'DEPORTISTA'
+            ? request.resource.data.negocioId == null
+            : (request.resource.data.negocioId is string
+               && !exists(/databases/$(database)/documents/negocios/$(request.resource.data.negocioId))));
 
-      // Solo se edita el propio perfil, sin cambiar el rol ni el estado de la cuenta.
       allow update: if signedIn()
         && request.auth.uid == uid
         && request.resource.data.rol == resource.data.rol
-        && request.resource.data.activa == resource.data.activa;
+        && request.resource.data.activa == resource.data.activa
+        && cambia(['nombre', 'telefono', 'foto']);
 
       allow delete: if false;
     }
 
-    // ---------------------------------------------------------------------------------
-    // Catálogo: negocios y servicios
-    // ---------------------------------------------------------------------------------
     match /negocios/{id} {
       allow read: if signedIn();
-      // El administrador carga el catálogo inicial; un establecimiento publica su propio negocio como pendiente.
       allow create: if esAdmin()
         || (esOperadorDe(id) && request.resource.data.estado == 'PENDIENTE');
-      // Nota: la aplicación actual autovalida el negocio al solicitar validación (comportamiento heredado
-      // de la maqueta), por eso el dueño puede pasar de PENDIENTE/RECHAZADO a VALIDADO.
       allow update: if esAdmin()
         || (esOperadorDe(id)
             && cambia(['estado', 'descripcion', 'contacto', 'direccion', 'cambioPendiente'])
@@ -69,7 +63,6 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Cupos ocupados por hora: ocupacion/{actividadId}_{fecha}_{hora}. Nunca superan la capacidad.
     match /ocupacion/{id} {
       allow read: if signedIn();
       allow create, update: if signedIn()
@@ -80,9 +73,6 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ---------------------------------------------------------------------------------
-    // Solicitudes, reservas, pagos y reembolsos (los pagos son simulados)
-    // ---------------------------------------------------------------------------------
     match /solicitudes/{id} {
       allow read: if signedIn()
         && (resource.data.usuarioId == yo() || esOperadorDe(resource.data.negocioId));
@@ -90,12 +80,10 @@ service cloud.firestore {
         && request.resource.data.usuarioId == yo()
         && request.resource.data.estado == 'REVISION';
       allow update: if signedIn() && cambia(['estado', 'deadline']) && (
-        // El establecimiento aprueba o rechaza.
         (esOperadorDe(resource.data.negocioId) && resource.data.estado == 'REVISION'
           && request.resource.data.estado in ['PAGO', 'RECHAZADA'])
         || (esOperadorDe(resource.data.negocioId) && resource.data.estado in ['FILA', 'PAGO']
           && request.resource.data.estado == 'RECHAZADA')
-        // La persona solicitante la retira o la paga.
         || (resource.data.usuarioId == yo() && resource.data.estado in ['FILA', 'REVISION', 'PAGO']
           && request.resource.data.estado == 'RETIRADA')
         || (resource.data.usuarioId == yo() && resource.data.estado == 'PAGO'
@@ -104,8 +92,18 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function transferenciaPagada(reservaId, pagoId) {
+      let pago = getAfter(/databases/$(database)/documents/pagos/$(pagoId)).data;
+      let permiso = get(/databases/$(database)/documents/autorizacionesTransferencia/$(pago.transferenciaId)).data;
+      let transferencia = getAfter(/databases/$(database)/documents/transferencias/$(pago.transferenciaId)).data;
+      return pago.usuarioId == yo() && pago.reservaId == reservaId
+        && pago.estado == 'EXITOSO' && pago.monto == permiso.monto
+        && permiso.compradorId == yo() && permiso.reservaId == reservaId
+        && permiso.deadline > request.time.toMillis()
+        && transferencia.estado == 'COMPLETADA';
+    }
+
     match /reservas/{id} {
-      // `enTransferencia` permite ver una reserva solo mientras está publicada para transferir.
       allow read: if signedIn()
         && (resource.data.usuarioId == yo()
             || esOperadorDe(resource.data.negocioId)
@@ -114,17 +112,17 @@ service cloud.firestore {
         && request.resource.data.usuarioId == yo()
         && request.resource.data.estado == 'CONFIRMADA';
       allow update: if signedIn() && (
-        // Titular: llegada, foto, publicar/retirar de transferencia y cancelar.
         (resource.data.usuarioId == yo() && request.resource.data.usuarioId == yo()
           && cambia(['llegada', 'fotoLlegada', 'estado', 'enTransferencia'])
           && (request.resource.data.estado == resource.data.estado
               || (resource.data.estado == 'CONFIRMADA' && request.resource.data.estado == 'CANCELADA')))
-        // Establecimiento: cerrar la actividad.
+
         || (esOperadorDe(resource.data.negocioId) && cambia(['cerrada']))
-        // Nuevo titular al completar una transferencia publicada.
+
         || (resource.data.enTransferencia == true && request.resource.data.usuarioId == yo()
           && cambia(['usuarioId', 'pagoId', 'llegada', 'fotoLlegada', 'enTransferencia'])
-          && request.resource.data.enTransferencia == false)
+          && request.resource.data.enTransferencia == false
+          && transferenciaPagada(id, request.resource.data.pagoId))
       );
       allow delete: if false;
     }
@@ -139,7 +137,6 @@ service cloud.firestore {
     match /reembolsos/{id} {
       allow read: if signedIn()
         && (resource.data.usuarioId == yo() || esOperadorDe(resource.data.negocioId));
-      // En una transferencia lo crea quien recibe la reserva a nombre de quien la cedió.
       allow create: if signedIn() && request.resource.data.estado == 'PENDIENTE';
       allow update: if esOperadorDe(resource.data.negocioId)
         && resource.data.estado == 'PENDIENTE'
@@ -147,9 +144,6 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ---------------------------------------------------------------------------------
-    // Transferencias: cada cambio incrementa `version` (control de concurrencia)
-    // ---------------------------------------------------------------------------------
     match /transferencias/{id} {
       allow read: if signedIn()
         && (resource.data.estado in ['PUBLICADA', 'TRAMITE']
@@ -160,22 +154,58 @@ service cloud.firestore {
         && request.resource.data.propietarioId == yo()
         && request.resource.data.estado == 'PUBLICADA'
         && request.resource.data.version == 0;
+
+      function esInscripcion() {
+        let anterior = resource.data.postulantes;
+        let nuevos = request.resource.data.postulantes;
+        let nuevo = nuevos[nuevos.size() - 1];
+        return resource.data.estado in ['PUBLICADA', 'TRAMITE']
+          && cambia(['postulantes', 'postulantesUids', 'version'])
+          && nuevos.size() == anterior.size() + 1
+          && nuevos == anterior.concat([nuevo])
+          && nuevo.usuarioId == yo() && yo() != resource.data.propietarioId
+          && nuevo.estado in ['FILA', 'REVISION'] && nuevo.aceptadoPorPropietario == false
+          && nuevo.deadline == null
+          && request.resource.data.postulantesUids.toSet() == resource.data.postulantesUids.toSet().union([yo()].toSet());
+      }
       allow update: if signedIn()
-        && request.resource.data.version > resource.data.version
-        && request.resource.data.reservaId == resource.data.reservaId
-        && request.resource.data.propietarioId == resource.data.propietarioId
-        && request.resource.data.negocioId == resource.data.negocioId
-        && (resource.data.propietarioId == yo()
-            || yo() in resource.data.postulantesUids
-            || esOperadorDe(resource.data.negocioId)
-            // Una persona nueva puede unirse a una publicación vigente.
-            || resource.data.estado in ['PUBLICADA', 'TRAMITE']);
+        && request.resource.data.version == resource.data.version + 1
+        && cambia(['version', 'estado', 'postulantes', 'postulantesUids'])
+        && resource.data.estado in ['PUBLICADA', 'TRAMITE']
+        && (
+          (resource.data.propietarioId == yo() && request.resource.data.estado in ['PUBLICADA', 'TRAMITE', 'RETIRADA'])
+          || (esOperadorDe(resource.data.negocioId) && request.resource.data.estado in ['PUBLICADA', 'TRAMITE'])
+          || esInscripcion()
+          || (request.resource.data.estado == 'COMPLETADA'
+              && get(/databases/$(database)/documents/autorizacionesTransferencia/$(id)).data.compradorId == yo()
+              && transferenciaPagada(resource.data.reservaId, 'p_t_' + id)
+              && getAfter(/databases/$(database)/documents/reservas/$(resource.data.reservaId)).data.usuarioId == yo())
+        );
       allow delete: if false;
     }
 
-    // ---------------------------------------------------------------------------------
-    // Comunidades, invitaciones y chats
-    // ---------------------------------------------------------------------------------
+    match /autorizacionesTransferencia/{id} {
+      function autorizacionValida() {
+        let t = get(/databases/$(database)/documents/transferencias/$(id)).data;
+        let r = get(/databases/$(database)/documents/reservas/$(t.reservaId)).data;
+        let candidato = t.postulantes[request.resource.data.indice];
+        return esOperadorDe(t.negocioId)
+          && request.resource.data.keys().hasOnly(['compradorId', 'propietarioId', 'reservaId', 'negocioId', 'indice', 'deadline', 'monto'])
+          && t.estado in ['PUBLICADA', 'TRAMITE']
+          && candidato.estado == 'REVISION' && candidato.aceptadoPorPropietario == true
+          && request.resource.data.compradorId == candidato.usuarioId
+          && request.resource.data.propietarioId == t.propietarioId
+          && request.resource.data.reservaId == t.reservaId
+          && request.resource.data.negocioId == t.negocioId
+          && request.resource.data.monto == r.precio
+          && request.resource.data.deadline > request.time.toMillis();
+      }
+      allow read: if signedIn() && (resource.data.compradorId == yo()
+        || resource.data.propietarioId == yo() || esOperadorDe(resource.data.negocioId));
+      allow create, update: if signedIn() && autorizacionValida();
+      allow delete: if false;
+    }
+
     match /comunidades/{id} {
       allow read: if signedIn()
         && (yo() in resource.data.miembros
@@ -185,10 +215,8 @@ service cloud.firestore {
         && request.resource.data.adminId == yo()
         && request.resource.data.miembros == [yo()];
       allow update: if signedIn() && (
-        // Administración: datos, foto y cesión del cargo a un miembro.
         (resource.data.adminId == yo() && cambia(['nombre', 'descripcion', 'foto', 'adminId'])
           && request.resource.data.adminId in resource.data.miembros)
-        // Una persona invitada se añade a sí misma al aceptar.
         || (cambia(['miembros'])
           && request.resource.data.miembros.size() == resource.data.miembros.size() + 1
           && request.resource.data.miembros.hasAll(resource.data.miembros)
@@ -207,12 +235,10 @@ service cloud.firestore {
         && id == request.resource.data.comunidadId + '_' + request.resource.data.invitadoId
         && yo() in get(/databases/$(database)/documents/comunidades/$(request.resource.data.comunidadId)).data.miembros;
       allow update: if signedIn() && (
-        // Quien invita puede volver a invitar si la anterior ya fue respondida.
         (request.resource.data.remitenteId == yo()
           && resource.data.estado in ['RECHAZADA', 'ACEPTADA']
           && request.resource.data.estado == 'PENDIENTE'
           && yo() in get(/databases/$(database)/documents/comunidades/$(resource.data.comunidadId)).data.miembros)
-        // La persona invitada responde una sola vez.
         || (resource.data.invitadoId == yo() && resource.data.estado == 'PENDIENTE'
           && request.resource.data.estado in ['ACEPTADA', 'RECHAZADA']
           && cambia(['estado', 'actualizadaEn']))
@@ -223,22 +249,18 @@ service cloud.firestore {
     match /chats/{chatId} {
       allow read: if signedIn() && yo() in resource.data.miembros;
       allow create: if signedIn() && yo() in request.resource.data.miembros && (
-        // Chat individual: id determinista a partir de los dos uids.
         (request.resource.data.comunidadId == null
           && request.resource.data.miembros.size() == 2
           && (chatId == request.resource.data.miembros[0] + '_' + request.resource.data.miembros[1]
               || chatId == request.resource.data.miembros[1] + '_' + request.resource.data.miembros[0]))
-        // Chat de comunidad: se crea junto con la comunidad, con su id.
         || (request.resource.data.comunidadId == chatId
           && getAfter(/databases/$(database)/documents/comunidades/$(chatId)).data.adminId == yo()
           && request.resource.data.miembros == getAfter(/databases/$(database)/documents/comunidades/$(chatId)).data.miembros)
       );
       allow update: if signedIn() && (
-        // Reescritura idéntica de un chat individual (dos personas lo abren a la vez).
         (resource.data.comunidadId == null && yo() in resource.data.miembros
           && request.resource.data.miembros == resource.data.miembros
           && cambia(['creadoEn']))
-        // Una persona invitada se añade al chat de la comunidad al aceptar.
         || (resource.data.comunidadId != null && cambia(['miembros'])
           && request.resource.data.miembros.size() == resource.data.miembros.size() + 1
           && request.resource.data.miembros.hasAll(resource.data.miembros)
@@ -260,9 +282,6 @@ service cloud.firestore {
       }
     }
 
-    // ---------------------------------------------------------------------------------
-    // Reseñas (id = id de la reserva, así que hay una sola por reserva), avisos y reportes
-    // ---------------------------------------------------------------------------------
     match /resenas/{id} {
       allow read: if signedIn();
       allow create: if signedIn()
@@ -275,8 +294,6 @@ service cloud.firestore {
       allow update: if esOperadorDe(resource.data.negocioId) && cambia(['respuesta']);
       allow delete: if false;
     }
-
-    // Cada aviso lo crea quien origina el evento y solo lo lee, marca o borra su destinatario.
     match /notificaciones/{id} {
       allow read: if signedIn() && resource.data.usuarioId == yo();
       allow create: if signedIn() && request.resource.data.autorId == yo();
@@ -291,52 +308,64 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ---------------------------------------------------------------------------------
-    // Fotografías compartidas (id = hash del contenido; no se pueden sobrescribir)
-    // ---------------------------------------------------------------------------------
     match /fotos/{id} {
       allow read: if signedIn();
       allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['datos', 'subidaPor', 'creadaEn'])
+        && request.resource.data.keys().hasOnly(['datos', 'subidaPor', 'creadaEn', 'reservaId'])
         && request.resource.data.subidaPor == yo()
         && request.resource.data.datos.size() < 900000;
       allow update, delete: if false;
     }
 
-    // ---------------------------------------------------------------------------------
-    // Encuentros por ubicación (Persona C usa estos datos desde la pantalla «Encontrarnos»)
-    // ---------------------------------------------------------------------------------
-    // Participa quien es miembro actual del chat individual o de la comunidad de origen.
-    // Si deja la comunidad, pierde el acceso sin necesidad de borrar nada.
-    function participaEn(tipo, origenId) {
+    match /fotosPrivadas/{id} {
+      function puedeVer() {
+        let reserva = get(/databases/$(database)/documents/reservas/$(resource.data.reservaId)).data;
+        return resource.data.subidaPor == yo() || reserva.usuarioId == yo() || esOperadorDe(reserva.negocioId);
+      }
+      allow get: if signedIn() && (resource == null || puedeVer());
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['datos', 'subidaPor', 'creadaEn', 'reservaId'])
+        && request.resource.data.subidaPor == yo()
+        && get(/databases/$(database)/documents/reservas/$(request.resource.data.reservaId)).data.usuarioId == yo()
+        && request.resource.data.datos.size() < 900000;
+      allow update, delete: if false;
+    }
+
+    function miembroDe(tipo, origenId, uid) {
       return tipo == 'CHAT'
-        ? (yo() in get(/databases/$(database)/documents/chats/$(origenId)).data.miembros
-            && get(/databases/$(database)/documents/chats/$(origenId)).data.comunidadId == null)
-        : (yo() in get(/databases/$(database)/documents/comunidades/$(origenId)).data.miembros);
+        ? (get(/databases/$(database)/documents/chats/$(origenId)).data.comunidadId == null
+            && get(/databases/$(database)/documents/chats/$(origenId)).data.miembros.size() == 2
+            && uid in get(/databases/$(database)/documents/chats/$(origenId)).data.miembros
+            && esDeportista(get(/databases/$(database)/documents/chats/$(origenId)).data.miembros[0])
+            && esDeportista(get(/databases/$(database)/documents/chats/$(origenId)).data.miembros[1]))
+        : (tipo == 'COMUNIDAD' && uid in get(/databases/$(database)/documents/comunidades/$(origenId)).data.miembros);
+    }
+    function participaEn(tipo, origenId) {
+      return signedIn() && esDeportista(yo()) && miembroDe(tipo, origenId, yo());
     }
 
     match /encuentros/{encId} {
-      // resource == null: el encuentro aún no existe. Encuentros.abrir lo lee antes de crearlo y, sin
-      // esta condición, la primera apertura fallaría con PERMISSION_DENIED. Solo revela que no existe.
-      allow read: if signedIn()
+      allow get: if signedIn() && esDeportista(yo())
         && (resource == null || participaEn(resource.data.origenTipo, resource.data.origenId));
       allow create: if signedIn()
         && request.resource.data.creadorId == yo()
         && encId == 'e_' + request.resource.data.origenId
         && request.resource.data.estado == 'ABIERTO'
+        && request.resource.data.sesion is string && request.resource.data.sesion.size() > 0
+        && request.resource.data.punto == null
         && participaEn(request.resource.data.origenTipo, request.resource.data.origenId);
       allow update: if signedIn()
         && participaEn(resource.data.origenTipo, resource.data.origenId)
-        && request.resource.data.origenTipo == resource.data.origenTipo
-        && request.resource.data.origenId == resource.data.origenId
-        && request.resource.data.creadorId == resource.data.creadorId
         && (
-          // Punto común: cualquier participante puede reemplazarlo mientras el encuentro está abierto.
-          (resource.data.estado == 'ABIERTO' && request.resource.data.estado == 'ABIERTO' && cambia(['punto']))
-          // Reabrir un encuentro finalizado (el punto anterior se descarta).
-          || (resource.data.estado == 'FINALIZADO' && request.resource.data.estado == 'ABIERTO'
-              && cambia(['estado', 'punto']))
-          // Finalizar para todos: quien lo creó o el administrador de la comunidad.
+          (resource.data.estado == 'ABIERTO' && cambia(['punto'])
+            && request.resource.data.punto.autorId == yo()
+            && request.resource.data.punto.lat is number && request.resource.data.punto.lat >= -90 && request.resource.data.punto.lat <= 90
+            && request.resource.data.punto.lng is number && request.resource.data.punto.lng >= -180 && request.resource.data.punto.lng <= 180)
+          || ((resource.data.estado == 'FINALIZADO' || !('sesion' in resource.data))
+              && request.resource.data.estado == 'ABIERTO' && cambia(['estado', 'punto', 'sesion'])
+              && request.resource.data.punto == null
+              && request.resource.data.sesion is string && request.resource.data.sesion.size() > 0
+              && request.resource.data.sesion != resource.data.get('sesion', ''))
           || (resource.data.estado == 'ABIERTO' && request.resource.data.estado == 'FINALIZADO'
               && cambia(['estado'])
               && (resource.data.creadorId == yo()
@@ -345,22 +374,21 @@ service cloud.firestore {
         );
       allow delete: if false;
 
-      // La existencia del documento propio es el consentimiento de esa persona para compartir.
-      match /posiciones/{pid} {
-        allow read: if signedIn()
-          && get(/databases/$(database)/documents/encuentros/$(encId)).data.estado == 'ABIERTO'
-          && participaEn(get(/databases/$(database)/documents/encuentros/$(encId)).data.origenTipo,
-                         get(/databases/$(database)/documents/encuentros/$(encId)).data.origenId);
-        allow create, update: if signedIn()
-          && pid == yo()
-          && get(/databases/$(database)/documents/encuentros/$(encId)).data.estado == 'ABIERTO'
-          && participaEn(get(/databases/$(database)/documents/encuentros/$(encId)).data.origenTipo,
-                         get(/databases/$(database)/documents/encuentros/$(encId)).data.origenId)
+      match /sesiones/{sesionId}/posiciones/{pid} {
+        function acceso() {
+          let e = get(/databases/$(database)/documents/encuentros/$(encId)).data;
+          return e.estado == 'ABIERTO' && e.sesion == sesionId
+            && participaEn(e.origenTipo, e.origenId)
+            && esDeportista(pid) && miembroDe(e.origenTipo, e.origenId, pid);
+        }
+        allow get: if signedIn() && acceso()
+          && (resource == null || (resource.data.actualizadoEn <= request.time
+              && resource.data.actualizadoEn > request.time - duration.value(300, 's')));
+        allow create, update: if signedIn() && pid == yo() && acceso()
           && request.resource.data.keys().hasOnly(['lat', 'lng', 'precision', 'actualizadoEn'])
           && request.resource.data.lat is number && request.resource.data.lat >= -90 && request.resource.data.lat <= 90
           && request.resource.data.lng is number && request.resource.data.lng >= -180 && request.resource.data.lng <= 180
           && request.resource.data.actualizadoEn == request.time;
-        // Dejar de compartir siempre es posible, incluso tras salir de la comunidad.
         allow delete: if signedIn() && pid == yo();
       }
     }

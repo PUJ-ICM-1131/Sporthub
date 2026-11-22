@@ -146,10 +146,6 @@ fun TarjetaHechos(
     }
 }
 
-/**
- * Tarjeta de un servicio. Con [uniforme] el título ocupa siempre dos líneas y el subtítulo una,
- * para que todas las tarjetas de un carrusel tengan la misma altura sin importar el texto.
- */
 @Composable
 fun TarjetaActividad(
     item: ActividadConNegocio,

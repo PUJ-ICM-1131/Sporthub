@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Textos de interfaz, mensajes y datos ficticios de la demostración. -->
+
     <string name="app_name" formatted="false">"SportHub"</string>
     <string name="formato_distancia_origen" formatted="false">"%.1f km desde %s"</string>
     <string name="texto_300_444_3322" formatted="false">"300 444 3322"</string>
@@ -518,8 +518,6 @@
     <string name="confirmacion_mayoria_edad">Confirmo que tengo 18 años o más.</string>
     <string name="error_mayoria_edad">Debes tener al menos 18 años y confirmarlo para crear una cuenta.</string>
 
-    <string name="permiso_notificaciones_titulo">No pierdas tu próximo paso</string>
-    <string name="permiso_notificaciones_detalle">Recibe avisos de solicitudes, pagos y cambios de turno.</string>
     <string name="permiso_permitir">Permitir</string>
     <string name="permiso_ahora_no">Ahora no</string>
     <string name="ruta_titulo">Cómo llegar</string>
@@ -527,17 +525,10 @@
     <string name="ruta_origen">Origen</string>
     <string name="ruta_distancia">Distancia del recorrido</string>
     <string name="ruta_distancia_km">%1$s km</string>
-    <string name="ruta_aviso_mapbox">Ruta calculada con Mapbox. Respeta siempre las señales de tránsito.</string>
-    <string name="ruta_aviso_estimada">Ruta estimada en línea recta: API no habilitada o sin conexión.</string>
     <string name="ruta_duracion">Tiempo estimado</string>
-    <string name="ruta_duracion_min">%1$d min</string>
     <string name="ruta_modo_caminando">A pie</string>
     <string name="ruta_modo_bicicleta">Bicicleta</string>
     <string name="ruta_modo_carro">Carro</string>
-    <string name="ruta_calculando">Calculando la ruta…</string>
-    <string name="ruta_buscando_posicion">Buscando tu posición para seguir el recorrido…</string>
-    <string name="ruta_sin_seguimiento">Estás usando un punto marcado en el mapa. Activa tu ubicación para seguir tu desplazamiento.</string>
-    <string name="ruta_restante_km">Te faltan %1$s km. La ruta se recalcula si te desvías.</string>
     <string name="ruta_llegaste">Llegaste al establecimiento.</string>
     <string name="mapa_sin_token">API no habilitada</string>
     <string name="mapa_leyenda_mapbox">Verde: dentro del rango · Gris: fuera del rango · Punto azul: tu posición · Punto naranja: punto marcado. Distancia geográfica, no recorrido por calles.</string>
@@ -573,8 +564,6 @@
     <string name="comunidad_ya_es_miembro">Esa persona ya pertenece a la comunidad.</string>
     <string name="comunidad_debe_ser_miembro">La persona debe ser miembro antes de recibir la administración.</string>
     <string name="comunidad_nombre_obligatorio">El nombre de la comunidad no puede estar vacío.</string>
-    <string name="checkin_titulo">Registrar llegada</string>
-    <string name="checkin_detalle">El registro es opcional y le confirma al establecimiento que ya llegaste.</string>
     <string name="checkin_registrar">Registrar mi llegada</string>
     <string name="checkin_registrada">Llegada registrada.</string>
     <string name="checkin_foto">Adjuntar una foto</string>
@@ -683,10 +672,6 @@
     <string name="invitacion_rechazada">%1$s rechazó unirse a %2$s.</string>
     <string name="invitacion_aceptar">Aceptar</string>
     <string name="invitacion_rechazar">Rechazar</string>
-    <string name="permiso_notificaciones_activo">Notificaciones activadas · Ajustes</string>
-    <string name="permiso_ajustes">Revisar permiso en Ajustes</string>
-    <string name="permiso_pedir_ubicacion">Permitir ubicación para orientar al destino</string>
-    <string name="permiso_pedir_notificaciones">Permitir notificaciones</string>
     <string name="avisos_canal">Actividad de SportHub</string>
     <string name="avisos_explicacion">Invitaciones y novedades de tus reservas.</string>
     <string name="brujula_ayuda_titulo">Cómo usar la brújula</string>
@@ -720,8 +705,6 @@
     <string name="ocultar_horarios">Ocultar horarios</string>
     <string name="camara_rationale_titulo">Acceso a la cámara</string>
     <string name="camara_rationale_detalle">SportHub usa la cámara solo para tomar la fotografía que elijas. También puedes elegir una imagen de la galería.</string>
-    <string name="permiso_ubicacion_apagada">Activa la ubicación del teléfono · Ajustes</string>
-    <string name="permiso_notificaciones_ajustes">Notificaciones desactivadas · Ajustes</string>
     <string name="origen_punto_marcado">Punto marcado en el mapa</string>
     <string name="ruta_marcar_origen">Sin tu ubicación: mantén presionado el mapa para marcar tu punto de partida.</string>
     <string name="mapa_ampliar">Ampliar mapa</string>
@@ -760,7 +743,7 @@
     <string name="nube_sin_permiso">No tienes permiso para realizar esta acción.</string>
     <string name="nube_sin_conexion">No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.</string>
     <string name="nube_sin_cupos">Ya no quedan cupos para este horario.</string>
-    <!-- Encontrarnos (Persona C) -->
+
     <string name="encuentro_titulo">Encontrarnos</string>
     <string name="encuentro_abrir">Encontrarnos: compartir ubicación en este chat</string>
     <string name="encuentro_en">En %1$s</string>
@@ -809,4 +792,15 @@
     <string name="encuentro_privacidad">Solo los participantes de este chat o comunidad ven este encuentro. Tu posición se comparte únicamente aquí, mientras el interruptor está activo y la pantalla abierta; no se guarda historial.</string>
     <string name="comunidad_encontrarnos">Encontrarnos</string>
     <string name="aviso_punto_encuentro">Se propuso un punto de reunión en un encuentro.</string>
+    <string name="nube_error_foto">No se pudo compartir la foto. La copia local se conserva; vuelve a intentar guardarla.</string>
+    <string name="invitar_buscar_contactos">Buscar entre mis contactos</string>
+    <string name="invitar_contactos_explicacion">Comparamos tu agenda con las cuentas de SportHub solo en este teléfono para mostrarte a quién ya puedes invitar. No se sube ni se guarda ningún contacto.</string>
+    <string name="invitar_contactos_coinciden">%1$d de tus contactos ya tienen cuenta.</string>
+    <string name="invitar_contactos_sin_coincidencias">Ninguno de tus contactos tiene cuenta en SportHub todavía.</string>
+    <string name="invitar_contacto_guardado">En tus contactos como %1$s</string>
+    <string name="invitar_contactos_permiso">Sin el permiso de contactos no podemos revisar tu agenda. Puedes concederlo desde Ajustes.</string>
+    <string name="invitar_contactos_error">No se pudo leer la agenda del teléfono.</string>
+    <string name="invitar_solo_contactos">Mostrar solo mis contactos</string>
+    <string name="encuentro_estado_distancia">%1$s · %2$s</string>
+    <string name="etiqueta_valor">%1$s: %2$s</string>
 </resources>

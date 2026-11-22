@@ -21,4 +21,8 @@ class PosicionCompartidaTest {
     @Test fun vencidaDejaDeMostrarse() {
         assertFalse(posicion(hace = Encuentros.SEGUNDOS_VIGENCIA + 1L).vigente(base))
     }
+    @Test fun fechaFuturaNoSeMuestra() {
+        assertFalse(posicion(hace = -1).enVivo(base))
+        assertFalse(posicion(hace = -1).vigente(base))
+    }
 }

@@ -9,13 +9,15 @@ import androidx.activity.enableEdgeToEdge
 import com.sportec.sporthub.navigation.SportHubApp
 import com.sportec.sporthub.ui.theme.SportHubTheme
 import com.sportec.sporthub.utils.Textos
+import com.sportec.sporthub.utils.FotosLocales
+import com.sportec.sporthub.data.FotosRemotas
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Textos.iniciar(this)
-        com.sportec.sporthub.utils.FotosLocales.iniciar(this)
-        com.sportec.sporthub.data.FotosRemotas.iniciar(this)
+        FotosLocales.iniciar(this)
+        FotosRemotas.iniciar(this)
         if (savedInstanceState == null) EntradaNotificacion.recibir(intent)
         enableEdgeToEdge()
         setContent {

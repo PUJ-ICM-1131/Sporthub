@@ -57,6 +57,7 @@ import com.sportec.sporthub.ui.components.Etiqueta
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.ui.components.TarjetaHechos
 import com.sportec.sporthub.utils.iniciales
+import com.sportec.sporthub.ui.components.CampanaNotificaciones
 
 private val PortadaInicio = Color(0xFF064D36)
 private val PortadaFin = Color(0xFF187848)
@@ -79,7 +80,7 @@ fun PerfilScreen(
     PantallaBase(
         titulo = titulo,
         acciones = {
-            com.sportec.sporthub.ui.components.CampanaNotificaciones(cuenta?.id) { onNavegar(Notificaciones) }
+            CampanaNotificaciones(cuenta?.id) { onNavegar(Notificaciones) }
         }
     ) { padding ->
         LazyColumn(

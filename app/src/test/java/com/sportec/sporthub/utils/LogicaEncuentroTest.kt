@@ -44,7 +44,7 @@ class LogicaEncuentroTest {
 
     @Test fun unDesplazamientoSePublicaAntesDeLaRenovacion() {
         val ultima = Publicacion(Coordenada(4.6, -74.08), ahora - 5_000)
-        val movida = lectura(500, lat = 4.6002) // ~22 m al norte
+        val movida = lectura(500, lat = 4.6002)
         assertTrue(LogicaEncuentro.debePublicar(ultima, movida, ahora, ubicacionActiva = true))
     }
 

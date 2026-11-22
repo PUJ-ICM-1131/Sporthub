@@ -93,6 +93,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import com.sportec.sporthub.domain.Rol
+import com.sportec.sporthub.domain.AccesoEncuentros
 
 private sealed interface CargaEncuentro {
     data object Cargando : CargaEncuentro
@@ -108,7 +110,7 @@ private val ColoresParticipantes = listOf(
 )
 private val Respaldo = Coordenada(4.6486, -74.0813)
 
-private fun colorDe(uid: String) = ColoresParticipantes[abs(uid.hashCode()) % ColoresParticipantes.size]
+private fun colorDe(uid: String) = ColoresParticipantes[Math.floorMod(uid.hashCode(), ColoresParticipantes.size)]
 
 private fun nombreDe(uid: String): String =
     Cuentas.porId(uid)?.let { Cuentas.nombreParaMostrar(it) } ?: Textos.obtener(R.string.encuentro_participante)
@@ -121,7 +123,6 @@ private fun distanciaTexto(metros: Double): String =
     if (metros < 1000) Textos.obtener(R.string.encuentro_distancia_m, metros.roundToInt())
     else Textos.obtener(R.string.encuentro_distancia_km, String.format("%.1f", metros / 1000))
 
-/** Conectividad del dispositivo; sirve para avisar que las posiciones pueden no estar al día. */
 @Composable
 private fun rememberConectado(): Boolean {
     val context = LocalContext.current
@@ -141,15 +142,6 @@ private fun rememberConectado(): Boolean {
     return conectado
 }
 
-/**
- * «Encontrarnos»: mapa de un encuentro ligado a un chat individual o a una comunidad.
- *
- * - El permiso de Android solo permite leer la ubicación; compartirla exige activar el interruptor,
- *   que empieza apagado cada vez que se abre la pantalla.
- * - Solo se comparte mientras la pantalla está visible: al salir, pasar a segundo plano, perder el
- *   permiso o el acceso, o cuando el encuentro finaliza, se retira la posición propia.
- * - El punto de reunión es independiente de las posiciones: se puede proponer sin compartir.
- */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun EncontrarnosScreen(
@@ -170,12 +162,14 @@ fun EncontrarnosScreen(
     val comunidad = comunidades.firstOrNull { it.id == comunidadId }
     val esComunidad = comunidadId != null
     val idOrigen = comunidadId ?: origenId
-    val participantes: List<String> = if (esComunidad) comunidad?.miembros.orEmpty() else chat?.miembros.orEmpty()
-    val tieneAcceso = if (esComunidad) usuarioId in participantes else chat != null && Mensajes.esMiembro(chat, usuarioId)
+    val cuentas by Cuentas.cuentas.collectAsState()
+    val participantes: List<String> = (if (esComunidad) comunidad?.miembros.orEmpty() else chat?.miembros.orEmpty()).filter { uid ->
+        cuentas.any { it.id == uid && it.activa && it.rol == Rol.DEPORTISTA }
+    }
+    val tieneAcceso = AccesoEncuentros.puedeEntrar(idOrigen, usuarioId)
     val nombreOrigen = if (esComunidad) comunidad?.nombre ?: Textos.obtener(R.string.texto_comunidad)
         else participantes.firstOrNull { it != usuarioId }?.let(::nombreDe) ?: Textos.obtener(R.string.texto_conversacion)
 
-    // ---------- Encuentro en Firestore ----------
     var intento by remember { mutableIntStateOf(0) }
     var encuentroId by remember { mutableStateOf<String?>(null) }
     var errorApertura by remember { mutableStateOf<String?>(null) }
@@ -194,17 +188,18 @@ fun EncontrarnosScreen(
     }
     val encuentro = (carga as? CargaEncuentro.Listo)?.encuentro
     val abierto = encuentro?.estado == EstadoEncuentro.ABIERTO
-    val posiciones by produceState(emptyList<PosicionCompartida>(), encuentroId, abierto) {
+
+    val sesionEncuentro = encuentro?.sesion.orEmpty()
+    val posiciones by produceState(emptyList<PosicionCompartida>(), encuentroId, sesionEncuentro, abierto, participantes, tieneAcceso) {
         val id = encuentroId
-        if (id == null || !abierto) { value = emptyList(); return@produceState }
-        Encuentros.observarPosiciones(id).collect { value = it }
+        if (id == null || !abierto || !tieneAcceso) { value = emptyList(); return@produceState }
+        Encuentros.observarPosiciones(id, sesionEncuentro, participantes).collect { value = it }
     }
-    // Reloj de la pantalla: las posiciones envejecen aunque Firestore no envíe cambios.
+
     val ahora by produceState(System.currentTimeMillis()) {
         while (isActive) { delay(5_000); value = System.currentTimeMillis() }
     }
 
-    // ---------- Ubicación propia ----------
     val posicion by Ubicacion.posicionActual.collectAsState()
     val conectado = rememberConectado()
     var ubicacionActiva by remember { mutableStateOf(LocationManagerCompat.isLocationEnabled(gestorUbicacion)) }
@@ -224,20 +219,30 @@ fun EncontrarnosScreen(
     val propia = posicion?.takeIf { LogicaEncuentro.lecturaUtil(it, ahora, ubicacionActiva) }
         ?.let { Coordenada(it.latitud, it.longitud) }
 
-    // ---------- Compartir ----------
-    // No se guarda con rememberSaveable: al volver a la pantalla el interruptor empieza apagado (ENC-07).
     var compartiendo by remember { mutableStateOf(false) }
     var ultima by remember { mutableStateOf<Publicacion?>(null) }
     val idActual by rememberUpdatedState(encuentroId)
+    var sesionCompartida by remember { mutableStateOf("") }
 
     fun detener() {
         val id = idActual
         val habiaPublicado = compartiendo || ultima != null
+        val sesionAnterior = sesionCompartida
         compartiendo = false
         pendienteActivar = false
         ultima = null
-        // Se lanza en el alcance de Nube para que la retirada sobreviva al cierre de la pantalla.
-        if (habiaPublicado && id != null) Nube.alcance.launch { runCatching { Encuentros.dejarDeCompartir(id) } }
+
+        if (habiaPublicado && id != null) Nube.alcance.launch { runCatching { Encuentros.dejarDeCompartir(id, sesionAnterior) } }
+    }
+
+    fun iniciarCompartir() {
+        val sesion = sesionEncuentro
+        if (sesion.isBlank()) {
+            mensaje = Textos.obtener(R.string.encuentro_error_abrir)
+            return
+        }
+        sesionCompartida = sesion
+        compartiendo = true
     }
 
     fun activar() {
@@ -246,13 +251,21 @@ fun EncontrarnosScreen(
             pendienteActivar = true
             permisos.launchMultiplePermissionRequest()
         } else {
-            compartiendo = true
+            iniciarCompartir()
         }
     }
 
     LaunchedEffect(permitido) {
-        if (permitido && pendienteActivar) { pendienteActivar = false; compartiendo = true }
+        if (permitido && pendienteActivar) { pendienteActivar = false; iniciarCompartir() }
         if (!permitido && compartiendo) { detener(); mensaje = Textos.obtener(R.string.encuentro_permiso_revocado) }
+    }
+    LaunchedEffect(sesionEncuentro) {
+        if (compartiendo && sesionCompartida != sesionEncuentro) detener()
+        val id = encuentroId
+        val sesion = sesionEncuentro
+        if (id != null && sesion.isNotBlank() && !compartiendo) {
+            runCatching { Encuentros.dejarDeCompartir(id, sesion) }
+        }
     }
     LaunchedEffect(tieneAcceso) { if (!tieneAcceso) detener() }
     LaunchedEffect(encuentro?.estado) { if (encuentro != null && !abierto) detener() }
@@ -269,16 +282,16 @@ fun EncontrarnosScreen(
         }
     }
 
-    LaunchedEffect(compartiendo, encuentroId, abierto) {
+    LaunchedEffect(compartiendo, encuentroId, abierto, sesionEncuentro, tieneAcceso) {
         val id = encuentroId
-        if (!compartiendo || id == null || !abierto) return@LaunchedEffect
+        if (!compartiendo || id == null || !abierto || !tieneAcceso || sesionCompartida != sesionEncuentro) return@LaunchedEffect
         while (isActive) {
             val instante = System.currentTimeMillis()
             val lectura = Ubicacion.posicionActual.value
             val activa = LocationManagerCompat.isLocationEnabled(gestorUbicacion)
             if (lectura != null && LogicaEncuentro.debePublicar(ultima, lectura, instante, activa)) {
                 try {
-                    Encuentros.publicarPosicion(id, lectura.latitud, lectura.longitud, lectura.precisionMetros)
+                    Encuentros.publicarPosicion(id, sesionCompartida, lectura.latitud, lectura.longitud, lectura.precisionMetros)
                     ultima = Publicacion(Coordenada(lectura.latitud, lectura.longitud), instante)
                 } catch (e: Exception) {
                     mensaje = Textos.obtener(R.string.encuentro_error_compartir)
@@ -289,7 +302,6 @@ fun EncontrarnosScreen(
         }
     }
 
-    // ---------- Punto de reunión ----------
     var candidato by remember { mutableStateOf<Coordenada?>(null) }
     var confirmarFin by remember { mutableStateOf(false) }
 
@@ -328,7 +340,7 @@ fun EncontrarnosScreen(
                 return@PantallaBase
             }
         }
-        val actual = encuentro!!
+        val actual = encuentro
         val visibles = LogicaEncuentro.visibles(posiciones, participantes, usuarioId, ahora)
         val punto = actual.punto?.let { Coordenada(it.latitud, it.longitud) }
         val puedeFinalizar = LogicaEncuentro.puedeFinalizar(actual, usuarioId, comunidad?.adminId)
@@ -349,7 +361,7 @@ fun EncontrarnosScreen(
             punto?.let { add(MarcadorMapa("punto", it, resaltado = true, atenuado = false, Textos.obtener(R.string.encuentro_punto), ColorPunto)) }
             candidato?.let { add(MarcadorMapa("candidato", it, resaltado = false, atenuado = false, Textos.obtener(R.string.encuentro_candidato), ColorCandidato)) }
         }
-        // El encuadre cambia cuando cambia quién aparece o el punto, no con cada movimiento.
+
         val claveEncuadre = visibles.map { it.uid }.sorted() to Triple(punto, propia != null, abierto)
         val encuadre = remember(claveEncuadre) {
             buildList {
@@ -418,6 +430,7 @@ fun EncontrarnosScreen(
                             }
                             Switch(
                                 checked = compartiendo || pendienteActivar,
+                                enabled = actual.sesion.isNotBlank(),
                                 onCheckedChange = { if (it) activar() else detener() }
                             )
                         }
@@ -500,7 +513,7 @@ fun EncontrarnosScreen(
                         supportingContent = {
                             val textoEstado = if (estado == EstadoPosicion.EN_VIVO) stringResource(R.string.encuentro_en_vivo)
                                 else stringResource(R.string.encuentro_desactualizada, hace(LogicaEncuentro.antiguedadSegundos(p, ahora)))
-                            Text(distancia?.let { "$textoEstado · ${distanciaTexto(it)}" } ?: textoEstado)
+                            Text(distancia?.let { stringResource(R.string.encuentro_estado_distancia, textoEstado, distanciaTexto(it)) } ?: textoEstado)
                         },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                     )

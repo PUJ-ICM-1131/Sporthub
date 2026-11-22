@@ -19,18 +19,10 @@ import kotlinx.coroutines.launch
 private val ZONA = ZoneId.of("America/Bogota")
 private val ACTIVAS = setOf(EstadoSolicitud.FILA, EstadoSolicitud.REVISION, EstadoSolicitud.PAGO)
 
-/** Referencia para numerar la cola de solicitudes con el reloj (segundos desde el 1-ene-2026). */
 private const val ORIGEN_ORDEN_MS = 1_767_225_600_000L
 
 data class FranjaHoraria(val hora: Int, val cuposLibres: Int)
 
-/**
- * Solicitudes, reservas, pagos y reembolsos (simulados) sincronizados con Firestore.
- *
- * Las operaciones que cambian el estado de algo compartido (aprobar, pagar, cancelar, confirmar un
- * reembolso) se confirman en una transacción que comprueba el estado esperado en el servidor, de modo
- * que no se duplican reservas ni se sobrepasan los cupos. Los cupos viven en `ocupacion/{actividad_fecha_hora}`.
- */
 object Reservas {
 
     private fun uid(prefijo: String): String = prefijo + java.util.UUID.randomUUID().toString()
@@ -90,7 +82,7 @@ object Reservas {
             it.actividadId == actividad.id && it.estado == EstadoSolicitud.PAGO &&
                 solapan(it.fecha, it.hora, it.duracionHoras, fecha, hora, duracion)
         }
-        // Contadores compartidos: incluyen lo que ocupan otras personas y no vemos localmente.
+
         val ocupadosEnNube = (0 until duracion).maxOfOrNull { ocupacion[claveOcupacion(actividad.id, fecha, hora + it)] ?: 0 } ?: 0
         return actividad.capacidad - maxOf(ocupadosPorReserva + ocupadosPorPago, ocupadosEnNube)
     }
@@ -102,7 +94,6 @@ object Reservas {
         _reservas.value.any { it.actividadId == actividadId && it.estado == EstadoReserva.CONFIRMADA && !it.cerrada } ||
             _solicitudes.value.any { it.actividadId == actividadId && it.estado == EstadoSolicitud.PAGO }
 
-    /** Escrituras que suman [delta] al contador de cada hora que ocupa la solicitud o reserva. */
     private fun ajustarOcupacion(actividadId: String, fecha: String, hora: Int, duracionHoras: Int, delta: Long) {
         (0 until duracionHoras).forEach { i ->
             Nube.escribir(Escritura.Mezclar(
@@ -218,14 +209,13 @@ object Reservas {
             val nuevoEstado = if (rechazadaPor != null) EstadoSolicitud.RECHAZADA else EstadoSolicitud.RETIRADA
             _solicitudes.value = _solicitudes.value.map { if (it.id == id) it.copy(estado = nuevoEstado) else it }
             Nube.escribir(Escritura.Actualizar("solicitudes/$id", mapOf("estado" to nuevoEstado.name)))
-            // Si tenía un cupo retenido (esperando pago), se libera.
+
             if (solicitud.estado == EstadoSolicitud.PAGO) {
                 ajustarOcupacion(actividad.id, solicitud.fecha, solicitud.hora, solicitud.duracionHoras, -1)
             }
         }
     }
 
-    /** Crea el pago en memoria; quien lo llama lo guarda junto con el resto de su operación. */
     fun registrarPago(usuarioId: String, monto: Int, medio: String, id: String = uid("p")): Pago {
         val pago = Pago(id, usuarioId, monto, EstadoPago.EXITOSO, medio)
         _pagos.value = _pagos.value + pago
@@ -278,7 +268,7 @@ object Reservas {
         if (solicitud.usuarioId != usuarioId || solicitud.estado != EstadoSolicitud.PAGO) {
             throw IllegalStateException(Textos.obtener(R.string.texto_no_hay_un_turno_de_pago_vigente))
         }
-        // La solicitud solo puede pagarse una vez: la transacción exige que siga en PAGO en el servidor.
+
         return Nube.agrupar(Condicion.Igual("solicitudes/$id", "estado", EstadoSolicitud.PAGO.name)) {
             val negocioId = negocioDe(solicitud.actividadId)
             val reservaId = "r$id"
@@ -370,9 +360,9 @@ object Reservas {
             if (it.id == reservaId) it.copy(llegada = true, fotoLlegada = uri) else it
         }
         Nube.escribir(Escritura.Actualizar("reservas/$reservaId", mapOf("llegada" to true)))
-        // La foto se sube comprimida y el establecimiento recibe solo la referencia compartida.
-        Nube.alcance.launch {
-            val ref = FotosRemotas.subirTodas(listOf(uri)).firstOrNull() ?: return@launch
+
+        Nube.ejecutar(R.string.nube_error_foto) {
+            val ref = FotosRemotas.subir(uri, reservaId)
             Nube.escribir(Escritura.Actualizar("reservas/$reservaId", mapOf("fotoLlegada" to ref)))
         }
     }

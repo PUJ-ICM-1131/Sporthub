@@ -6,11 +6,9 @@ import com.sportec.sporthub.data.Nube
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import com.sportec.sporthub.utils.Textos
+import com.sportec.sporthub.R
 
-/**
- * Avisos de cada cuenta. Se guardan en `notificaciones/{id}` con el destinatario en `usuarioId`;
- * al emitirse dentro de [Nube.agrupar] se confirman en el mismo lote que el hecho que los origina.
- */
 object Notificaciones {
 
     private val _notificaciones = MutableStateFlow<List<Notificacion>>(emptyList())
@@ -26,8 +24,8 @@ object Notificaciones {
 
     fun evento(usuarioId: String?, mensaje: Int, ruta: String? = null, argumento: String? = null) {
         if (usuarioId == null) return
-        publicar(usuarioId, com.sportec.sporthub.utils.Textos.obtener(com.sportec.sporthub.R.string.app_name),
-            com.sportec.sporthub.utils.Textos.obtener(mensaje), ruta, argumento)
+        publicar(usuarioId, Textos.obtener(R.string.app_name),
+            Textos.obtener(mensaje), ruta, argumento)
     }
 
     fun publicar(usuarioId: String, titulo: String, texto: String, ruta: String? = null, argumento: String? = null) {

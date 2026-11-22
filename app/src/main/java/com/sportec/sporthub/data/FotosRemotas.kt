@@ -20,20 +20,12 @@ import java.io.IOException
 import java.security.MessageDigest
 import kotlin.coroutines.cancellation.CancellationException
 
-/**
- * Fotografías compartidas entre dispositivos.
- *
- * Funciona con el plan gratuito de Firebase: cada imagen se comprime (máx. 1280 px, JPEG,
- * menos de 700 KB) y se guarda como documento `fotos/{hash}` en Firestore. El documento del
- * negocio guarda solo la referencia `fr:{hash}`; nunca rutas locales de otro teléfono.
- *
- * Para pasar a Firebase Storage basta con reemplazar [subir] y [descargar]; el resto de la
- * aplicación solo usa referencias.
- */
 object FotosRemotas {
     private const val ETIQUETA = "FotosRemotas"
     const val PREFIJO = "fr:"
+    const val PREFIJO_PRIVADA = "fp:"
     const val COLECCION = "fotos"
+    const val COLECCION_PRIVADA = "fotosPrivadas"
     private const val LADO_MAXIMO = 1280
     private const val LIMITE_BYTES = 700 * 1024
 
@@ -42,7 +34,7 @@ object FotosRemotas {
     private val enCurso = mutableSetOf<String>()
 
     private val _version = MutableStateFlow(0)
-    /** Cambia cada vez que termina una descarga, para que la sincronización recargue las URIs. */
+
     val version: StateFlow<Int> = _version.asStateFlow()
 
     fun iniciar(context: Context) {
@@ -51,29 +43,25 @@ object FotosRemotas {
         resolver = app.contentResolver
     }
 
-    fun esReferencia(valor: String?) = valor?.startsWith(PREFIJO) == true
+    fun esReferencia(valor: String?) = valor?.let { it.startsWith(PREFIJO) || it.startsWith(PREFIJO_PRIVADA) } == true
 
-    /**
-     * Devuelve una URI local lista para mostrar. Si la imagen aún no está en este teléfono
-     * devuelve null y la descarga en segundo plano (luego cambia [version]).
-     * Los valores que no son referencias se devuelven sin cambios.
-     */
     fun resolver(referencia: String): String? {
         if (!esReferencia(referencia)) return referencia
-        val id = referencia.removePrefix(PREFIJO)
+        val privada = referencia.startsWith(PREFIJO_PRIVADA)
+        val id = referencia.substringAfter(":")
         val archivo = archivoDe(id) ?: return null
         if (archivo.isFile && archivo.length() > 0) return Uri.fromFile(archivo).toString()
-        descargar(id)
+        descargar(id, privada)
         return null
     }
 
     private fun archivoDe(id: String): File? = carpeta?.let { File(it, "$id.jpg") }
 
-    private fun descargar(id: String) {
+    private fun descargar(id: String, privada: Boolean) {
         if (Nube.uid() == null || !enCurso.add(id)) return
         Nube.alcance.launch {
             try {
-                val doc = Nube.db.collection(COLECCION).document(id).get().await()
+                val doc = Nube.db.collection(if (privada) COLECCION_PRIVADA else COLECCION).document(id).get().await()
                 val bytes = doc.getBlob("datos")?.toBytes()
                 val archivo = archivoDe(id)
                 if (bytes != null && archivo != null) {
@@ -90,46 +78,38 @@ object FotosRemotas {
         }
     }
 
-    /** Sube una imagen local (o devuelve la referencia si ya lo es). Idempotente por contenido. */
-    suspend fun subir(uri: String): String {
+    suspend fun subir(uri: String, reservaId: String? = null): String {
         if (esReferencia(uri)) return uri
         val bytes = withContext(Dispatchers.IO) { comprimir(uri) }
         val id = withContext(Dispatchers.Default) {
-            MessageDigest.getInstance("SHA-1").digest(bytes).joinToString("") { "%02x".format(it) }
+            MessageDigest.getInstance("SHA-256").digest((reservaId.orEmpty().toByteArray() + bytes)).joinToString("") { "%02x".format(it) }
         }
-        val ref = Nube.db.collection(COLECCION).document(id)
+        val ref = Nube.db.collection(if (reservaId == null) COLECCION else COLECCION_PRIVADA).document(id)
         if (!ref.get().await().exists()) {
             ref.set(
                 mapOf(
                     "datos" to Blob.fromBytes(bytes),
                     "subidaPor" to Nube.uid(),
-                    "creadaEn" to Nube.ahora()
+                    "creadaEn" to Nube.ahora(),
+                    "reservaId" to reservaId
                 )
             ).await()
         }
         archivoDe(id)?.let { destino ->
             if (!destino.isFile) withContext(Dispatchers.IO) { destino.writeBytes(bytes) }
         }
-        return PREFIJO + id
+        return (if (reservaId == null) PREFIJO else PREFIJO_PRIVADA) + id
     }
 
-    /** Sube varias; las que fallen se omiten para no bloquear el guardado del resto. */
-    suspend fun subirTodas(uris: List<String>): List<String> = uris.mapNotNull { uri ->
-        try {
-            subir(uri)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.w(ETIQUETA, "No se pudo subir una foto", e)
-            null
-        }
-    }
+    suspend fun subirTodas(uris: List<String>): List<String> = uris.map { subir(it) }
 
     private fun comprimir(uri: String): ByteArray {
         val resolutor = resolver ?: throw IOException()
         val destino = Uri.parse(uri)
         val limites = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        resolutor.openInputStream(destino)?.use { BitmapFactory.decodeStream(it, null, limites) } ?: throw IOException()
+        (resolutor.openInputStream(destino) ?: throw IOException()).use {
+            BitmapFactory.decodeStream(it, null, limites)
+        }
         if (limites.outWidth <= 0 || limites.outHeight <= 0) throw IOException()
         var muestreo = 1
         while (maxOf(limites.outWidth, limites.outHeight) / muestreo > LADO_MAXIMO * 2) muestreo *= 2

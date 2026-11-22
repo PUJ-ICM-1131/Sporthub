@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
@@ -17,6 +19,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -30,7 +33,13 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.sportec.sporthub.domain.Mensajes as MensajesDominio
+import com.sportec.sporthub.data.Nube
 import com.sportec.sporthub.domain.Negocios
+import com.sportec.sporthub.domain.Notificaciones as NotificacionesDominio
+import com.sportec.sporthub.ui.components.AvisosSistema
+import com.sportec.sporthub.ui.components.PermisoNotificacionesAlEntrar
+import com.sportec.sporthub.ui.screens.comun.EncontrarnosScreen
+import com.sportec.sporthub.utils.EntradaNotificacion
 import com.sportec.sporthub.ui.SesionViewModel
 import com.sportec.sporthub.ui.screens.acceso.BienvenidaScreen
 import com.sportec.sporthub.ui.screens.acceso.EnlaceRecuperacionScreen
@@ -95,13 +104,17 @@ import com.sportec.sporthub.ui.screens.establecimiento.ValidacionNegocioScreen
 fun SportHubApp(
     sesionViewModel: SesionViewModel = viewModel()
 ) {
-    val aperturaAviso by com.sportec.sporthub.utils.EntradaNotificacion.pendiente.collectAsState()
+    val aperturaAviso by EntradaNotificacion.pendiente.collectAsState()
     val cuenta by sesionViewModel.cuenta.collectAsState()
     val restaurando by sesionViewModel.restaurando.collectAsState()
-    com.sportec.sporthub.ui.components.PermisoNotificacionesAlEntrar(cuenta?.id)
-    com.sportec.sporthub.ui.components.AvisosSistema(cuenta?.id)
+    PermisoNotificacionesAlEntrar(cuenta?.id)
+    AvisosSistema(cuenta?.id)
     val backStack = rememberNavBackStack(Bienvenida)
     val actividad = LocalActivity.current
+    val avisosNube = remember { SnackbarHostState() }
+    LaunchedEffect(cuenta?.id) {
+        if (cuenta != null) Nube.errores.collect { avisosNube.showSnackbar(it) }
+    }
 
     val pestanas = cuenta?.let { pestanasDe(it.rol) }.orEmpty()
     val rutaActual = backStack.lastOrNull()
@@ -152,18 +165,19 @@ fun SportHubApp(
         val apertura = aperturaAviso
         val activa = cuenta
         if (!restaurando && apertura != null && activa != null) {
-            com.sportec.sporthub.utils.EntradaNotificacion.pendiente.value = null
+            EntradaNotificacion.pendiente.value = null
             if (apertura.usuarioId == activa.id) {
-                val aviso = com.sportec.sporthub.domain.Notificaciones.notificaciones.value
+                val aviso = NotificacionesDominio.notificaciones.value
                     .firstOrNull { it.id == apertura.avisoId && it.usuarioId == activa.id }
                 val destino = aviso?.let { destinoNotificacion(it, activa.id) }
-                aviso?.let { com.sportec.sporthub.domain.Notificaciones.marcarLeida(it.id) }
+                aviso?.let { NotificacionesDominio.marcarLeida(it.id) }
                 irA(destino ?: Notificaciones)
             }
         }
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(avisosNube) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (mostrarBarra) {
@@ -554,7 +568,7 @@ fun SportHubApp(
                     )
                 }
                 entry<Encontrarnos> { ruta ->
-                    com.sportec.sporthub.ui.screens.comun.EncontrarnosScreen(
+                    EncontrarnosScreen(
                         origenId = ruta.origenId,
                         usuarioId = cuenta?.id.orEmpty(),
                         onBack = { volver() }
