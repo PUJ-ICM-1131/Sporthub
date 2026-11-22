@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -69,6 +70,9 @@ import com.sportec.sporthub.domain.Comunidades
 import com.sportec.sporthub.domain.Cuentas
 import com.sportec.sporthub.domain.Mensajes
 import com.sportec.sporthub.domain.Notificaciones
+import com.sportec.sporthub.domain.ModoViaje
+import com.sportec.sporthub.domain.Trayecto
+import com.sportec.sporthub.domain.Trayectos
 import com.sportec.sporthub.domain.Ubicacion
 import com.sportec.sporthub.ui.components.Aviso
 import com.sportec.sporthub.ui.components.EstadoCargando
@@ -83,6 +87,7 @@ import com.sportec.sporthub.ui.components.TipoAviso
 import com.sportec.sporthub.ui.components.mapboxDisponible
 import com.sportec.sporthub.ui.components.rememberPermisosUbicacion
 import com.sportec.sporthub.utils.Coordenada
+import com.sportec.sporthub.utils.DireccionesMapbox
 import com.sportec.sporthub.utils.EstadoPosicion
 import com.sportec.sporthub.utils.Geo
 import com.sportec.sporthub.utils.LogicaEncuentro
@@ -379,6 +384,23 @@ fun EncontrarnosScreen(
         }
         val centro = miPunto ?: punto ?: encuadre.firstOrNull() ?: Respaldo
 
+        // Ruta hasta el punto de reunión: se calcula con Mapbox y, si no hay token o conexión,
+        // se estima en línea recta (igual que «Cómo llegar» de un establecimiento).
+        val tokenMapa = stringResource(R.string.mapbox_access_token)
+        var modoRuta by remember { mutableStateOf<ModoViaje?>(null) }
+        var rutaAlPunto by remember { mutableStateOf<Trayecto?>(null) }
+        LaunchedEffect(modoRuta, punto, miPunto) {
+            val modo = modoRuta
+            val desde = miPunto
+            val hasta = punto
+            if (modo == null || desde == null || hasta == null) {
+                rutaAlPunto = null
+                return@LaunchedEffect
+            }
+            rutaAlPunto = DireccionesMapbox.consultar(tokenMapa, encuentroId.orEmpty(), modo, desde, hasta)
+                ?: Trayectos.estimado(encuentroId.orEmpty(), modo, desde, hasta)
+        }
+
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(16.dp),
@@ -412,6 +434,7 @@ fun EncontrarnosScreen(
                         origen = centro,
                         origenEsPosicionActual = propia != null,
                         marcadores = marcadores,
+                        trazado = rutaAlPunto?.puntos.orEmpty(),
                         encuadrarEn = encuadre,
                         mostrarOrigen = false,
                         onMarcarOrigen = { candidato = it }
@@ -466,12 +489,32 @@ fun EncontrarnosScreen(
                                     ?: stringResource(R.string.encuentro_tu)),
                                 style = MaterialTheme.typography.bodyMedium
                             )
-                            propia?.let {
+                            miPunto?.let {
                                 Text(
                                     stringResource(R.string.encuentro_a_distancia, distanciaTexto(Geo.distanciaMetros(it, punto))),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    ModoViaje.entries.forEach { modo ->
+                                        FilterChip(
+                                            selected = modoRuta == modo,
+                                            onClick = { modoRuta = if (modoRuta == modo) null else modo },
+                                            label = { Text(stringResource(modo.etiqueta)) }
+                                        )
+                                    }
+                                }
+                                rutaAlPunto?.let { ruta ->
+                                    Text(
+                                        stringResource(
+                                            R.string.encuentro_ruta_resumen,
+                                            distanciaTexto(ruta.distanciaMetros),
+                                            (ruta.duracionSegundos / 60).roundToInt()
+                                        ),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         } else {
                             Text(stringResource(R.string.encuentro_sin_punto), style = MaterialTheme.typography.bodyMedium)
