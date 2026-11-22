@@ -1,10 +1,10 @@
 import java.util.Properties
 
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.plugin.compose")
-    id("org.jetbrains.kotlin.plugin.serialization")
-    id("com.google.gms.google-services")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.services)
 }
 
 val propiedadesLocales = Properties().apply {
@@ -44,37 +44,38 @@ android {
 }
 
 dependencies {
-    implementation("com.google.accompanist:accompanist-permissions:0.37.3")
-    testImplementation("junit:junit:4.13.2")
-    implementation(platform("androidx.compose:compose-bom:2026.09.00"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
+    implementation(libs.accompanist.permissions)
+    testImplementation(libs.junit)
 
-    implementation("androidx.core:core-ktx:1.19.0")
-    implementation("androidx.activity:activity-compose:1.13.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
 
-    implementation("androidx.navigation3:navigation3-runtime:1.1.7")
-    implementation("androidx.navigation3:navigation3-ui:1.1.7")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-navigation3:2.11.0")
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.11.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
 
-    implementation("io.coil-kt.coil3:coil-compose:3.4.0")
+    implementation(libs.kotlinx.serialization.core)
+    implementation(libs.kotlinx.coroutines.android)
 
-    implementation("com.mapbox.maps:android-ndk27:11.33.0")
-    implementation("com.mapbox.extension:maps-compose-ndk27:11.33.0")
+    implementation(libs.coil.compose)
 
-    implementation("com.google.android.gms:play-services-location:21.4.0")
-    implementation("io.ktor:ktor-client-android:3.5.2")
+    implementation(libs.mapbox.android)
+    implementation(libs.mapbox.compose)
 
-    implementation(platform("com.google.firebase:firebase-bom:35.0.2"))
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
+    implementation(libs.play.services.location)
+    implementation(libs.ktor.client.android)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.kotlinx.coroutines.play.services)
 }

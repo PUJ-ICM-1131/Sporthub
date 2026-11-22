@@ -23,7 +23,6 @@ data class Trayecto(
     val estimado: Boolean
 )
 
-/** Conserva la ruta vigente para que sobreviva a la navegación (por ejemplo, ir a la brújula y volver). */
 object Trayectos {
     const val DESVIO_MAXIMO_M = 60.0
     const val LLEGADA_M = 30.0
@@ -46,10 +45,6 @@ object Trayectos {
         _actual.value = null
     }
 
-    /**
-     * La ruta guardada sirve mientras el destino y el modo coincidan y el origen siga sobre el trazado.
-     * Una ruta estimada es una línea recta que no sigue las calles, así que se compara con su punto de partida.
-     */
     fun vigente(negocioId: String, modo: ModoViaje, origen: Coordenada, trayecto: Trayecto? = _actual.value): Trayecto? =
         trayecto?.takeIf {
             val desvio = if (it.estimado) Geo.distanciaMetros(origen, it.inicio) else Geo.distanciaAlTrazado(origen, it.puntos)

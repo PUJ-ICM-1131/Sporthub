@@ -1,12 +1,15 @@
 package com.sportec.sporthub.ui.components
 
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.provider.Settings
+import android.provider.Settings as AjustesAndroid
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -48,12 +51,12 @@ fun PermisoNotificacionesAlEntrar(usuarioId: String?) {
 @Composable
 fun PermisoNotificaciones() {
     val context = LocalContext.current
-    androidx.compose.material3.SmallFloatingActionButton(onClick = {
-        context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-            .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
+    SmallFloatingActionButton(onClick = {
+        context.startActivity(Intent(AjustesAndroid.ACTION_APP_NOTIFICATION_SETTINGS)
+            .putExtra(AjustesAndroid.EXTRA_APP_PACKAGE, context.packageName))
     }) {
-        androidx.compose.material3.Icon(
-            androidx.compose.material.icons.Icons.Filled.Settings,
+        Icon(
+            Icons.Filled.Settings,
             contentDescription = stringResource(R.string.ajustes_notificaciones)
         )
     }

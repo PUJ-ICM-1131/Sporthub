@@ -35,6 +35,7 @@ import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
 import com.mapbox.maps.extension.compose.annotation.generated.CircleAnnotation
+import com.mapbox.maps.extension.compose.annotation.generated.PointAnnotation
 import com.mapbox.maps.extension.compose.annotation.generated.PolygonAnnotation
 import com.mapbox.maps.extension.compose.annotation.generated.PolylineAnnotation
 import com.mapbox.maps.extension.compose.style.standard.MapboxStandardStyle
@@ -47,7 +48,16 @@ import com.sportec.sporthub.utils.Coordenada
 import com.sportec.sporthub.utils.DireccionesMapbox
 import com.sportec.sporthub.utils.Geo
 
-data class MarcadorMapa(val id: String, val posicion: Coordenada, val resaltado: Boolean, val atenuado: Boolean)
+data class MarcadorMapa(
+    val id: String,
+    val posicion: Coordenada,
+    val resaltado: Boolean,
+    val atenuado: Boolean,
+
+    val etiqueta: String? = null,
+
+    val color: Color? = null
+)
 
 private val ColorMarcador = Color(0xFF126B47)
 private val ColorAtenuado = Color(0xFFADB7AC)
@@ -108,10 +118,6 @@ fun MapaMapbox(
     }
 }
 
-/**
- * Contenido del mapa: cámara, puck del usuario cuando hay permiso (Accompanist), radio de búsqueda,
- * trazado de la ruta, marcadores y la pulsación larga del estilo estándar para marcar el origen.
- */
 @OptIn(ExperimentalPermissionsApi::class, MapboxExperimental::class)
 @Composable
 private fun ContenidoMapa(
@@ -204,10 +210,20 @@ private fun ContenidoMapa(
         }
         marcadores.forEach { marcador ->
             CircleAnnotation(point = marcador.posicion.punto(), onClick = { onSeleccionar(marcador.id); true }) {
-                circleRadius = if (marcador.resaltado) 12.0 else 9.0
-                circleColor = if (marcador.atenuado) ColorAtenuado else ColorMarcador
+                circleRadius = if (marcador.resaltado) 16.0 else 13.0
+                circleColor = if (marcador.atenuado) ColorAtenuado else marcador.color ?: ColorMarcador
                 circleStrokeColor = Color.White
-                circleStrokeWidth = 2.0
+                circleStrokeWidth = 3.5
+            }
+            marcador.etiqueta?.let { texto ->
+                PointAnnotation(point = marcador.posicion.punto()) {
+                    textField = texto
+                    textSize = 14.0
+                    textOffset = listOf(0.0, 1.5)
+                    textColor = Color(0xFF14211A)
+                    textHaloColor = Color.White
+                    textHaloWidth = 2.5
+                }
             }
         }
     }

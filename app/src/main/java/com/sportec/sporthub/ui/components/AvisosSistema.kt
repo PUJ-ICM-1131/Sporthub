@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import com.sportec.sporthub.MainActivity
 import com.sportec.sporthub.R
 import com.sportec.sporthub.domain.Notificaciones
+import com.sportec.sporthub.utils.EntradaNotificacion
 
 @Composable
 fun AvisosSistema(usuarioId: String?) {
@@ -36,8 +37,8 @@ fun AvisosSistema(usuarioId: String?) {
         if (!permitidas || !manager.areNotificationsEnabled()) return@LaunchedEffect
         avisos.filter { it.usuarioId == usuarioId && !it.leida && !preferencias.getBoolean("$usuarioId:${it.id}", false) }.forEach { aviso ->
             val intent = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            intent.putExtra(com.sportec.sporthub.utils.EntradaNotificacion.USUARIO, usuarioId)
-            intent.putExtra(com.sportec.sporthub.utils.EntradaNotificacion.AVISO, aviso.id)
+            intent.putExtra(EntradaNotificacion.USUARIO, usuarioId)
+            intent.putExtra(EntradaNotificacion.AVISO, aviso.id)
             intent.data = android.net.Uri.Builder().scheme("sporthub").authority("aviso")
                 .appendPath(usuarioId).appendPath(aviso.id).build()
             val abrir = PendingIntent.getActivity(context, usuarioId.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)

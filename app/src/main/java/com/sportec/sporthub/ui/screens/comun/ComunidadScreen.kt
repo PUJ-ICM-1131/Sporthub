@@ -28,6 +28,7 @@ import com.sportec.sporthub.domain.Comunidades
 import com.sportec.sporthub.domain.Cuentas
 import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.PantallaBase
+import com.sportec.sporthub.domain.AccesoEncuentros
 
 @Composable
 fun ComunidadScreen(
@@ -37,7 +38,8 @@ fun ComunidadScreen(
     onAbrirChat: () -> Unit,
     onEditar: () -> Unit,
     onInvitar: () -> Unit,
-    onCeder: () -> Unit
+    onCeder: () -> Unit,
+    onEncontrarnos: () -> Unit = {}
 ) {
     val comunidades by Comunidades.comunidades.collectAsState()
     val cuentas by Cuentas.cuentas.collectAsState()
@@ -77,6 +79,13 @@ fun ComunidadScreen(
             item {
                 OutlinedButton(onClick = onAbrirChat, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.comunidad_abrir_chat))
+                }
+            }
+            if (AccesoEncuentros.puedeEntrar(comunidadId, usuarioId)) {
+                item {
+                    OutlinedButton(onClick = onEncontrarnos, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.comunidad_encontrarnos))
+                    }
                 }
             }
             item {

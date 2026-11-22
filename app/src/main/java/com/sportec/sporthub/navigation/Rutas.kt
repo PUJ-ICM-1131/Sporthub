@@ -52,6 +52,8 @@ interface RutaAcceso : NavKey
 @Serializable data class Sucesion(val comunidadId: String) : NavKey
 @Serializable data object Contactos : NavKey
 
+@Serializable data class Encontrarnos(val origenId: String) : NavKey
+
 @Serializable data class Ruta(val negocioId: String) : NavKey
 @Serializable data class Brujula(val negocioId: String) : NavKey
 @Serializable data class FotoLlegada(val reservaId: String) : NavKey

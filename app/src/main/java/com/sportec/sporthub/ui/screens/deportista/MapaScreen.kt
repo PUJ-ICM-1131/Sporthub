@@ -63,6 +63,8 @@ import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 import androidx.compose.foundation.Canvas
+import com.sportec.sporthub.domain.Cuentas
+import com.sportec.sporthub.domain.Rol
 
 private val FondoMapa = Color(0xFFEDF2E6)
 private val PinActivo = Color(0xFF126B47)
@@ -78,11 +80,11 @@ fun MapaScreen(
 ) {
     SeguimientoUbicacion()
     val negocios by Negocios.negocios.collectAsState()
-    val cuentas by com.sportec.sporthub.domain.Cuentas.cuentas.collectAsState()
+    val cuentas by Cuentas.cuentas.collectAsState()
     val origen by Ubicacion.origen.collectAsState()
     val origenDefinido by Ubicacion.origenDefinido.collectAsState()
     val posicion by Ubicacion.posicionActual.collectAsState()
-    val negociosConCuenta = cuentas.filter { it.activa && it.rol == com.sportec.sporthub.domain.Rol.ESTABLECIMIENTO }.mapNotNull { it.negocioId }.toSet()
+    val negociosConCuenta = cuentas.filter { it.activa && it.rol == Rol.ESTABLECIMIENTO }.mapNotNull { it.negocioId }.toSet()
     val validados = negocios.filter { it.estado == EstadoNegocio.VALIDADO && it.id in negociosConCuenta }
     var interactuandoMapa by remember { mutableStateOf(false) }
     var seleccionado by rememberSaveable { mutableStateOf<String?>(null) }

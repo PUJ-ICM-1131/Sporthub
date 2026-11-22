@@ -2,25 +2,395 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Perfil y rol de cada usuario. El documento se llama como su UID de Firebase Auth.
-    match /usuarios/{uid} {
-      // Cualquier usuario autenticado puede ver perfiles (chats, contactos, invitaciones).
-      allow read: if request.auth != null;
+    function signedIn() { return request.auth != null; }
+    function yo() { return request.auth.uid; }
+    function perfil() { return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data; }
 
-      // Solo se crea el propio perfil, como deportista o establecimiento y activo.
-      // El administrador se crea a mano desde la consola de Firebase.
-      allow create: if request.auth != null
+    function esDeportista(uid) {
+      let cuenta = get(/databases/$(database)/documents/usuarios/$(uid)).data;
+      return cuenta.rol == 'DEPORTISTA' && cuenta.activa == true;
+    }
+    function esAdmin() { return signedIn() && perfil().rol == 'ADMINISTRADOR'; }
+    function esOperadorDe(negocioId) {
+      return signedIn() && perfil().rol == 'ESTABLECIMIENTO' && perfil().negocioId == negocioId;
+    }
+
+    function cambia(campos) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(campos);
+    }
+
+    match /usuarios/{uid} {
+      allow read: if signedIn();
+      allow create: if signedIn()
         && request.auth.uid == uid
         && request.resource.data.rol in ['DEPORTISTA', 'ESTABLECIMIENTO']
-        && request.resource.data.activa == true;
+        && request.resource.data.activa == true
+        && (request.resource.data.rol == 'DEPORTISTA'
+            ? request.resource.data.negocioId == null
+            : (request.resource.data.negocioId is string
+               && !exists(/databases/$(database)/documents/negocios/$(request.resource.data.negocioId))));
 
-      // Solo se edita el propio perfil, sin cambiar el rol ni el estado de la cuenta.
-      allow update: if request.auth != null
+      allow update: if signedIn()
         && request.auth.uid == uid
         && request.resource.data.rol == resource.data.rol
-        && request.resource.data.activa == resource.data.activa;
+        && request.resource.data.activa == resource.data.activa
+        && cambia(['nombre', 'telefono', 'foto']);
 
       allow delete: if false;
+    }
+
+    match /negocios/{id} {
+      allow read: if signedIn();
+      allow create: if esAdmin()
+        || (esOperadorDe(id) && request.resource.data.estado == 'PENDIENTE');
+      allow update: if esAdmin()
+        || (esOperadorDe(id)
+            && cambia(['estado', 'descripcion', 'contacto', 'direccion', 'cambioPendiente'])
+            && (request.resource.data.estado == resource.data.estado
+                || (resource.data.estado in ['PENDIENTE', 'RECHAZADO']
+                    && request.resource.data.estado in ['PENDIENTE', 'VALIDADO'])));
+      allow delete: if false;
+    }
+
+    match /actividades/{id} {
+      allow read: if signedIn();
+      allow create: if esAdmin()
+        || (esOperadorDe(request.resource.data.negocioId)
+            && get(/databases/$(database)/documents/negocios/$(request.resource.data.negocioId)).data.estado == 'VALIDADO');
+      allow update: if esAdmin()
+        || (esOperadorDe(resource.data.negocioId)
+            && request.resource.data.negocioId == resource.data.negocioId);
+      allow delete: if false;
+    }
+
+    match /ocupacion/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly(['n', 'actividadId'])
+        && request.resource.data.n is int
+        && request.resource.data.n >= 0
+        && request.resource.data.n <= get(/databases/$(database)/documents/actividades/$(request.resource.data.actividadId)).data.capacidad;
+      allow delete: if false;
+    }
+
+    match /solicitudes/{id} {
+      allow read: if signedIn()
+        && (resource.data.usuarioId == yo() || esOperadorDe(resource.data.negocioId));
+      allow create: if signedIn()
+        && request.resource.data.usuarioId == yo()
+        && request.resource.data.estado == 'REVISION';
+      allow update: if signedIn() && cambia(['estado', 'deadline']) && (
+        (esOperadorDe(resource.data.negocioId) && resource.data.estado == 'REVISION'
+          && request.resource.data.estado in ['PAGO', 'RECHAZADA'])
+        || (esOperadorDe(resource.data.negocioId) && resource.data.estado in ['FILA', 'PAGO']
+          && request.resource.data.estado == 'RECHAZADA')
+        || (resource.data.usuarioId == yo() && resource.data.estado in ['FILA', 'REVISION', 'PAGO']
+          && request.resource.data.estado == 'RETIRADA')
+        || (resource.data.usuarioId == yo() && resource.data.estado == 'PAGO'
+          && request.resource.data.estado == 'ATENDIDA')
+      );
+      allow delete: if false;
+    }
+
+    function transferenciaPagada(reservaId, pagoId) {
+      let pago = getAfter(/databases/$(database)/documents/pagos/$(pagoId)).data;
+      let permiso = get(/databases/$(database)/documents/autorizacionesTransferencia/$(pago.transferenciaId)).data;
+      let transferencia = getAfter(/databases/$(database)/documents/transferencias/$(pago.transferenciaId)).data;
+      return pago.usuarioId == yo() && pago.reservaId == reservaId
+        && pago.estado == 'EXITOSO' && pago.monto == permiso.monto
+        && permiso.compradorId == yo() && permiso.reservaId == reservaId
+        && permiso.deadline > request.time.toMillis()
+        && transferencia.estado == 'COMPLETADA';
+    }
+
+    match /reservas/{id} {
+      allow read: if signedIn()
+        && (resource.data.usuarioId == yo()
+            || esOperadorDe(resource.data.negocioId)
+            || resource.data.enTransferencia == true);
+      allow create: if signedIn()
+        && request.resource.data.usuarioId == yo()
+        && request.resource.data.estado == 'CONFIRMADA';
+      allow update: if signedIn() && (
+        (resource.data.usuarioId == yo() && request.resource.data.usuarioId == yo()
+          && cambia(['llegada', 'fotoLlegada', 'estado', 'enTransferencia'])
+          && (request.resource.data.estado == resource.data.estado
+              || (resource.data.estado == 'CONFIRMADA' && request.resource.data.estado == 'CANCELADA')))
+
+        || (esOperadorDe(resource.data.negocioId) && cambia(['cerrada']))
+
+        || (resource.data.enTransferencia == true && request.resource.data.usuarioId == yo()
+          && cambia(['usuarioId', 'pagoId', 'llegada', 'fotoLlegada', 'enTransferencia'])
+          && request.resource.data.enTransferencia == false
+          && transferenciaPagada(id, request.resource.data.pagoId))
+      );
+      allow delete: if false;
+    }
+
+    match /pagos/{id} {
+      allow read: if signedIn()
+        && (resource.data.usuarioId == yo() || esOperadorDe(resource.data.negocioId));
+      allow create: if signedIn() && request.resource.data.usuarioId == yo();
+      allow update, delete: if false;
+    }
+
+    match /reembolsos/{id} {
+      allow read: if signedIn()
+        && (resource.data.usuarioId == yo() || esOperadorDe(resource.data.negocioId));
+      allow create: if signedIn() && request.resource.data.estado == 'PENDIENTE';
+      allow update: if esOperadorDe(resource.data.negocioId)
+        && resource.data.estado == 'PENDIENTE'
+        && cambia(['estado']);
+      allow delete: if false;
+    }
+
+    match /transferencias/{id} {
+      allow read: if signedIn()
+        && (resource.data.estado in ['PUBLICADA', 'TRAMITE']
+            || resource.data.propietarioId == yo()
+            || yo() in resource.data.postulantesUids
+            || esOperadorDe(resource.data.negocioId));
+      allow create: if signedIn()
+        && request.resource.data.propietarioId == yo()
+        && request.resource.data.estado == 'PUBLICADA'
+        && request.resource.data.version == 0;
+
+      function esInscripcion() {
+        let anterior = resource.data.postulantes;
+        let nuevos = request.resource.data.postulantes;
+        let nuevo = nuevos[nuevos.size() - 1];
+        return resource.data.estado in ['PUBLICADA', 'TRAMITE']
+          && cambia(['postulantes', 'postulantesUids', 'version'])
+          && nuevos.size() == anterior.size() + 1
+          && nuevos == anterior.concat([nuevo])
+          && nuevo.usuarioId == yo() && yo() != resource.data.propietarioId
+          && nuevo.estado in ['FILA', 'REVISION'] && nuevo.aceptadoPorPropietario == false
+          && nuevo.deadline == null
+          && request.resource.data.postulantesUids.toSet() == resource.data.postulantesUids.toSet().union([yo()].toSet());
+      }
+      allow update: if signedIn()
+        && request.resource.data.version == resource.data.version + 1
+        && cambia(['version', 'estado', 'postulantes', 'postulantesUids'])
+        && resource.data.estado in ['PUBLICADA', 'TRAMITE']
+        && (
+          (resource.data.propietarioId == yo() && request.resource.data.estado in ['PUBLICADA', 'TRAMITE', 'RETIRADA'])
+          || (esOperadorDe(resource.data.negocioId) && request.resource.data.estado in ['PUBLICADA', 'TRAMITE'])
+          || esInscripcion()
+          || (request.resource.data.estado == 'COMPLETADA'
+              && get(/databases/$(database)/documents/autorizacionesTransferencia/$(id)).data.compradorId == yo()
+              && transferenciaPagada(resource.data.reservaId, 'p_t_' + id)
+              && getAfter(/databases/$(database)/documents/reservas/$(resource.data.reservaId)).data.usuarioId == yo())
+        );
+      allow delete: if false;
+    }
+
+    match /autorizacionesTransferencia/{id} {
+      function autorizacionValida() {
+        let t = get(/databases/$(database)/documents/transferencias/$(id)).data;
+        let r = get(/databases/$(database)/documents/reservas/$(t.reservaId)).data;
+        let candidato = t.postulantes[request.resource.data.indice];
+        return esOperadorDe(t.negocioId)
+          && request.resource.data.keys().hasOnly(['compradorId', 'propietarioId', 'reservaId', 'negocioId', 'indice', 'deadline', 'monto'])
+          && t.estado in ['PUBLICADA', 'TRAMITE']
+          && candidato.estado == 'REVISION' && candidato.aceptadoPorPropietario == true
+          && request.resource.data.compradorId == candidato.usuarioId
+          && request.resource.data.propietarioId == t.propietarioId
+          && request.resource.data.reservaId == t.reservaId
+          && request.resource.data.negocioId == t.negocioId
+          && request.resource.data.monto == r.precio
+          && request.resource.data.deadline > request.time.toMillis();
+      }
+      allow read: if signedIn() && (resource.data.compradorId == yo()
+        || resource.data.propietarioId == yo() || esOperadorDe(resource.data.negocioId));
+      allow create, update: if signedIn() && autorizacionValida();
+      allow delete: if false;
+    }
+
+    match /comunidades/{id} {
+      allow read: if signedIn()
+        && (yo() in resource.data.miembros
+            || exists(/databases/$(database)/documents/invitaciones/$(id + '_' + yo())));
+      allow create: if signedIn()
+        && request.resource.data.creadorId == yo()
+        && request.resource.data.adminId == yo()
+        && request.resource.data.miembros == [yo()];
+      allow update: if signedIn() && (
+        (resource.data.adminId == yo() && cambia(['nombre', 'descripcion', 'foto', 'adminId'])
+          && request.resource.data.adminId in resource.data.miembros)
+        || (cambia(['miembros'])
+          && request.resource.data.miembros.size() == resource.data.miembros.size() + 1
+          && request.resource.data.miembros.hasAll(resource.data.miembros)
+          && yo() in request.resource.data.miembros
+          && get(/databases/$(database)/documents/invitaciones/$(id + '_' + yo())).data.estado == 'PENDIENTE')
+      );
+      allow delete: if false;
+    }
+
+    match /invitaciones/{id} {
+      allow read: if signedIn()
+        && (resource.data.invitadoId == yo() || resource.data.remitenteId == yo());
+      allow create: if signedIn()
+        && request.resource.data.remitenteId == yo()
+        && request.resource.data.estado == 'PENDIENTE'
+        && id == request.resource.data.comunidadId + '_' + request.resource.data.invitadoId
+        && yo() in get(/databases/$(database)/documents/comunidades/$(request.resource.data.comunidadId)).data.miembros;
+      allow update: if signedIn() && (
+        (request.resource.data.remitenteId == yo()
+          && resource.data.estado in ['RECHAZADA', 'ACEPTADA']
+          && request.resource.data.estado == 'PENDIENTE'
+          && yo() in get(/databases/$(database)/documents/comunidades/$(resource.data.comunidadId)).data.miembros)
+        || (resource.data.invitadoId == yo() && resource.data.estado == 'PENDIENTE'
+          && request.resource.data.estado in ['ACEPTADA', 'RECHAZADA']
+          && cambia(['estado', 'actualizadaEn']))
+      );
+      allow delete: if false;
+    }
+
+    match /chats/{chatId} {
+      allow read: if signedIn() && yo() in resource.data.miembros;
+      allow create: if signedIn() && yo() in request.resource.data.miembros && (
+        (request.resource.data.comunidadId == null
+          && request.resource.data.miembros.size() == 2
+          && (chatId == request.resource.data.miembros[0] + '_' + request.resource.data.miembros[1]
+              || chatId == request.resource.data.miembros[1] + '_' + request.resource.data.miembros[0]))
+        || (request.resource.data.comunidadId == chatId
+          && getAfter(/databases/$(database)/documents/comunidades/$(chatId)).data.adminId == yo()
+          && request.resource.data.miembros == getAfter(/databases/$(database)/documents/comunidades/$(chatId)).data.miembros)
+      );
+      allow update: if signedIn() && (
+        (resource.data.comunidadId == null && yo() in resource.data.miembros
+          && request.resource.data.miembros == resource.data.miembros
+          && cambia(['creadoEn']))
+        || (resource.data.comunidadId != null && cambia(['miembros'])
+          && request.resource.data.miembros.size() == resource.data.miembros.size() + 1
+          && request.resource.data.miembros.hasAll(resource.data.miembros)
+          && yo() in request.resource.data.miembros
+          && get(/databases/$(database)/documents/invitaciones/$(chatId + '_' + yo())).data.estado == 'PENDIENTE')
+      );
+      allow delete: if false;
+
+      match /mensajes/{mensajeId} {
+        allow read: if signedIn()
+          && yo() in get(/databases/$(database)/documents/chats/$(chatId)).data.miembros;
+        allow create: if signedIn()
+          && request.resource.data.autorId == yo()
+          && request.resource.data.texto is string
+          && request.resource.data.texto.size() > 0
+          && request.resource.data.texto.size() <= 2000
+          && yo() in getAfter(/databases/$(database)/documents/chats/$(chatId)).data.miembros;
+        allow update, delete: if false;
+      }
+    }
+
+    match /resenas/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.usuarioId == yo()
+        && id == request.resource.data.reservaId
+        && request.resource.data.puntaje is int
+        && request.resource.data.puntaje >= 1 && request.resource.data.puntaje <= 5
+        && get(/databases/$(database)/documents/reservas/$(id)).data.usuarioId == yo()
+        && get(/databases/$(database)/documents/reservas/$(id)).data.cerrada == true;
+      allow update: if esOperadorDe(resource.data.negocioId) && cambia(['respuesta']);
+      allow delete: if false;
+    }
+    match /notificaciones/{id} {
+      allow read: if signedIn() && resource.data.usuarioId == yo();
+      allow create: if signedIn() && request.resource.data.autorId == yo();
+      allow update: if signedIn() && resource.data.usuarioId == yo() && cambia(['leida']);
+      allow delete: if signedIn() && resource.data.usuarioId == yo();
+    }
+
+    match /reportes/{id} {
+      allow read: if esAdmin() || (signedIn() && resource.data.autorId == yo());
+      allow create: if signedIn() && request.resource.data.autorId == yo();
+      allow update: if esAdmin() && cambia(['estado']);
+      allow delete: if false;
+    }
+
+    match /fotos/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['datos', 'subidaPor', 'creadaEn', 'reservaId'])
+        && request.resource.data.subidaPor == yo()
+        && request.resource.data.datos.size() < 900000;
+      allow update, delete: if false;
+    }
+
+    match /fotosPrivadas/{id} {
+      function puedeVer() {
+        let reserva = get(/databases/$(database)/documents/reservas/$(resource.data.reservaId)).data;
+        return resource.data.subidaPor == yo() || reserva.usuarioId == yo() || esOperadorDe(reserva.negocioId);
+      }
+      allow get: if signedIn() && (resource == null || puedeVer());
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['datos', 'subidaPor', 'creadaEn', 'reservaId'])
+        && request.resource.data.subidaPor == yo()
+        && get(/databases/$(database)/documents/reservas/$(request.resource.data.reservaId)).data.usuarioId == yo()
+        && request.resource.data.datos.size() < 900000;
+      allow update, delete: if false;
+    }
+
+    function miembroDe(tipo, origenId, uid) {
+      return tipo == 'CHAT'
+        ? (get(/databases/$(database)/documents/chats/$(origenId)).data.comunidadId == null
+            && get(/databases/$(database)/documents/chats/$(origenId)).data.miembros.size() == 2
+            && uid in get(/databases/$(database)/documents/chats/$(origenId)).data.miembros
+            && esDeportista(get(/databases/$(database)/documents/chats/$(origenId)).data.miembros[0])
+            && esDeportista(get(/databases/$(database)/documents/chats/$(origenId)).data.miembros[1]))
+        : (tipo == 'COMUNIDAD' && uid in get(/databases/$(database)/documents/comunidades/$(origenId)).data.miembros);
+    }
+    function participaEn(tipo, origenId) {
+      return signedIn() && esDeportista(yo()) && miembroDe(tipo, origenId, yo());
+    }
+
+    match /encuentros/{encId} {
+      allow get: if signedIn() && esDeportista(yo())
+        && (resource == null || participaEn(resource.data.origenTipo, resource.data.origenId));
+      allow create: if signedIn()
+        && request.resource.data.creadorId == yo()
+        && encId == 'e_' + request.resource.data.origenId
+        && request.resource.data.estado == 'ABIERTO'
+        && request.resource.data.sesion is string && request.resource.data.sesion.size() > 0
+        && request.resource.data.punto == null
+        && participaEn(request.resource.data.origenTipo, request.resource.data.origenId);
+      allow update: if signedIn()
+        && participaEn(resource.data.origenTipo, resource.data.origenId)
+        && (
+          (resource.data.estado == 'ABIERTO' && cambia(['punto'])
+            && request.resource.data.punto.autorId == yo()
+            && request.resource.data.punto.lat is number && request.resource.data.punto.lat >= -90 && request.resource.data.punto.lat <= 90
+            && request.resource.data.punto.lng is number && request.resource.data.punto.lng >= -180 && request.resource.data.punto.lng <= 180)
+          || ((resource.data.estado == 'FINALIZADO' || !('sesion' in resource.data))
+              && request.resource.data.estado == 'ABIERTO' && cambia(['estado', 'punto', 'sesion'])
+              && request.resource.data.punto == null
+              && request.resource.data.sesion is string && request.resource.data.sesion.size() > 0
+              && request.resource.data.sesion != resource.data.get('sesion', ''))
+          || (resource.data.estado == 'ABIERTO' && request.resource.data.estado == 'FINALIZADO'
+              && cambia(['estado'])
+              && (resource.data.creadorId == yo()
+                  || (resource.data.origenTipo == 'COMUNIDAD'
+                      && get(/databases/$(database)/documents/comunidades/$(resource.data.origenId)).data.adminId == yo())))
+        );
+      allow delete: if false;
+
+      match /sesiones/{sesionId}/posiciones/{pid} {
+        function acceso() {
+          let e = get(/databases/$(database)/documents/encuentros/$(encId)).data;
+          return e.estado == 'ABIERTO' && e.sesion == sesionId
+            && participaEn(e.origenTipo, e.origenId)
+            && esDeportista(pid) && miembroDe(e.origenTipo, e.origenId, pid);
+        }
+        allow get: if signedIn() && acceso()
+          && (resource == null
+              || resource.data.actualizadoEn > request.time - duration.value(300, 's'));
+        allow create, update: if signedIn() && pid == yo() && acceso()
+          && request.resource.data.keys().hasOnly(['lat', 'lng', 'precision', 'actualizadoEn'])
+          && request.resource.data.lat is number && request.resource.data.lat >= -90 && request.resource.data.lat <= 90
+          && request.resource.data.lng is number && request.resource.data.lng >= -180 && request.resource.data.lng <= 180
+          && request.resource.data.actualizadoEn == request.time;
+        allow delete: if signedIn() && pid == yo();
+      }
     }
   }
 }

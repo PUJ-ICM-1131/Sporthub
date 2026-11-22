@@ -2,6 +2,11 @@ package com.sportec.sporthub.domain
 
 import com.sportec.sporthub.utils.FotosLocales
 import com.sportec.sporthub.R
+import com.sportec.sporthub.data.Condicion
+import com.sportec.sporthub.data.Escritura
+import com.sportec.sporthub.data.FotosRemotas
+import com.sportec.sporthub.data.Mapeos
+import com.sportec.sporthub.data.Nube
 import com.sportec.sporthub.utils.Textos
 
 import java.time.LocalDate
@@ -9,34 +14,47 @@ import java.time.ZoneId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 private val ZONA = ZoneId.of("America/Bogota")
 private val ACTIVAS = setOf(EstadoSolicitud.FILA, EstadoSolicitud.REVISION, EstadoSolicitud.PAGO)
+
+private const val ORIGEN_ORDEN_MS = 1_767_225_600_000L
 
 data class FranjaHoraria(val hora: Int, val cuposLibres: Int)
 
 object Reservas {
 
-    private var secuencia = 100
-    private fun uid(prefijo: String): String {
-        secuencia++
-        return prefijo + java.util.UUID.randomUUID().toString()
-    }
+    private fun uid(prefijo: String): String = prefijo + java.util.UUID.randomUUID().toString()
 
-    private val _solicitudes = MutableStateFlow(DatosMock.solicitudes)
+    private val _solicitudes = MutableStateFlow<List<Solicitud>>(emptyList())
     val solicitudes: StateFlow<List<Solicitud>> = _solicitudes.asStateFlow()
 
-    private val _reservas = MutableStateFlow(DatosMock.reservas.map { reserva ->
-        val foto = FotosLocales.obtener("reserva", reserva.id + ":" + reserva.usuarioId)
-        reserva.copy(fotoLlegada = foto ?: reserva.fotoLlegada, llegada = reserva.llegada || foto != null)
-    })
+    private val _reservas = MutableStateFlow<List<Reserva>>(emptyList())
     val reservas: StateFlow<List<Reserva>> = _reservas.asStateFlow()
 
-    private val _pagos = MutableStateFlow(DatosMock.pagos)
+    private val _pagos = MutableStateFlow<List<Pago>>(emptyList())
     val pagos: StateFlow<List<Pago>> = _pagos.asStateFlow()
 
     private val _reembolsos = MutableStateFlow<List<Reembolso>>(emptyList())
     val reembolsos: StateFlow<List<Reembolso>> = _reembolsos.asStateFlow()
+
+    private var ocupacion: Map<String, Int> = emptyMap()
+
+    internal fun cargarSolicitudes(lista: List<Solicitud>) { _solicitudes.value = lista }
+    internal fun cargarPagos(lista: List<Pago>) { _pagos.value = lista }
+    internal fun cargarReembolsos(lista: List<Reembolso>) { _reembolsos.value = lista }
+    internal fun cargarOcupacion(mapa: Map<String, Int>) { ocupacion = mapa }
+    internal fun cargarReservas(lista: List<Reserva>) {
+        _reservas.value = lista.map { reserva ->
+            if (reserva.fotoLlegada != null) reserva
+            else reserva.copy(fotoLlegada = FotosLocales.obtener("reserva", reserva.id + ":" + reserva.usuarioId))
+        }
+    }
+    internal fun vaciar() {
+        _solicitudes.value = emptyList(); _reservas.value = emptyList()
+        _pagos.value = emptyList(); _reembolsos.value = emptyList(); ocupacion = emptyMap()
+    }
 
     fun ahora(): Long = System.currentTimeMillis()
 
@@ -50,6 +68,10 @@ object Reservas {
         inicioMillis(fecha, hora) < finMillis(fecha2, hora2, duracion2) &&
             inicioMillis(fecha2, hora2) < finMillis(fecha, hora, duracion)
 
+    private fun claveOcupacion(actividadId: String, fecha: String, hora: Int) = "${actividadId}_${fecha}_$hora"
+
+    private fun negocioDe(actividadId: String): String = Negocios.actividadDe(actividadId)?.negocioId.orEmpty()
+
     fun cuposLibres(actividad: Actividad, fecha: String, hora: Int): Int {
         val duracion = (actividad.duracionMinutos / 60).coerceAtLeast(1)
         val ocupadosPorReserva = _reservas.value.count {
@@ -60,7 +82,9 @@ object Reservas {
             it.actividadId == actividad.id && it.estado == EstadoSolicitud.PAGO &&
                 solapan(it.fecha, it.hora, it.duracionHoras, fecha, hora, duracion)
         }
-        return actividad.capacidad - ocupadosPorReserva - ocupadosPorPago
+
+        val ocupadosEnNube = (0 until duracion).maxOfOrNull { ocupacion[claveOcupacion(actividad.id, fecha, hora + it)] ?: 0 } ?: 0
+        return actividad.capacidad - maxOf(ocupadosPorReserva + ocupadosPorPago, ocupadosEnNube)
     }
 
     fun listarFranjas(actividad: Actividad, fecha: String): List<FranjaHoraria> =
@@ -70,7 +94,21 @@ object Reservas {
         _reservas.value.any { it.actividadId == actividadId && it.estado == EstadoReserva.CONFIRMADA && !it.cerrada } ||
             _solicitudes.value.any { it.actividadId == actividadId && it.estado == EstadoSolicitud.PAGO }
 
-    fun enviarSolicitud(usuarioId: String, actividadId: String, fecha: String, hora: Int): Solicitud {
+    private fun ajustarOcupacion(actividadId: String, fecha: String, hora: Int, duracionHoras: Int, delta: Long) {
+        (0 until duracionHoras).forEach { i ->
+            Nube.escribir(Escritura.Mezclar(
+                "ocupacion/${claveOcupacion(actividadId, fecha, hora + i)}",
+                mapOf("n" to Nube.sumar(delta), "actividadId" to actividadId)
+            ))
+        }
+    }
+
+    private fun condicionesDeCupo(actividad: Actividad, fecha: String, hora: Int, duracionHoras: Int): List<Condicion> =
+        (0 until duracionHoras).map {
+            Condicion.Menor("ocupacion/${claveOcupacion(actividad.id, fecha, hora + it)}", "n", actividad.capacidad.toLong())
+        }
+
+    fun enviarSolicitud(usuarioId: String, actividadId: String, fecha: String, hora: Int): Solicitud = Nube.agrupar {
         val actividad = Negocios.actividadDe(actividadId)
             ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_el_servicio_no_esta_disponible))
         if (inicioMillis(fecha, hora) <= ahora()) {
@@ -87,15 +125,16 @@ object Reservas {
             fecha = fecha,
             hora = hora,
             duracionHoras = duracion,
-            orden = secuencia,
+            orden = ((ahora() - ORIGEN_ORDEN_MS) / 1000).toInt(),
             estado = EstadoSolicitud.REVISION,
             precio = actividad.precio,
             politica = actividad.politica
         )
         _solicitudes.value = _solicitudes.value + nueva
+        Nube.escribir(Escritura.Crear("solicitudes/${nueva.id}", Mapeos.mapa(nueva, actividad.negocioId)))
         Notificaciones.evento(usuarioId, R.string.aviso_solicitud_enviada, "request", nueva.id)
         Notificaciones.evento(Negocios.operadorDe(actividad.negocioId), R.string.aviso_solicitud_recibida)
-        return _solicitudes.value.first { it.id == nueva.id }
+        nueva
     }
 
     fun obtenerSolicitud(id: String): Solicitud? =
@@ -130,13 +169,20 @@ object Reservas {
         if (solicitud.estado != EstadoSolicitud.REVISION) {
             throw IllegalStateException(Textos.obtener(R.string.texto_esta_solicitud_ya_no_esta_en_revision))
         }
-        val actualizada = solicitud.copy(
-            estado = EstadoSolicitud.PAGO,
-            deadline = minOf(ahora() + solicitud.politica.payMinutes * 60_000L, inicioMillis(solicitud.fecha, solicitud.hora))
-        )
-        _solicitudes.value = _solicitudes.value.map { if (it.id == id) actualizada else it }
-        Notificaciones.evento(solicitud.usuarioId, R.string.aviso_solicitud_aprobada, "request", id)
-        return actualizada
+        val condiciones = listOf(Condicion.Igual("solicitudes/$id", "estado", EstadoSolicitud.REVISION.name)) +
+            condicionesDeCupo(actividad, solicitud.fecha, solicitud.hora, solicitud.duracionHoras)
+        return Nube.agrupar(*condiciones.toTypedArray()) {
+            val actualizada = solicitud.copy(
+                estado = EstadoSolicitud.PAGO,
+                deadline = minOf(ahora() + solicitud.politica.payMinutes * 60_000L, inicioMillis(solicitud.fecha, solicitud.hora))
+            )
+            _solicitudes.value = _solicitudes.value.map { if (it.id == id) actualizada else it }
+            Nube.escribir(Escritura.Actualizar("solicitudes/$id",
+                mapOf("estado" to actualizada.estado.name, "deadline" to actualizada.deadline)))
+            ajustarOcupacion(actividad.id, solicitud.fecha, solicitud.hora, solicitud.duracionHoras, +1)
+            Notificaciones.evento(solicitud.usuarioId, R.string.aviso_solicitud_aprobada, "request", id)
+            actualizada
+        }
     }
 
     fun rechazarSolicitud(id: String, motivo: String, operadorId: String) =
@@ -157,22 +203,32 @@ object Reservas {
             throw IllegalStateException(Textos.obtener(R.string.texto_no_tienes_acceso_a_esta_solicitud))
         }
         if (solicitud.estado !in ACTIVAS) throw IllegalStateException(Textos.obtener(R.string.texto_la_solicitud_ya_no_esta_activa))
-        Notificaciones.evento(solicitud.usuarioId, if (rechazadaPor != null) R.string.aviso_solicitud_rechazada else R.string.aviso_solicitud_retirada, "request", id)
-        Notificaciones.evento(Negocios.operadorDe(actividad.negocioId), R.string.aviso_solicitud_actualizada)
-        val nuevoEstado = if (rechazadaPor != null) EstadoSolicitud.RECHAZADA else EstadoSolicitud.RETIRADA
-        _solicitudes.value = _solicitudes.value.map { if (it.id == id) it.copy(estado = nuevoEstado) else it }
+        Nube.agrupar(Condicion.Igual("solicitudes/$id", "estado", solicitud.estado.name)) {
+            Notificaciones.evento(solicitud.usuarioId, if (rechazadaPor != null) R.string.aviso_solicitud_rechazada else R.string.aviso_solicitud_retirada, "request", id)
+            Notificaciones.evento(Negocios.operadorDe(actividad.negocioId), R.string.aviso_solicitud_actualizada)
+            val nuevoEstado = if (rechazadaPor != null) EstadoSolicitud.RECHAZADA else EstadoSolicitud.RETIRADA
+            _solicitudes.value = _solicitudes.value.map { if (it.id == id) it.copy(estado = nuevoEstado) else it }
+            Nube.escribir(Escritura.Actualizar("solicitudes/$id", mapOf("estado" to nuevoEstado.name)))
+
+            if (solicitud.estado == EstadoSolicitud.PAGO) {
+                ajustarOcupacion(actividad.id, solicitud.fecha, solicitud.hora, solicitud.duracionHoras, -1)
+            }
+        }
     }
 
-    fun registrarPago(usuarioId: String, monto: Int, medio: String): Pago {
-        val pago = Pago(uid("p"), usuarioId, monto, EstadoPago.EXITOSO, medio)
+    fun registrarPago(usuarioId: String, monto: Int, medio: String, id: String = uid("p")): Pago {
+        val pago = Pago(id, usuarioId, monto, EstadoPago.EXITOSO, medio)
         _pagos.value = _pagos.value + pago
         Notificaciones.evento(usuarioId, R.string.aviso_pago_simulado)
         return pago
     }
 
-    fun registrarReembolso(reservaId: String, usuarioId: String, pagoId: String, monto: Int, causa: String, refundHours: Int): Reembolso {
+    fun registrarReembolso(
+        reservaId: String, usuarioId: String, pagoId: String, monto: Int, causa: String, refundHours: Int,
+        id: String = uid("ref")
+    ): Reembolso {
         val reembolso = Reembolso(
-            id = uid("ref"),
+            id = id,
             reservaId = reservaId,
             usuarioId = usuarioId,
             pagoId = pagoId,
@@ -181,6 +237,8 @@ object Reservas {
             plazo = ahora() + refundHours * 3_600_000L
         )
         _reembolsos.value = _reembolsos.value + reembolso
+        val negocioId = obtenerReserva(reservaId)?.let { negocioDe(it.actividadId) }.orEmpty()
+        Nube.escribir(Escritura.Crear("reembolsos/$id", Mapeos.mapa(reembolso, negocioId)))
         Notificaciones.evento(usuarioId, R.string.aviso_reembolso_pendiente)
         return reembolso
     }
@@ -196,10 +254,13 @@ object Reservas {
         val reembolso = _reembolsos.value.firstOrNull { it.id == id } ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_el_reembolso_ya_no_existe))
         if (reembolso.estado != EstadoReembolso.PENDIENTE) throw IllegalStateException(Textos.obtener(R.string.texto_este_reembolso_ya_fue_procesado))
         val reserva = obtenerReserva(reembolso.reservaId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_reserva_ya_no_existe))
-        val actividad = Negocios.actividadDe(reserva.actividadId)!!
-        val actualizado = reembolso.copy(estado = if (exitoso) EstadoReembolso.REALIZADO else EstadoReembolso.FALLIDO)
-        _reembolsos.value = _reembolsos.value.map { if (it.id == id) actualizado else it }
-        Notificaciones.evento(reembolso.usuarioId, if (exitoso) R.string.aviso_reembolso_ok else R.string.aviso_reembolso_fallo)
+        Negocios.actividadDe(reserva.actividadId)!!
+        Nube.agrupar(Condicion.Igual("reembolsos/$id", "estado", EstadoReembolso.PENDIENTE.name)) {
+            val actualizado = reembolso.copy(estado = if (exitoso) EstadoReembolso.REALIZADO else EstadoReembolso.FALLIDO)
+            _reembolsos.value = _reembolsos.value.map { if (it.id == id) actualizado else it }
+            Nube.escribir(Escritura.Actualizar("reembolsos/$id", mapOf("estado" to actualizado.estado.name)))
+            Notificaciones.evento(reembolso.usuarioId, if (exitoso) R.string.aviso_reembolso_ok else R.string.aviso_reembolso_fallo)
+        }
     }
 
     fun pagarSolicitud(id: String, medio: String, usuarioId: String): Reserva {
@@ -207,26 +268,36 @@ object Reservas {
         if (solicitud.usuarioId != usuarioId || solicitud.estado != EstadoSolicitud.PAGO) {
             throw IllegalStateException(Textos.obtener(R.string.texto_no_hay_un_turno_de_pago_vigente))
         }
-        val pago = registrarPago(usuarioId, solicitud.precio, medio)
-        val reserva = Reserva(
-            id = uid("r"),
-            usuarioId = usuarioId,
-            actividadId = solicitud.actividadId,
-            fecha = solicitud.fecha,
-            hora = solicitud.hora,
-            duracionHoras = solicitud.duracionHoras,
-            precio = solicitud.precio,
-            estado = EstadoReserva.CONFIRMADA,
-            pagoId = pago.id,
-            politica = solicitud.politica
-        )
-        _pagos.value = _pagos.value.map { if (it.id == pago.id) it.copy(reservaId = reserva.id) else it }
-        _reservas.value = _reservas.value + reserva
-        _solicitudes.value = _solicitudes.value.map { if (it.id == id) it.copy(estado = EstadoSolicitud.ATENDIDA) else it }
-        val actividad = Negocios.actividadDe(solicitud.actividadId)!!
-        Notificaciones.evento(usuarioId, R.string.aviso_reserva_confirmada, "reservation", reserva.id)
-        Notificaciones.evento(Negocios.operadorDe(actividad.negocioId), R.string.aviso_pago_recibido)
-        return reserva
+
+        return Nube.agrupar(Condicion.Igual("solicitudes/$id", "estado", EstadoSolicitud.PAGO.name)) {
+            val negocioId = negocioDe(solicitud.actividadId)
+            val reservaId = "r$id"
+            val pago = registrarPago(usuarioId, solicitud.precio, medio, id = "p$id")
+            val reserva = Reserva(
+                id = reservaId,
+                usuarioId = usuarioId,
+                actividadId = solicitud.actividadId,
+                fecha = solicitud.fecha,
+                hora = solicitud.hora,
+                duracionHoras = solicitud.duracionHoras,
+                precio = solicitud.precio,
+                estado = EstadoReserva.CONFIRMADA,
+                pagoId = pago.id,
+                politica = solicitud.politica
+            )
+            val pagoFinal = pago.copy(reservaId = reserva.id)
+            _pagos.value = _pagos.value.map { if (it.id == pago.id) pagoFinal else it }
+            _reservas.value = _reservas.value + reserva
+            _solicitudes.value = _solicitudes.value.map { if (it.id == id) it.copy(estado = EstadoSolicitud.ATENDIDA) else it }
+            Nube.escribir(
+                Escritura.Crear("pagos/${pago.id}", Mapeos.mapa(pagoFinal, negocioId)),
+                Escritura.Crear("reservas/${reserva.id}", Mapeos.mapa(reserva, negocioId)),
+                Escritura.Actualizar("solicitudes/$id", mapOf("estado" to EstadoSolicitud.ATENDIDA.name))
+            )
+            Notificaciones.evento(usuarioId, R.string.aviso_reserva_confirmada, "reservation", reserva.id)
+            Notificaciones.evento(Negocios.operadorDe(negocioId), R.string.aviso_pago_recibido)
+            reserva
+        }
     }
 
     fun cancelarReserva(id: String, motivo: String, usuarioId: String) {
@@ -238,14 +309,20 @@ object Reservas {
         if (ahora() > limite) {
             throw IllegalStateException(Textos.obtener(R.string.texto_el_plazo_de_cancelacion_establecido_ya_termino))
         }
-        _reservas.value = _reservas.value.map { if (it.id == id) it.copy(estado = EstadoReserva.CANCELADA) else it }
-        val monto = Math.round(reserva.precio * reserva.politica.refundPercent / 100.0).toInt()
-        if (monto > 0 && reserva.pagoId != null) {
-            registrarReembolso(id, usuarioId, reserva.pagoId, monto, Textos.obtener(R.string.texto_cancelacion), reserva.politica.refundHours)
+        Nube.agrupar(Condicion.Igual("reservas/$id", "estado", EstadoReserva.CONFIRMADA.name)) {
+            _reservas.value = _reservas.value.map { if (it.id == id) it.copy(estado = EstadoReserva.CANCELADA) else it }
+            Nube.escribir(Escritura.Actualizar("reservas/$id",
+                mapOf("estado" to EstadoReserva.CANCELADA.name, "enTransferencia" to false)))
+            ajustarOcupacion(reserva.actividadId, reserva.fecha, reserva.hora, reserva.duracionHoras, -1)
+            val monto = Math.round(reserva.precio * reserva.politica.refundPercent / 100.0).toInt()
+            if (monto > 0 && reserva.pagoId != null) {
+                registrarReembolso(id, usuarioId, reserva.pagoId, monto, Textos.obtener(R.string.texto_cancelacion),
+                    reserva.politica.refundHours, id = "ref_c_$id")
+            }
+            val actividad = Negocios.actividadDe(reserva.actividadId)!!
+            Notificaciones.evento(usuarioId, R.string.aviso_reserva_cancelada, "reservation", id)
+            Notificaciones.evento(Negocios.operadorDe(actividad.negocioId), R.string.aviso_reserva_cancelada)
         }
-        val actividad = Negocios.actividadDe(reserva.actividadId)!!
-        Notificaciones.evento(usuarioId, R.string.aviso_reserva_cancelada, "reservation", id)
-        Notificaciones.evento(Negocios.operadorDe(actividad.negocioId), R.string.aviso_reserva_cancelada)
     }
 
     fun cambiarTitular(reservaId: String, nuevoUsuarioId: String, nuevoPagoId: String): Reserva {
@@ -253,6 +330,10 @@ object Reservas {
         val actualizada = reserva.copy(usuarioId = nuevoUsuarioId, pagoId = nuevoPagoId, llegada = false, fotoLlegada = null)
         _reservas.value = _reservas.value.map { if (it.id == reservaId) actualizada else it }
         _pagos.value = _pagos.value.map { if (it.id == nuevoPagoId) it.copy(reservaId = reservaId) else it }
+        Nube.escribir(Escritura.Actualizar("reservas/$reservaId", mapOf(
+            "usuarioId" to nuevoUsuarioId, "pagoId" to nuevoPagoId, "llegada" to false,
+            "fotoLlegada" to null, "enTransferencia" to false
+        )))
         return actualizada
     }
 
@@ -265,6 +346,7 @@ object Reservas {
         _reservas.value = _reservas.value.map {
             if (it.id == reservaId) it.copy(llegada = true) else it
         }
+        Nube.escribir(Escritura.Actualizar("reservas/$reservaId", mapOf("llegada" to true)))
     }
 
     fun adjuntarFotoLlegada(reservaId: String, usuarioId: String, uri: String) {
@@ -277,15 +359,24 @@ object Reservas {
         _reservas.value = _reservas.value.map {
             if (it.id == reservaId) it.copy(llegada = true, fotoLlegada = uri) else it
         }
+        Nube.escribir(Escritura.Actualizar("reservas/$reservaId", mapOf("llegada" to true)))
+
+        Nube.ejecutar(R.string.nube_error_foto) {
+            val ref = FotosRemotas.subir(uri, reservaId)
+            Nube.escribir(Escritura.Actualizar("reservas/$reservaId", mapOf("fotoLlegada" to ref)))
+        }
     }
 
     fun cerrarActividad(reservaId: String, operadorId: String) {
         val reserva = obtenerReserva(reservaId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_reserva_ya_no_existe))
-        val actividad = Negocios.actividadDe(reserva.actividadId)!!
+        Negocios.actividadDe(reserva.actividadId)!!
         if (ahora() < finMillis(reserva.fecha, reserva.hora, reserva.duracionHoras)) throw IllegalStateException(Textos.obtener(R.string.texto_el_horario_todavia_no_ha_finalizado))
         if (reserva.cerrada) throw IllegalStateException(Textos.obtener(R.string.texto_esta_actividad_ya_fue_cerrada))
-        _reservas.value = _reservas.value.map { if (it.id == reservaId) it.copy(cerrada = true) else it }
-        Notificaciones.evento(reserva.usuarioId, R.string.aviso_reserva_cerrada, "reservation", reservaId)
+        Nube.agrupar(Condicion.Igual("reservas/$reservaId", "cerrada", false)) {
+            _reservas.value = _reservas.value.map { if (it.id == reservaId) it.copy(cerrada = true) else it }
+            Nube.escribir(Escritura.Actualizar("reservas/$reservaId", mapOf("cerrada" to true)))
+            Notificaciones.evento(reserva.usuarioId, R.string.aviso_reserva_cerrada, "reservation", reservaId)
+        }
     }
 
     fun enviarAvisoSalida(reservaId: String, operadorId: String) {

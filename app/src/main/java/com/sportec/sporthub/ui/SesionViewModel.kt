@@ -3,6 +3,8 @@ package com.sportec.sporthub.ui
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sportec.sporthub.data.Semilla
+import com.sportec.sporthub.data.Sincronizacion
 import com.sportec.sporthub.domain.Autenticacion
 import com.sportec.sporthub.domain.Cuenta
 import com.sportec.sporthub.domain.Cuentas
@@ -11,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
+import com.sportec.sporthub.data.Nube
 
 class SesionViewModel : ViewModel() {
 
@@ -41,6 +44,8 @@ class SesionViewModel : ViewModel() {
     fun iniciar(cuenta: Cuenta) {
         _cuenta.value = cuenta
         Cuentas.iniciarEscucha(viewModelScope, cuenta)
+        Sincronizacion.iniciar(viewModelScope, cuenta)
+        Semilla.cargarSiHaceFalta(viewModelScope, cuenta)
     }
 
     fun actualizar(cuenta: Cuenta) {
@@ -53,11 +58,13 @@ class SesionViewModel : ViewModel() {
                 throw e
             } catch (e: Exception) {
                 Log.w("SesionViewModel", "No se pudo guardar el perfil en Firestore", e)
+                Nube.informarError(e)
             }
         }
     }
 
     fun cerrar() {
+        Sincronizacion.detener()
         Cuentas.detenerEscucha()
         Autenticacion.cerrarSesion()
         _cuenta.value = null

@@ -1,6 +1,12 @@
 package com.sportec.sporthub.domain
 
+import com.sportec.sporthub.data.Escritura
+import com.sportec.sporthub.data.FotosRemotas
+import com.sportec.sporthub.data.Mapeos
+import com.sportec.sporthub.data.Nube
 import com.sportec.sporthub.utils.FotosLocales
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Textos
 
@@ -9,18 +15,44 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-
 object Negocios {
 
     private fun uid(prefijo: String) = prefijo + java.util.UUID.randomUUID().toString()
 
-    private val _negocios = MutableStateFlow(DatosMock.negocios)
+    private val _negocios = MutableStateFlow<List<Negocio>>(emptyList())
     val negocios: StateFlow<List<Negocio>> = _negocios.asStateFlow()
 
-    private val _actividades = MutableStateFlow(DatosMock.actividades.map { it.copy(fotoUri = FotosLocales.obtenerGaleria(it.id).firstOrNull() ?: it.fotoUri, fotos = FotosLocales.obtenerGaleria(it.id).ifEmpty { it.fotos }) })
+    private val _actividades = MutableStateFlow<List<Actividad>>(emptyList())
     val actividades: StateFlow<List<Actividad>> = _actividades.asStateFlow()
 
+    private val sinPublicar = mutableSetOf<String>()
+
+    internal fun cargarNegocios(lista: List<Negocio>) {
+        _negocios.value = lista + _negocios.value.filter { it.id in sinPublicar && lista.none { n -> n.id == it.id } }
+    }
+
+    internal fun cargarActividades(lista: List<Actividad>) {
+
+        _actividades.value = lista.map { a ->
+            if (a.fotos.isNotEmpty()) a else {
+                val locales = FotosLocales.obtenerGaleria(a.id)
+                a.copy(fotoUri = locales.firstOrNull(), fotos = locales)
+            }
+        }
+    }
+
+    internal fun vaciar() {
+        _negocios.value = emptyList(); _actividades.value = emptyList(); sinPublicar.clear()
+    }
+
+    suspend fun publicar(negocioId: String) {
+        val negocio = negocioDe(negocioId) ?: return
+        Nube.db.collection("negocios").document(negocioId).set(Mapeos.mapa(negocio)).await()
+        sinPublicar.remove(negocioId)
+    }
+
     fun descartar(id: String) {
+        sinPublicar.remove(id)
         _negocios.value = _negocios.value.filterNot { it.id == id }
     }
 
@@ -45,6 +77,7 @@ object Negocios {
             latitud = 4.6486, longitud = -74.0813
         )
         _negocios.value = _negocios.value + negocio
+        sinPublicar.add(negocio.id)
         return negocio
     }
 
@@ -53,6 +86,7 @@ object Negocios {
         val nuevoEstado = if (negocio.nombre.isNotBlank() && negocio.nit.isNotBlank()) EstadoNegocio.VALIDADO else EstadoNegocio.PENDIENTE
         val actualizado = negocio.copy(estado = nuevoEstado)
         _negocios.value = _negocios.value.map { if (it.id == negocioId) actualizado else it }
+        Nube.escribir(Escritura.Actualizar("negocios/$negocioId", mapOf("estado" to nuevoEstado.name)))
         return actualizado
     }
 
@@ -61,6 +95,7 @@ object Negocios {
         if (negocio.estado != EstadoNegocio.PENDIENTE) throw IllegalStateException(Textos.obtener(R.string.texto_este_negocio_ya_fue_revisado))
         val actualizado = negocio.copy(estado = if (aprobado) EstadoNegocio.VALIDADO else EstadoNegocio.RECHAZADO)
         _negocios.value = _negocios.value.map { if (it.id == negocioId) actualizado else it }
+        Nube.escribir(Escritura.Actualizar("negocios/$negocioId", mapOf("estado" to actualizado.estado.name)))
         return actualizado
     }
 
@@ -78,6 +113,11 @@ object Negocios {
             cambioPendiente = if (cambiaSensible) CambioSensible(nombre.trim(), nit.trim()) else negocio.cambioPendiente
         )
         _negocios.value = _negocios.value.map { if (it.id == negocioId) actualizado else it }
+        Nube.escribir(Escritura.Actualizar("negocios/$negocioId", mapOf(
+            "descripcion" to actualizado.descripcion, "contacto" to actualizado.contacto,
+            "direccion" to actualizado.direccion,
+            "cambioPendiente" to actualizado.cambioPendiente?.let { mapOf("nombre" to it.nombre, "nit" to it.nit) }
+        )))
         return actualizado
     }
 
@@ -92,6 +132,9 @@ object Negocios {
             negocio.copy(cambioPendiente = null)
         }
         _negocios.value = _negocios.value.map { if (it.id == negocioId) actualizado else it }
+        Nube.escribir(Escritura.Actualizar("negocios/$negocioId", mapOf(
+            "nombre" to actualizado.nombre, "nit" to actualizado.nit, "cambioPendiente" to null
+        )))
         return actualizado
     }
 
@@ -142,6 +185,7 @@ object Negocios {
             )
             FotosLocales.guardarGaleria(actualizada.id, galeria)
             _actividades.value = _actividades.value.map { if (it.id == existente.id) actualizada else it }
+            persistirServicio(actualizada, galeria)
             return actualizada
         }
         val nueva = Actividad(
@@ -152,7 +196,18 @@ object Negocios {
         )
         FotosLocales.guardarGaleria(nueva.id, galeria)
         _actividades.value = _actividades.value + nueva
+        persistirServicio(nueva, galeria)
         return nueva
+    }
+
+    private fun persistirServicio(actividad: Actividad, galeria: List<String>) {
+        val ruta = "actividades/${actividad.id}"
+        Nube.escribir(Escritura.Mezclar(ruta, Mapeos.mapa(actividad, emptyList()) - "fotos"))
+        Nube.ejecutar(R.string.nube_error_foto) {
+            val refs = FotosRemotas.subirTodas(galeria)
+
+            if (refs.size == galeria.size) Nube.escribir(Escritura.Mezclar(ruta, mapOf("fotos" to refs)))
+        }
     }
 
 }
