@@ -128,6 +128,15 @@ object Nube {
         }
     }
 
+    /**
+     * Mensaje para la persona a partir de un fallo de Firestore. Lo usan tanto las escrituras
+     * agrupadas como las pantallas que llaman directamente a Firestore (por ejemplo, los encuentros).
+     */
+    fun mensajeDe(e: Exception): String {
+        if (e is IllegalStateException && !e.message.isNullOrBlank()) return e.message!!
+        return traducir(e)
+    }
+
     private fun traducir(e: Exception): String {
         val causa = if (e is ConflictoException) e else e.cause as? ConflictoException
         if (causa != null) return causa.message ?: Textos.obtener(R.string.nube_conflicto)

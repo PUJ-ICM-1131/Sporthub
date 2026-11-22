@@ -71,6 +71,7 @@ async function sembrar() {
     await poner('actividades/a1', { negocioId: 'b1', nombre: 'Cancha', capacidad: 2, precio: MONTO, fotos: [] });
 
     await poner('chats/juan_camila', { miembros: ['juan', 'camila'], comunidadId: null, creadoEn: Timestamp.now() });
+    await poner('chats/camila_otro', { miembros: ['camila', 'otro'], comunidadId: null, creadoEn: Timestamp.now() });
     await poner('chats/juan_nego', { miembros: ['juan', 'nego'], comunidadId: null, creadoEn: Timestamp.now() });
     await poner('comunidades/c1', { nombre: 'Comunidad', adminId: 'juan', miembros: ['juan', 'camila'], descripcion: '', foto: null });
 
@@ -103,6 +104,11 @@ async function sembrar() {
     await poner('transferencias/t2', {
       reservaId: 'r1', propietarioId: 'juan', pagoId: 'p1', estado: 'PUBLICADA', negocioId: 'b1', version: 0,
       postulantes: [], postulantesUids: []
+    });
+
+    await poner('transferencias/t4', {
+      reservaId: 'r1', propietarioId: 'juan', pagoId: 'p1', estado: 'PUBLICADA', negocioId: 'b1', version: 3,
+      postulantes: [postulante('camila', 'REVISION', true)], postulantesUids: ['camila']
     });
 
     await poner('transferencias/t3', {
@@ -350,6 +356,68 @@ describe('Transferencias', () => {
       postulantes: [postulante('otro', 'ATENDIDA', true)], postulantesUids: ['otro']
     });
     await assertFails(lote.commit());
+  });
+});
+
+describe('Aprobacion del establecimiento (lo que escribe Transferencias.aprobar)', () => {
+  const plazo = () => Date.now() + 10 * 60 * 1000;
+
+  function loteDeAprobacion(db, transferenciaId, version) {
+    const lote = writeBatch(db);
+    lote.set(doc(db, 'notificaciones/n_aprob'), {
+      usuarioId: 'camila', titulo: 'SportHub', texto: 'Tu transferencia fue aprobada',
+      ruta: 'transfer', argumento: transferenciaId, leida: false, autorId: 'nego', creadaEn: serverTimestamp()
+    });
+    lote.set(doc(db, `autorizacionesTransferencia/${transferenciaId}`), {
+      compradorId: 'camila', propietarioId: 'juan', reservaId: 'r1', negocioId: 'b1',
+      indice: 0, deadline: plazo(), monto: MONTO
+    });
+    lote.set(doc(db, `transferencias/${transferenciaId}`), {
+      reservaId: 'r1', propietarioId: 'juan', pagoId: 'p1', estado: 'TRAMITE', negocioId: 'b1',
+      version, postulantes: [{ ...postulante('camila', 'PAGO', true), deadline: plazo() }],
+      postulantesUids: ['camila']
+    }, { merge: true });
+    return lote;
+  }
+
+  it('el establecimiento aprueba y habilita el pago', async () => {
+    await assertSucceeds(loteDeAprobacion(como('nego'), 't4', 4).commit());
+  });
+
+  it('el propietario no puede aprobar en nombre del establecimiento', async () => {
+    await assertFails(loteDeAprobacion(como('juan'), 't4', 4).commit());
+  });
+});
+
+describe('Encuentros: abrir y reabrir', () => {
+  it('el primer participante crea el encuentro del chat', async () => {
+    await assertSucceeds(setDoc(doc(como('camila'), 'encuentros/e_camila_otro'), {
+      origenTipo: 'CHAT', origenId: 'camila_otro', creadorId: 'camila',
+      estado: 'ABIERTO', punto: null, sesion: 's9', creadoEn: serverTimestamp()
+    }));
+  });
+
+  it('el identificador del encuentro tiene que ser e_<origenId>', async () => {
+    await assertFails(setDoc(doc(como('camila'), 'encuentros/e_otro_nombre'), {
+      origenTipo: 'CHAT', origenId: 'camila_otro', creadorId: 'camila',
+      estado: 'ABIERTO', punto: null, sesion: 's9', creadoEn: serverTimestamp()
+    }));
+  });
+
+  it('un establecimiento no puede crear el encuentro de su chat', async () => {
+    await assertFails(setDoc(doc(como('nego'), 'encuentros/e_nuevo_nego'), {
+      origenTipo: 'CHAT', origenId: 'juan_nego', creadorId: 'nego',
+      estado: 'ABIERTO', punto: null, sesion: 's9', creadoEn: serverTimestamp()
+    }));
+  });
+
+  it('reabrir un encuentro finalizado estrena sesion', async () => {
+    await entorno.withSecurityRulesDisabled(async (contexto) => {
+      await updateDoc(doc(contexto.firestore(), 'encuentros/e_juan_camila'), { estado: 'FINALIZADO' });
+    });
+    await assertSucceeds(updateDoc(doc(como('camila'), 'encuentros/e_juan_camila'), {
+      estado: 'ABIERTO', punto: null, sesion: 's2'
+    }));
   });
 });
 

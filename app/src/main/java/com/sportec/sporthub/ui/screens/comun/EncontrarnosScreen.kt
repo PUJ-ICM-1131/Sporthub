@@ -179,7 +179,7 @@ fun EncontrarnosScreen(
         try {
             encuentroId = Encuentros.abrir(LogicaEncuentro.tipoOrigen(esComunidad), idOrigen)
         } catch (e: Exception) {
-            errorApertura = Textos.obtener(R.string.encuentro_error_abrir)
+            errorApertura = Nube.mensajeDe(e)
         }
     }
     val carga by produceState<CargaEncuentro>(CargaEncuentro.Cargando, encuentroId) {
@@ -201,6 +201,8 @@ fun EncontrarnosScreen(
     }
 
     val posicion by Ubicacion.posicionActual.collectAsState()
+    val origenMarcado by Ubicacion.origen.collectAsState()
+    val origenDefinido by Ubicacion.origenDefinido.collectAsState()
     val conectado = rememberConectado()
     var ubicacionActiva by remember { mutableStateOf(LocationManagerCompat.isLocationEnabled(gestorUbicacion)) }
     LaunchedEffect(ahora) { ubicacionActiva = LocationManagerCompat.isLocationEnabled(gestorUbicacion) }
@@ -360,17 +362,22 @@ fun EncontrarnosScreen(
             }
             punto?.let { add(MarcadorMapa("punto", it, resaltado = true, atenuado = false, Textos.obtener(R.string.encuentro_punto), ColorPunto)) }
             candidato?.let { add(MarcadorMapa("candidato", it, resaltado = false, atenuado = false, Textos.obtener(R.string.encuentro_candidato), ColorCandidato)) }
+            if (propia == null && origenDefinido) {
+                add(MarcadorMapa("partida", Coordenada(origenMarcado.latitud, origenMarcado.longitud), resaltado = false,
+                    atenuado = false, Textos.obtener(R.string.encuentro_mi_partida), ColorCandidato))
+            }
         }
 
-        val claveEncuadre = visibles.map { it.uid }.sorted() to Triple(punto, propia != null, abierto)
+        val miPunto = propia ?: Coordenada(origenMarcado.latitud, origenMarcado.longitud).takeIf { origenDefinido }
+        val claveEncuadre = visibles.map { it.uid }.sorted() to Triple(punto, miPunto, abierto)
         val encuadre = remember(claveEncuadre) {
             buildList {
-                propia?.let(::add)
+                miPunto?.let(::add)
                 punto?.let(::add)
                 visibles.forEach { add(Coordenada(it.latitud, it.longitud)) }
             }
         }
-        val centro = propia ?: punto ?: encuadre.firstOrNull() ?: Respaldo
+        val centro = miPunto ?: punto ?: encuadre.firstOrNull() ?: Respaldo
 
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
@@ -479,6 +486,13 @@ fun EncontrarnosScreen(
                                 Icon(Icons.Filled.MyLocation, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Text(stringResource(R.string.encuentro_usar_mi_ubicacion), modifier = Modifier.padding(start = 8.dp))
                             }
+                        } else {
+                            // Sin permiso o sin lectura: el punto marcado hace de partida para medir distancias.
+                            OutlinedButton(
+                                onClick = { candidato?.let { Ubicacion.marcarOrigen(it.latitud, it.longitud) } },
+                                enabled = candidato != null,
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text(stringResource(R.string.encuentro_marcar_partida)) }
                         }
                         Button(
                             onClick = { candidato?.let(::proponer) },
@@ -506,7 +520,7 @@ fun EncontrarnosScreen(
             } else {
                 items(visibles, key = { it.uid }) { p ->
                     val estado = LogicaEncuentro.estado(p, ahora)
-                    val distancia = propia?.let { Geo.distanciaMetros(it, Coordenada(p.latitud, p.longitud)) }
+                    val distancia = miPunto?.let { Geo.distanciaMetros(it, Coordenada(p.latitud, p.longitud)) }
                     ListItem(
                         leadingContent = { Surface(color = colorDe(p.uid), shape = CircleShape, modifier = Modifier.size(14.dp)) {} },
                         headlineContent = { Text(nombreDe(p.uid)) },

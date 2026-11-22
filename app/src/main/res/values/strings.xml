@@ -784,7 +784,7 @@
     <string name="encuentro_cancelar">Cancelar</string>
     <string name="encuentro_finalizado">Este encuentro finalizó. Nadie está compartiendo su ubicación.</string>
     <string name="encuentro_reabrir">Iniciar un nuevo encuentro</string>
-    <string name="encuentro_sin_acceso">No tienes acceso a este encuentro.</string>
+    <string name="encuentro_sin_acceso">No tienes acceso a este encuentro: es solo entre dos deportistas activos, o entre los miembros de una comunidad.</string>
     <string name="encuentro_error_abrir">No se pudo abrir el encuentro. Revisa tu conexión e inténtalo de nuevo.</string>
     <string name="encuentro_error_compartir">No se pudo enviar tu posición. Se reintentará en unos segundos.</string>
     <string name="encuentro_error_punto">No se pudo guardar el punto de reunión.</string>
@@ -803,4 +803,9 @@
     <string name="invitar_solo_contactos">Mostrar solo mis contactos</string>
     <string name="encuentro_estado_distancia">%1$s · %2$s</string>
     <string name="etiqueta_valor">%1$s: %2$s</string>
+    <string name="encuentro_elegir_conversacion">¿Con quién quieres encontrarte?</string>
+    <string name="encuentro_abrir_desde_mensajes">Encontrarnos: ver la ubicación compartida</string>
+    <string name="encuentro_mi_partida">Mi punto de partida</string>
+    <string name="encuentro_marcar_partida">Usar este punto como mi partida</string>
+    <string name="encuentro_sin_sesion">Vuelve a iniciar sesión para abrir el encuentro.</string>
 </resources>

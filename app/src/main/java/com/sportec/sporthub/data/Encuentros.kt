@@ -11,7 +11,9 @@ import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.delay
 import com.google.firebase.firestore.Source
+import com.sportec.sporthub.R
 import com.sportec.sporthub.domain.AccesoEncuentros
+import com.sportec.sporthub.utils.Textos
 import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.tasks.await
@@ -74,9 +76,9 @@ object Encuentros {
     }
 
     suspend fun abrir(origenTipo: OrigenEncuentro, origenId: String): String {
-        val uid = Nube.uid() ?: throw IllegalStateException()
+        val uid = Nube.uid() ?: throw IllegalStateException(Textos.obtener(R.string.encuentro_sin_sesion))
 
-        check(AccesoEncuentros.puedeEntrar(origenId, uid))
+        if (!AccesoEncuentros.puedeEntrar(origenId, uid)) throw IllegalStateException(Textos.obtener(R.string.encuentro_sin_acceso))
         val id = idDe(origenId)
         val ref = Nube.db.document(ruta(id))
         val nuevaSesion = UUID.randomUUID().toString()

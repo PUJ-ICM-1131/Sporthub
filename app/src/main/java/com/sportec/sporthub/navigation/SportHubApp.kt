@@ -547,7 +547,8 @@ fun SportHubApp(
                     MensajesScreen(
                         usuarioId = cuenta?.id.orEmpty(),
                         onAbrirChat = { id -> irA(Chat(id)) },
-                        onCrearComunidad = { irA(CrearComunidad) }
+                        onCrearComunidad = { irA(CrearComunidad) },
+                        onEncontrarnos = { origenId -> irA(Encontrarnos(origenId)) }
                     )
                 }
                 entry<CrearComunidad> {
@@ -563,8 +564,7 @@ fun SportHubApp(
                         usuarioId = cuenta?.id.orEmpty(),
                         onBack = { volver() },
                         onReportar = { irA(Reportar("mensaje")) },
-                        onVerComunidad = { id -> irA(Comunidad(id)) },
-                        onEncontrarnos = { irA(Encontrarnos(ruta.id)) }
+                        onVerComunidad = { id -> irA(Comunidad(id)) }
                     )
                 }
                 entry<Encontrarnos> { ruta ->
