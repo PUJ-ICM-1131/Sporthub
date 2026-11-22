@@ -95,7 +95,7 @@ import com.sportec.sporthub.ui.screens.establecimiento.ValidacionNegocioScreen
 fun SportHubApp(
     sesionViewModel: SesionViewModel = viewModel()
 ) {
-    val destinatarioAviso by com.sportec.sporthub.utils.EntradaNotificacion.destinatario.collectAsState()
+    val aperturaAviso by com.sportec.sporthub.utils.EntradaNotificacion.pendiente.collectAsState()
     val cuenta by sesionViewModel.cuenta.collectAsState()
     val restaurando by sesionViewModel.restaurando.collectAsState()
     com.sportec.sporthub.ui.components.PermisoNotificacionesAlEntrar(cuenta?.id)
@@ -148,10 +148,18 @@ fun SportHubApp(
         }
     }
 
-    LaunchedEffect(destinatarioAviso, cuenta?.id) {
-        if (destinatarioAviso != null && destinatarioAviso == cuenta?.id) {
-            irA(Notificaciones)
-            com.sportec.sporthub.utils.EntradaNotificacion.destinatario.value = null
+    LaunchedEffect(aperturaAviso, cuenta?.id, restaurando) {
+        val apertura = aperturaAviso
+        val activa = cuenta
+        if (!restaurando && apertura != null && activa != null) {
+            com.sportec.sporthub.utils.EntradaNotificacion.pendiente.value = null
+            if (apertura.usuarioId == activa.id) {
+                val aviso = com.sportec.sporthub.domain.Notificaciones.notificaciones.value
+                    .firstOrNull { it.id == apertura.avisoId && it.usuarioId == activa.id }
+                val destino = aviso?.let { destinoNotificacion(it, activa.id) }
+                aviso?.let { com.sportec.sporthub.domain.Notificaciones.marcarLeida(it.id) }
+                irA(destino ?: Notificaciones)
+            }
         }
     }
 
@@ -472,7 +480,8 @@ fun SportHubApp(
                         onAbrirChat = { irA(Chat(MensajesDominio.crearGrupo(ruta.id).id)) },
                         onEditar = { irA(EditarComunidad(ruta.id)) },
                         onInvitar = { irA(Invitar(ruta.id)) },
-                        onCeder = { irA(Sucesion(ruta.id)) }
+                        onCeder = { irA(Sucesion(ruta.id)) },
+                        onEncontrarnos = { irA(Encontrarnos(ruta.id)) }
                     )
                 }
                 entry<EditarComunidad> { ruta ->
@@ -540,7 +549,15 @@ fun SportHubApp(
                         usuarioId = cuenta?.id.orEmpty(),
                         onBack = { volver() },
                         onReportar = { irA(Reportar("mensaje")) },
-                        onVerComunidad = { id -> irA(Comunidad(id)) }
+                        onVerComunidad = { id -> irA(Comunidad(id)) },
+                        onEncontrarnos = { irA(Encontrarnos(ruta.id)) }
+                    )
+                }
+                entry<Encontrarnos> { ruta ->
+                    com.sportec.sporthub.ui.screens.comun.EncontrarnosScreen(
+                        origenId = ruta.origenId,
+                        usuarioId = cuenta?.id.orEmpty(),
+                        onBack = { volver() }
                     )
                 }
                 entry<Reportar> { ruta ->

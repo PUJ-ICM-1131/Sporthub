@@ -51,6 +51,8 @@ interface RutaAcceso : NavKey
 @Serializable data class Invitar(val comunidadId: String) : NavKey
 @Serializable data class Sucesion(val comunidadId: String) : NavKey
 @Serializable data object Contactos : NavKey
+/** [origenId]: id del chat individual o de la comunidad. */
+@Serializable data class Encontrarnos(val origenId: String) : NavKey
 
 @Serializable data class Ruta(val negocioId: String) : NavKey
 @Serializable data class Brujula(val negocioId: String) : NavKey

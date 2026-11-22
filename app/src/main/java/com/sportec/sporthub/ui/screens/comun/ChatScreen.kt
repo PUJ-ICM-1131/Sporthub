@@ -22,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -48,7 +49,8 @@ fun ChatScreen(
     usuarioId: String,
     onBack: () -> Unit,
     onReportar: () -> Unit,
-    onVerComunidad: (String) -> Unit
+    onVerComunidad: (String) -> Unit,
+    onEncontrarnos: () -> Unit = {}
 ) {
     val chats by Mensajes.chats.collectAsState()
     val chat = chats.firstOrNull { it.id == chatId }
@@ -75,6 +77,11 @@ fun ChatScreen(
             }
         },
         acciones = {
+            if (chat != null && Mensajes.esMiembro(chat, usuarioId)) {
+                IconButton(onClick = onEncontrarnos) {
+                    Icon(Icons.Filled.LocationOn, contentDescription = stringResource(R.string.encuentro_abrir))
+                }
+            }
             chat?.comunidadId?.let { id ->
                 IconButton(onClick = { onVerComunidad(id) }) {
                     Icon(Icons.Filled.Info, contentDescription = stringResource(R.string.comunidad_ver_informacion))

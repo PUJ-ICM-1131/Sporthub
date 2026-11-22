@@ -25,7 +25,7 @@ object FotosLocales {
         val archivo = File.createTempFile("foto_", ".img", carpeta)
         try {
             val entrada = resolver.openInputStream(uri) ?: throw IOException()
-            entrada.use { origen -> archivo.outputStream().use { origen.copyTo(it) } }
+            entrada.use { origen -> archivo.outputStream().use { CopiaFoto.copiar(origen, it) } }
             val opciones = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(archivo.path, opciones)
             if (opciones.outWidth <= 0 || opciones.outHeight <= 0) throw IOException()
