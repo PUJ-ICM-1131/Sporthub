@@ -44,7 +44,6 @@ import com.sportec.sporthub.domain.Mensajes
 import com.sportec.sporthub.ui.components.EstadoVacio
 import com.sportec.sporthub.ui.components.PantallaBase
 
-/** Nombre con el que se muestra una conversación: la comunidad o la otra persona. */
 private fun nombreDeChat(
     chat: Chat,
     usuarioId: String,
@@ -57,13 +56,6 @@ private fun nombreDeChat(
         ?.let { Cuentas.nombreParaMostrar(it) } ?: Textos.obtener(R.string.texto_conversacion)
 }
 
-/**
- * Lista de conversaciones.
- *
- * El botón flotante abre «Encontrarnos». Solo aparece para los deportistas y solo si alguna
- * conversación admite encuentro (`AccesoEncuentros`): el establecimiento y el administrador no lo
- * ven. Con una sola conversación entra directo; con varias, primero se elige cuál.
- */
 @Composable
 fun MensajesScreen(
     usuarioId: String,

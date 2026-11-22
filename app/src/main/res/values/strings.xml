@@ -812,4 +812,5 @@
     <string name="encuentro_nadie_visible">Nadie más está compartiendo su ubicación todavía.</string>
     <string name="encuentro_personas_visibles">%1$d persona(s) compartiendo ahora.</string>
     <string name="encuentro_titulo_con">Encontrarnos · %1$s</string>
+    <string name="encuentro_confirmar">Confirmar</string>
 </resources>

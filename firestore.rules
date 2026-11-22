@@ -382,8 +382,8 @@ service cloud.firestore {
             && esDeportista(pid) && miembroDe(e.origenTipo, e.origenId, pid);
         }
         allow get: if signedIn() && acceso()
-          && (resource == null || (resource.data.actualizadoEn <= request.time
-              && resource.data.actualizadoEn > request.time - duration.value(300, 's')));
+          && (resource == null
+              || resource.data.actualizadoEn > request.time - duration.value(300, 's'));
         allow create, update: if signedIn() && pid == yo() && acceso()
           && request.resource.data.keys().hasOnly(['lat', 'lng', 'precision', 'actualizadoEn'])
           && request.resource.data.lat is number && request.resource.data.lat >= -90 && request.resource.data.lat <= 90

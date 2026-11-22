@@ -19,12 +19,16 @@ object LogicaEncuentro {
 
     const val INTERVALO_MINIMO_MS = 3_000L
 
+    const val MARGEN_RELOJ_MS = 10_000L
+
     fun tipoOrigen(esComunidad: Boolean): OrigenEncuentro =
         if (esComunidad) OrigenEncuentro.COMUNIDAD else OrigenEncuentro.CHAT
 
-    fun lecturaUtil(posicion: PosicionActual?, ahora: Long, ubicacionActiva: Boolean): Boolean =
-        ubicacionActiva && posicion != null && posicion.instante <= ahora &&
-            ahora - posicion.instante <= EDAD_MAXIMA_LECTURA_MS
+    fun lecturaUtil(posicion: PosicionActual?, ahora: Long, ubicacionActiva: Boolean): Boolean {
+        if (!ubicacionActiva || posicion == null) return false
+        val edad = ahora - posicion.instante
+        return edad in -MARGEN_RELOJ_MS..EDAD_MAXIMA_LECTURA_MS
+    }
 
     fun debePublicar(
         ultima: Publicacion?,

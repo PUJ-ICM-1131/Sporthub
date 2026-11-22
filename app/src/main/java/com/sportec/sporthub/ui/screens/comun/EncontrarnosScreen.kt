@@ -299,8 +299,8 @@ fun EncontrarnosScreen(
         val id = encuentroId
         if (!compartiendo || id == null || !abierto || !tieneAcceso || sesionCompartida != sesionEncuentro) return@LaunchedEffect
         while (isActive) {
-            val instante = System.currentTimeMillis()
             val lectura = Ubicacion.posicionActual.value
+            val instante = System.currentTimeMillis()
             val activa = LocationManagerCompat.isLocationEnabled(gestorUbicacion)
             if (lectura != null && LogicaEncuentro.debePublicar(ultima, lectura, instante, activa)) {
                 try {
@@ -390,8 +390,6 @@ fun EncontrarnosScreen(
         }
         val centro = miPunto ?: punto ?: encuadre.firstOrNull() ?: Respaldo
 
-        // Ruta hasta el punto de reunión: se calcula con Mapbox y, si no hay token o conexión,
-        // se estima en línea recta (igual que «Cómo llegar» de un establecimiento).
         val tokenMapa = stringResource(R.string.mapbox_access_token)
         var modoRuta by remember { mutableStateOf<ModoViaje?>(null) }
         var rutaAlPunto by remember { mutableStateOf<Trayecto?>(null) }
@@ -424,7 +422,6 @@ fun EncontrarnosScreen(
                 return@Column
             }
 
-            // ---------- Cabecera: el interruptor y quiénes se ven ----------
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -445,7 +442,6 @@ fun EncontrarnosScreen(
                 )
             }
 
-            // Avisos cortos, solo cuando hacen falta: no le quitan sitio al mapa.
             val aviso = when {
                 mensaje != null -> mensaje to TipoAviso.ERROR
                 compartiendo && !ubicacionActiva -> stringResource(R.string.encuentro_gps_apagado) to TipoAviso.ADVERTENCIA
@@ -460,7 +456,6 @@ fun EncontrarnosScreen(
                 }
             }
 
-            // ---------- El mapa manda: ocupa todo el espacio que sobra ----------
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 if (conMapbox) {
                     MapaMapbox(
@@ -482,7 +477,6 @@ fun EncontrarnosScreen(
 
             HorizontalDivider()
 
-            // ---------- Franja inferior: el punto elegido en el mapa y cómo llegar ----------
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -492,19 +486,28 @@ fun EncontrarnosScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (candidato != null) {
-                    // Se eligió un lugar en el mapa: confirmarlo es lo único que falta.
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { candidato?.let(::proponer) }, modifier = Modifier.weight(1f)) {
-                            Text(stringResource(R.string.encuentro_nos_encontramos_aqui))
-                        }
-                        if (propia == null) {
-                            OutlinedButton(onClick = { candidato?.let { Ubicacion.marcarOrigen(it.latitud, it.longitud) } }) {
-                                Text(stringResource(R.string.encuentro_marcar_partida))
-                            }
-                        }
-                        TextButton(onClick = { candidato = null }) {
-                            Text(stringResource(R.string.encuentro_descartar_candidato))
-                        }
+                    Text(
+                        stringResource(R.string.encuentro_candidato),
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Button(
+                            onClick = { candidato?.let(::proponer) },
+                            modifier = Modifier.weight(1f).height(48.dp)
+                        ) { Text(stringResource(R.string.encuentro_confirmar), maxLines = 1) }
+                        OutlinedButton(
+                            onClick = { candidato = null },
+                            modifier = Modifier.weight(1f).height(48.dp)
+                        ) { Text(stringResource(R.string.encuentro_cancelar), maxLines = 1) }
+                    }
+                    if (propia == null) {
+                        OutlinedButton(
+                            onClick = { candidato?.let { Ubicacion.marcarOrigen(it.latitud, it.longitud) } },
+                            modifier = Modifier.fillMaxWidth().height(48.dp)
+                        ) { Text(stringResource(R.string.encuentro_marcar_partida), maxLines = 1) }
                     }
                 }
 

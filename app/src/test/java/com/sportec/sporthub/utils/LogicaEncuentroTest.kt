@@ -28,6 +28,17 @@ class LogicaEncuentroTest {
         assertFalse(LogicaEncuentro.debePublicar(null, vieja, ahora, ubicacionActiva = true))
     }
 
+    @Test fun unaLecturaMasNuevaQueElRelojDeLaPantallaSigueSirviendo() {
+        val recien = PosicionActual(4.6, -74.08, ahora + 2_000, 8f)
+        assertTrue(LogicaEncuentro.lecturaUtil(recien, ahora, ubicacionActiva = true))
+        assertTrue(LogicaEncuentro.debePublicar(null, recien, ahora, ubicacionActiva = true))
+    }
+
+    @Test fun unaLecturaDemasiadoAdelantadaNoSirve() {
+        val futura = PosicionActual(4.6, -74.08, ahora + LogicaEncuentro.MARGEN_RELOJ_MS + 1, 8f)
+        assertFalse(LogicaEncuentro.lecturaUtil(futura, ahora, ubicacionActiva = true))
+    }
+
     @Test fun primeraLecturaRecienteSePublica() {
         assertTrue(LogicaEncuentro.debePublicar(null, lectura(1_000), ahora, ubicacionActiva = true))
     }

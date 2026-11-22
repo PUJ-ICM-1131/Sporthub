@@ -128,10 +128,6 @@ object Nube {
         }
     }
 
-    /**
-     * Mensaje para la persona a partir de un fallo de Firestore. Lo usan tanto las escrituras
-     * agrupadas como las pantallas que llaman directamente a Firestore (por ejemplo, los encuentros).
-     */
     fun mensajeDe(e: Exception): String {
         if (e is IllegalStateException && !e.message.isNullOrBlank()) return e.message!!
         return traducir(e)

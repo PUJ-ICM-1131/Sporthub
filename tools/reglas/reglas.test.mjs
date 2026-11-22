@@ -12,12 +12,14 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  onSnapshot,
   serverTimestamp,
   setDoc,
   Timestamp,
   updateDoc,
   writeBatch
 } from 'firebase/firestore';
+import { strict as assert } from 'node:assert';
 
 const PROYECTO = 'demo-sporthub';
 const REGLAS = new URL('../../firestore.rules', import.meta.url);
@@ -123,6 +125,18 @@ async function sembrar() {
 }
 
 const como = (uid) => entorno.authenticatedContext(uid).firestore();
+
+function esperarEnListener(referencia, cumple, ms = 8000) {
+  return new Promise((resolver, rechazar) => {
+    let quitar = () => {};
+    const reloj = setTimeout(() => { quitar(); rechazar(new Error('el listener no recibio la novedad')); }, ms);
+    quitar = onSnapshot(
+      referencia,
+      (instantanea) => { if (cumple(instantanea)) { clearTimeout(reloj); quitar(); resolver(instantanea); } },
+      (error) => { clearTimeout(reloj); quitar(); rechazar(error); }
+    );
+  });
+}
 const sinSesion = () => entorno.unauthenticatedContext().firestore();
 
 before(async () => {
@@ -200,6 +214,15 @@ describe('Encuentros: posiciones compartidas', () => {
 
   it('una posición reciente se lee', async () => {
     await assertSucceeds(getDoc(doc(como('camila'), `${ruta}/juan`)));
+  });
+
+  it('quien escucha recibe la posición que la otra persona publica después', async () => {
+    const llegada = esperarEnListener(doc(como('camila'), `${ruta}/juan`), (i) => i.get('lat') === 4.61);
+    await new Promise((r) => setTimeout(r, 500));
+    await setDoc(doc(como('juan'), `${ruta}/juan`), {
+      lat: 4.61, lng: -74.07, precision: 9, actualizadoEn: serverTimestamp()
+    });
+    assert.equal((await llegada).get('lat'), 4.61);
   });
 
   it('una posición de hace diez minutos ya no se lee', async () => {

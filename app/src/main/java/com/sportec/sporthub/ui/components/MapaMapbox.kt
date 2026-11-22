@@ -209,8 +209,6 @@ private fun ContenidoMapa(
             }
         }
         marcadores.forEach { marcador ->
-            // Marcadores grandes y con borde blanco: se tienen que distinguir sobre cualquier estilo
-            // del mapa, claro u oscuro, y sobre fotografía aérea.
             CircleAnnotation(point = marcador.posicion.punto(), onClick = { onSeleccionar(marcador.id); true }) {
                 circleRadius = if (marcador.resaltado) 16.0 else 13.0
                 circleColor = if (marcador.atenuado) ColorAtenuado else marcador.color ?: ColorMarcador

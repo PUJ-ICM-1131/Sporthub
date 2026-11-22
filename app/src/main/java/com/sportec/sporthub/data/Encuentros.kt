@@ -44,9 +44,11 @@ data class PosicionCompartida(
     val actualizadaEn: Long
 ) {
 
-    fun enVivo(ahora: Long = System.currentTimeMillis()) = ahora - actualizadaEn in 0..Encuentros.SEGUNDOS_EN_VIVO * 1000L
+    private fun edadMs(ahora: Long) = (ahora - actualizadaEn).coerceAtLeast(0L)
 
-    fun vigente(ahora: Long = System.currentTimeMillis()) = ahora - actualizadaEn in 0..Encuentros.SEGUNDOS_VIGENCIA * 1000L
+    fun enVivo(ahora: Long = System.currentTimeMillis()) = edadMs(ahora) <= Encuentros.SEGUNDOS_EN_VIVO * 1000L
+
+    fun vigente(ahora: Long = System.currentTimeMillis()) = edadMs(ahora) <= Encuentros.SEGUNDOS_VIGENCIA * 1000L
 }
 
 object Encuentros {
