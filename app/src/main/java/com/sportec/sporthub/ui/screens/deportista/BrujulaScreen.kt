@@ -54,6 +54,7 @@ import com.sportec.sporthub.ui.components.SeguimientoUbicacion
 import com.sportec.sporthub.ui.components.TipoAviso
 import com.sportec.sporthub.utils.CalculosBrujula
 import com.sportec.sporthub.utils.SensoresBrujula
+import com.sportec.sporthub.ui.components.PermisoSistema
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -100,7 +101,7 @@ fun BrujulaScreen(negocioId: String, onBack: () -> Unit) {
             Text(stringResource(R.string.brujula_magnetometro, stringResource(if (estado.magnetometroDisponible) R.string.brujula_disponible else R.string.brujula_no_disponible)))
         } }, confirmButton = { TextButton(onClick = { ayuda = false }) { Text(stringResource(R.string.selector_foto_aceptar)) } })
     PantallaBase(titulo = stringResource(R.string.texto_brujula), onBack = onBack, acciones = {
-        com.sportec.sporthub.ui.components.PermisoSistema(solicitarAlEntrar = true, exigirPrecisa = true)
+        PermisoSistema(solicitarAlEntrar = true, exigirPrecisa = true)
     }) { padding ->
         if (negocio == null) {
             EstadoVacio(mensaje = stringResource(R.string.texto_el_establecimiento_ya_no_existe), modifier = Modifier.padding(padding))

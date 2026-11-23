@@ -1,1 +1,4 @@
 MAPBOX_ACCESS_TOKEN=
+# Carpeta de compilacion fuera de una carpeta sincronizada (OneDrive, Drive, Dropbox).
+# Opcional: sin esta linea se usa la carpeta build de siempre.
+#sporthub.buildDir=C:/sporthub-build

@@ -15,7 +15,6 @@ object Resenas {
     private val _resenas = MutableStateFlow<List<Resena>>(emptyList())
     val resenas: StateFlow<List<Resena>> = _resenas.asStateFlow()
 
-    /** Negocio al que pertenece cada reseña (id de la reseña = id de la reserva). */
     private var negocioPorResena: Map<String, String> = emptyMap()
 
     internal fun cargar(lista: List<Mapeos.ResenaLeida>) {
@@ -34,7 +33,7 @@ object Resenas {
         if (!reserva.cerrada) throw IllegalStateException(Textos.obtener(R.string.texto_la_reserva_debe_estar_cerrada_por_el_establecimiento))
         if (puntaje !in 1..5) throw IllegalArgumentException(Textos.obtener(R.string.texto_la_calificacion_debe_estar_entre_1_y_5))
         if (_resenas.value.any { it.reservaId == reservaId }) throw IllegalStateException(Textos.obtener(R.string.texto_ya_calificaste_esta_reserva))
-        // El id de la reseña es el de la reserva: Firestore impide una segunda reseña para la misma reserva.
+
         val nueva = Resena(reservaId, reservaId, usuarioId, puntaje, comentario)
         val negocioId = Negocios.actividadDe(reserva.actividadId)?.negocioId.orEmpty()
         negocioPorResena = negocioPorResena + (nueva.id to negocioId)

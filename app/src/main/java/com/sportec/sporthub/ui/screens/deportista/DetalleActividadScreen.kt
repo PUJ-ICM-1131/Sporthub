@@ -33,6 +33,7 @@ import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.ui.components.TarjetaHechos
 import com.sportec.sporthub.utils.formatoDuracion
 import com.sportec.sporthub.utils.formatoPesos
+import com.sportec.sporthub.ui.components.CarruselFotos
 
 @Composable
 fun DetalleActividadScreen(
@@ -65,7 +66,7 @@ fun DetalleActividadScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     if (item.actividad.fotos.isEmpty()) IlustracionActividad(item.actividad)
-                    else com.sportec.sporthub.ui.components.CarruselFotos(item.actividad.fotos)
+                    else CarruselFotos(item.actividad.fotos)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Etiqueta(texto = item.actividad.categoria)
                         Etiqueta(

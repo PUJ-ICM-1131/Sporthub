@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
+import com.sportec.sporthub.data.Nube
 
 class SesionViewModel : ViewModel() {
 
@@ -57,6 +58,7 @@ class SesionViewModel : ViewModel() {
                 throw e
             } catch (e: Exception) {
                 Log.w("SesionViewModel", "No se pudo guardar el perfil en Firestore", e)
+                Nube.informarError(e)
             }
         }
     }

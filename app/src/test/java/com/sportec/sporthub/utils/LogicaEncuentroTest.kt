@@ -28,6 +28,17 @@ class LogicaEncuentroTest {
         assertFalse(LogicaEncuentro.debePublicar(null, vieja, ahora, ubicacionActiva = true))
     }
 
+    @Test fun unaLecturaMasNuevaQueElRelojDeLaPantallaSigueSirviendo() {
+        val recien = PosicionActual(4.6, -74.08, ahora + 2_000, 8f)
+        assertTrue(LogicaEncuentro.lecturaUtil(recien, ahora, ubicacionActiva = true))
+        assertTrue(LogicaEncuentro.debePublicar(null, recien, ahora, ubicacionActiva = true))
+    }
+
+    @Test fun unaLecturaDemasiadoAdelantadaNoSirve() {
+        val futura = PosicionActual(4.6, -74.08, ahora + LogicaEncuentro.MARGEN_RELOJ_MS + 1, 8f)
+        assertFalse(LogicaEncuentro.lecturaUtil(futura, ahora, ubicacionActiva = true))
+    }
+
     @Test fun primeraLecturaRecienteSePublica() {
         assertTrue(LogicaEncuentro.debePublicar(null, lectura(1_000), ahora, ubicacionActiva = true))
     }
@@ -44,7 +55,7 @@ class LogicaEncuentroTest {
 
     @Test fun unDesplazamientoSePublicaAntesDeLaRenovacion() {
         val ultima = Publicacion(Coordenada(4.6, -74.08), ahora - 5_000)
-        val movida = lectura(500, lat = 4.6002) // ~22 m al norte
+        val movida = lectura(500, lat = 4.6002)
         assertTrue(LogicaEncuentro.debePublicar(ultima, movida, ahora, ubicacionActiva = true))
     }
 

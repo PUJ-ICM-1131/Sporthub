@@ -3,6 +3,10 @@ package com.sportec.sporthub.ui.screens.deportista
 import com.sportec.sporthub.R
 import com.sportec.sporthub.utils.Textos
 
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
+import com.sportec.sporthub.data.Nube
 import androidx.lifecycle.ViewModel
 import com.sportec.sporthub.domain.Reservas
 import com.sportec.sporthub.domain.Transferencias
@@ -14,7 +18,8 @@ import kotlinx.coroutines.flow.update
 data class PagoUiState(
     val error: String? = null,
     val monto: Int? = null,
-    val esTransferencia: Boolean = false
+    val esTransferencia: Boolean = false,
+    val procesando: Boolean = false
 )
 
 class PagoViewModel : ViewModel() {
@@ -41,15 +46,22 @@ class PagoViewModel : ViewModel() {
     }
 
     fun pagar(usuarioId: String, medio: String, onExito: (reservaId: String) -> Unit) {
-        try {
-            val reserva = if (_uiState.value.esTransferencia) {
-                Transferencias.pagar(referencia, usuarioId, medio)
-            } else {
-                Reservas.pagarSolicitud(referencia, medio, usuarioId)
+        if (_uiState.value.procesando) return
+        _uiState.update { it.copy(procesando = true, error = null) }
+        viewModelScope.launch {
+            try {
+                val reserva = Nube.confirmarOperacion {
+                    if (_uiState.value.esTransferencia) Transferencias.pagar(referencia, usuarioId, medio)
+                    else Reservas.pagarSolicitud(referencia, medio, usuarioId)
+                }
+                onExito(reserva.id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_procesar_el_pago)) }
+            } finally {
+                _uiState.update { it.copy(procesando = false) }
             }
-            onExito(reserva.id)
-        } catch (e: Exception) {
-            _uiState.update { it.copy(error = e.message ?: Textos.obtener(R.string.texto_no_se_pudo_procesar_el_pago)) }
         }
     }
 }

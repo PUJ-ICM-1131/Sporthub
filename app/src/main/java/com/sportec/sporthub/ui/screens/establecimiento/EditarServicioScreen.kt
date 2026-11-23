@@ -44,6 +44,7 @@ import com.sportec.sporthub.ui.components.Aviso
 import com.sportec.sporthub.ui.components.TipoAviso
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.ui.components.SelectorFoto
+import com.sportec.sporthub.ui.components.CarruselFotos
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,7 +78,7 @@ fun EditarServicioScreen(
         ) {
             TituloBloque(stringResource(R.string.servicio_bloque_datos))
 
-            com.sportec.sporthub.ui.components.CarruselFotos(estado.fotos, viewModel::quitarFoto)
+            CarruselFotos(estado.fotos, viewModel::quitarFoto)
             Text(stringResource(R.string.fotos_ayuda))
             if (estado.fotos.size < 8) SelectorFoto(fotoUri = null, onFotoSeleccionada = viewModel::onFotoCambiada, onProcesando = { procesandoFoto = it })
             OutlinedTextField(

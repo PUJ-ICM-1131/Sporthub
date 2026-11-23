@@ -45,6 +45,7 @@ import com.sportec.sporthub.ui.components.tono
 import com.sportec.sporthub.ui.components.PantallaBase
 import com.sportec.sporthub.utils.formatoIntervalo
 import com.sportec.sporthub.utils.formatoPesos
+import com.sportec.sporthub.ui.components.IlustracionActividad
 
 @Composable
 fun MisReservasScreen(
@@ -134,7 +135,7 @@ private fun TarjetaSolicitud(solicitud: Solicitud, onClick: () -> Unit) {
     val actividades by Negocios.actividades.collectAsState()
     val actividad = actividades.firstOrNull { it.id == solicitud.actividadId }
     ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        actividad?.let { com.sportec.sporthub.ui.components.IlustracionActividad(it) }
+        actividad?.let { IlustracionActividad(it) }
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                 Text(
@@ -162,7 +163,7 @@ private fun TarjetaReserva(reserva: Reserva, onClick: () -> Unit) {
     val actividades by Negocios.actividades.collectAsState()
     val actividad = actividades.firstOrNull { it.id == reserva.actividadId }
     ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        actividad?.let { com.sportec.sporthub.ui.components.IlustracionActividad(it) }
+        actividad?.let { IlustracionActividad(it) }
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                 Text(
@@ -191,7 +192,7 @@ private fun TarjetaTransferenciaReserva(transferencia: Transferencia, onClick: (
     val actividades by Negocios.actividades.collectAsState()
     val actividad = actividades.firstOrNull { it.id == reserva?.actividadId }
     ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        actividad?.let { com.sportec.sporthub.ui.components.IlustracionActividad(it) }
+        actividad?.let { IlustracionActividad(it) }
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                 Text(

@@ -6,16 +6,21 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,6 +29,8 @@ import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -69,6 +76,9 @@ import com.sportec.sporthub.domain.Comunidades
 import com.sportec.sporthub.domain.Cuentas
 import com.sportec.sporthub.domain.Mensajes
 import com.sportec.sporthub.domain.Notificaciones
+import com.sportec.sporthub.domain.ModoViaje
+import com.sportec.sporthub.domain.Trayecto
+import com.sportec.sporthub.domain.Trayectos
 import com.sportec.sporthub.domain.Ubicacion
 import com.sportec.sporthub.ui.components.Aviso
 import com.sportec.sporthub.ui.components.EstadoCargando
@@ -83,6 +93,7 @@ import com.sportec.sporthub.ui.components.TipoAviso
 import com.sportec.sporthub.ui.components.mapboxDisponible
 import com.sportec.sporthub.ui.components.rememberPermisosUbicacion
 import com.sportec.sporthub.utils.Coordenada
+import com.sportec.sporthub.utils.DireccionesMapbox
 import com.sportec.sporthub.utils.EstadoPosicion
 import com.sportec.sporthub.utils.Geo
 import com.sportec.sporthub.utils.LogicaEncuentro
@@ -93,6 +104,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import com.sportec.sporthub.domain.Rol
+import com.sportec.sporthub.domain.AccesoEncuentros
 
 private sealed interface CargaEncuentro {
     data object Cargando : CargaEncuentro
@@ -108,7 +121,7 @@ private val ColoresParticipantes = listOf(
 )
 private val Respaldo = Coordenada(4.6486, -74.0813)
 
-private fun colorDe(uid: String) = ColoresParticipantes[abs(uid.hashCode()) % ColoresParticipantes.size]
+private fun colorDe(uid: String) = ColoresParticipantes[Math.floorMod(uid.hashCode(), ColoresParticipantes.size)]
 
 private fun nombreDe(uid: String): String =
     Cuentas.porId(uid)?.let { Cuentas.nombreParaMostrar(it) } ?: Textos.obtener(R.string.encuentro_participante)
@@ -121,7 +134,6 @@ private fun distanciaTexto(metros: Double): String =
     if (metros < 1000) Textos.obtener(R.string.encuentro_distancia_m, metros.roundToInt())
     else Textos.obtener(R.string.encuentro_distancia_km, String.format("%.1f", metros / 1000))
 
-/** Conectividad del dispositivo; sirve para avisar que las posiciones pueden no estar al día. */
 @Composable
 private fun rememberConectado(): Boolean {
     val context = LocalContext.current
@@ -141,15 +153,6 @@ private fun rememberConectado(): Boolean {
     return conectado
 }
 
-/**
- * «Encontrarnos»: mapa de un encuentro ligado a un chat individual o a una comunidad.
- *
- * - El permiso de Android solo permite leer la ubicación; compartirla exige activar el interruptor,
- *   que empieza apagado cada vez que se abre la pantalla.
- * - Solo se comparte mientras la pantalla está visible: al salir, pasar a segundo plano, perder el
- *   permiso o el acceso, o cuando el encuentro finaliza, se retira la posición propia.
- * - El punto de reunión es independiente de las posiciones: se puede proponer sin compartir.
- */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun EncontrarnosScreen(
@@ -170,12 +173,14 @@ fun EncontrarnosScreen(
     val comunidad = comunidades.firstOrNull { it.id == comunidadId }
     val esComunidad = comunidadId != null
     val idOrigen = comunidadId ?: origenId
-    val participantes: List<String> = if (esComunidad) comunidad?.miembros.orEmpty() else chat?.miembros.orEmpty()
-    val tieneAcceso = if (esComunidad) usuarioId in participantes else chat != null && Mensajes.esMiembro(chat, usuarioId)
+    val cuentas by Cuentas.cuentas.collectAsState()
+    val participantes: List<String> = (if (esComunidad) comunidad?.miembros.orEmpty() else chat?.miembros.orEmpty()).filter { uid ->
+        cuentas.any { it.id == uid && it.activa && it.rol == Rol.DEPORTISTA }
+    }
+    val tieneAcceso = AccesoEncuentros.puedeEntrar(idOrigen, usuarioId)
     val nombreOrigen = if (esComunidad) comunidad?.nombre ?: Textos.obtener(R.string.texto_comunidad)
         else participantes.firstOrNull { it != usuarioId }?.let(::nombreDe) ?: Textos.obtener(R.string.texto_conversacion)
 
-    // ---------- Encuentro en Firestore ----------
     var intento by remember { mutableIntStateOf(0) }
     var encuentroId by remember { mutableStateOf<String?>(null) }
     var errorApertura by remember { mutableStateOf<String?>(null) }
@@ -185,7 +190,7 @@ fun EncontrarnosScreen(
         try {
             encuentroId = Encuentros.abrir(LogicaEncuentro.tipoOrigen(esComunidad), idOrigen)
         } catch (e: Exception) {
-            errorApertura = Textos.obtener(R.string.encuentro_error_abrir)
+            errorApertura = Nube.mensajeDe(e)
         }
     }
     val carga by produceState<CargaEncuentro>(CargaEncuentro.Cargando, encuentroId) {
@@ -194,18 +199,21 @@ fun EncontrarnosScreen(
     }
     val encuentro = (carga as? CargaEncuentro.Listo)?.encuentro
     val abierto = encuentro?.estado == EstadoEncuentro.ABIERTO
-    val posiciones by produceState(emptyList<PosicionCompartida>(), encuentroId, abierto) {
+
+    val sesionEncuentro = encuentro?.sesion.orEmpty()
+    val posiciones by produceState(emptyList<PosicionCompartida>(), encuentroId, sesionEncuentro, abierto, participantes, tieneAcceso) {
         val id = encuentroId
-        if (id == null || !abierto) { value = emptyList(); return@produceState }
-        Encuentros.observarPosiciones(id).collect { value = it }
+        if (id == null || !abierto || !tieneAcceso) { value = emptyList(); return@produceState }
+        Encuentros.observarPosiciones(id, sesionEncuentro, participantes).collect { value = it }
     }
-    // Reloj de la pantalla: las posiciones envejecen aunque Firestore no envíe cambios.
+
     val ahora by produceState(System.currentTimeMillis()) {
         while (isActive) { delay(5_000); value = System.currentTimeMillis() }
     }
 
-    // ---------- Ubicación propia ----------
     val posicion by Ubicacion.posicionActual.collectAsState()
+    val origenMarcado by Ubicacion.origen.collectAsState()
+    val origenDefinido by Ubicacion.origenDefinido.collectAsState()
     val conectado = rememberConectado()
     var ubicacionActiva by remember { mutableStateOf(LocationManagerCompat.isLocationEnabled(gestorUbicacion)) }
     LaunchedEffect(ahora) { ubicacionActiva = LocationManagerCompat.isLocationEnabled(gestorUbicacion) }
@@ -224,20 +232,30 @@ fun EncontrarnosScreen(
     val propia = posicion?.takeIf { LogicaEncuentro.lecturaUtil(it, ahora, ubicacionActiva) }
         ?.let { Coordenada(it.latitud, it.longitud) }
 
-    // ---------- Compartir ----------
-    // No se guarda con rememberSaveable: al volver a la pantalla el interruptor empieza apagado (ENC-07).
     var compartiendo by remember { mutableStateOf(false) }
     var ultima by remember { mutableStateOf<Publicacion?>(null) }
     val idActual by rememberUpdatedState(encuentroId)
+    var sesionCompartida by remember { mutableStateOf("") }
 
     fun detener() {
         val id = idActual
         val habiaPublicado = compartiendo || ultima != null
+        val sesionAnterior = sesionCompartida
         compartiendo = false
         pendienteActivar = false
         ultima = null
-        // Se lanza en el alcance de Nube para que la retirada sobreviva al cierre de la pantalla.
-        if (habiaPublicado && id != null) Nube.alcance.launch { runCatching { Encuentros.dejarDeCompartir(id) } }
+
+        if (habiaPublicado && id != null) Nube.alcance.launch { runCatching { Encuentros.dejarDeCompartir(id, sesionAnterior) } }
+    }
+
+    fun iniciarCompartir() {
+        val sesion = sesionEncuentro
+        if (sesion.isBlank()) {
+            mensaje = Textos.obtener(R.string.encuentro_error_abrir)
+            return
+        }
+        sesionCompartida = sesion
+        compartiendo = true
     }
 
     fun activar() {
@@ -246,13 +264,21 @@ fun EncontrarnosScreen(
             pendienteActivar = true
             permisos.launchMultiplePermissionRequest()
         } else {
-            compartiendo = true
+            iniciarCompartir()
         }
     }
 
     LaunchedEffect(permitido) {
-        if (permitido && pendienteActivar) { pendienteActivar = false; compartiendo = true }
+        if (permitido && pendienteActivar) { pendienteActivar = false; iniciarCompartir() }
         if (!permitido && compartiendo) { detener(); mensaje = Textos.obtener(R.string.encuentro_permiso_revocado) }
+    }
+    LaunchedEffect(sesionEncuentro) {
+        if (compartiendo && sesionCompartida != sesionEncuentro) detener()
+        val id = encuentroId
+        val sesion = sesionEncuentro
+        if (id != null && sesion.isNotBlank() && !compartiendo) {
+            runCatching { Encuentros.dejarDeCompartir(id, sesion) }
+        }
     }
     LaunchedEffect(tieneAcceso) { if (!tieneAcceso) detener() }
     LaunchedEffect(encuentro?.estado) { if (encuentro != null && !abierto) detener() }
@@ -269,16 +295,16 @@ fun EncontrarnosScreen(
         }
     }
 
-    LaunchedEffect(compartiendo, encuentroId, abierto) {
+    LaunchedEffect(compartiendo, encuentroId, abierto, sesionEncuentro, tieneAcceso) {
         val id = encuentroId
-        if (!compartiendo || id == null || !abierto) return@LaunchedEffect
+        if (!compartiendo || id == null || !abierto || !tieneAcceso || sesionCompartida != sesionEncuentro) return@LaunchedEffect
         while (isActive) {
-            val instante = System.currentTimeMillis()
             val lectura = Ubicacion.posicionActual.value
+            val instante = System.currentTimeMillis()
             val activa = LocationManagerCompat.isLocationEnabled(gestorUbicacion)
             if (lectura != null && LogicaEncuentro.debePublicar(ultima, lectura, instante, activa)) {
                 try {
-                    Encuentros.publicarPosicion(id, lectura.latitud, lectura.longitud, lectura.precisionMetros)
+                    Encuentros.publicarPosicion(id, sesionCompartida, lectura.latitud, lectura.longitud, lectura.precisionMetros)
                     ultima = Publicacion(Coordenada(lectura.latitud, lectura.longitud), instante)
                 } catch (e: Exception) {
                     mensaje = Textos.obtener(R.string.encuentro_error_compartir)
@@ -289,7 +315,6 @@ fun EncontrarnosScreen(
         }
     }
 
-    // ---------- Punto de reunión ----------
     var candidato by remember { mutableStateOf<Coordenada?>(null) }
     var confirmarFin by remember { mutableStateOf(false) }
 
@@ -310,7 +335,7 @@ fun EncontrarnosScreen(
 
     val conMapbox = mapboxDisponible()
     PantallaBase(
-        titulo = stringResource(R.string.encuentro_titulo),
+        titulo = Textos.obtener(R.string.encuentro_titulo_con, nombreOrigen),
         onBack = { detener(); onBack() },
         acciones = { PermisoSistema() }
     ) { padding ->
@@ -328,7 +353,7 @@ fun EncontrarnosScreen(
                 return@PantallaBase
             }
         }
-        val actual = encuentro!!
+        val actual = encuentro
         val visibles = LogicaEncuentro.visibles(posiciones, participantes, usuarioId, ahora)
         val punto = actual.punto?.let { Coordenada(it.latitud, it.longitud) }
         val puedeFinalizar = LogicaEncuentro.puedeFinalizar(actual, usuarioId, comunidad?.adminId)
@@ -348,181 +373,222 @@ fun EncontrarnosScreen(
             }
             punto?.let { add(MarcadorMapa("punto", it, resaltado = true, atenuado = false, Textos.obtener(R.string.encuentro_punto), ColorPunto)) }
             candidato?.let { add(MarcadorMapa("candidato", it, resaltado = false, atenuado = false, Textos.obtener(R.string.encuentro_candidato), ColorCandidato)) }
+            if (propia == null && origenDefinido) {
+                add(MarcadorMapa("partida", Coordenada(origenMarcado.latitud, origenMarcado.longitud), resaltado = false,
+                    atenuado = false, Textos.obtener(R.string.encuentro_mi_partida), ColorCandidato))
+            }
         }
-        // El encuadre cambia cuando cambia quién aparece o el punto, no con cada movimiento.
-        val claveEncuadre = visibles.map { it.uid }.sorted() to Triple(punto, propia != null, abierto)
+
+        val miPunto = propia ?: Coordenada(origenMarcado.latitud, origenMarcado.longitud).takeIf { origenDefinido }
+        val claveEncuadre = visibles.map { it.uid }.sorted() to Triple(punto, miPunto, abierto)
         val encuadre = remember(claveEncuadre) {
             buildList {
-                propia?.let(::add)
+                miPunto?.let(::add)
                 punto?.let(::add)
                 visibles.forEach { add(Coordenada(it.latitud, it.longitud)) }
             }
         }
-        val centro = propia ?: punto ?: encuadre.firstOrNull() ?: Respaldo
+        val centro = miPunto ?: punto ?: encuadre.firstOrNull() ?: Respaldo
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item {
-                Text(
-                    text = stringResource(R.string.encuentro_en, nombreOrigen),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
+        val tokenMapa = stringResource(R.string.mapbox_access_token)
+        var modoRuta by remember { mutableStateOf<ModoViaje?>(null) }
+        var rutaAlPunto by remember { mutableStateOf<Trayecto?>(null) }
+        LaunchedEffect(modoRuta, punto, miPunto) {
+            val modo = modoRuta
+            val desde = miPunto
+            val hasta = punto
+            if (modo == null || desde == null || hasta == null) {
+                rutaAlPunto = null
+                return@LaunchedEffect
             }
+            rutaAlPunto = DireccionesMapbox.consultar(tokenMapa, encuentroId.orEmpty(), modo, desde, hasta)
+                ?: Trayectos.estimado(encuentroId.orEmpty(), modo, desde, hasta)
+        }
+
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (!abierto) {
-                item { Aviso(texto = stringResource(R.string.encuentro_finalizado), tipo = TipoAviso.ADVERTENCIA) }
-                item {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Aviso(texto = stringResource(R.string.encuentro_finalizado), tipo = TipoAviso.ADVERTENCIA)
                     Button(onClick = { encuentroId = null; intento++ }, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.encuentro_reabrir))
                     }
-                }
-                item {
                     OutlinedButton(onClick = { detener(); onBack() }, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.encuentro_salir))
                     }
                 }
-                return@LazyColumn
+                return@Column
             }
-            item {
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.encuentro_compartir), style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        text = if (visibles.isEmpty()) stringResource(R.string.encuentro_nadie_visible)
+                            else stringResource(R.string.encuentro_personas_visibles, visibles.size),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = compartiendo || pendienteActivar,
+                    enabled = actual.sesion.isNotBlank(),
+                    onCheckedChange = { if (it) activar() else detener() }
+                )
+            }
+
+            val aviso = when {
+                mensaje != null -> mensaje to TipoAviso.ERROR
+                compartiendo && !ubicacionActiva -> stringResource(R.string.encuentro_gps_apagado) to TipoAviso.ADVERTENCIA
+                compartiendo && propia == null -> stringResource(R.string.encuentro_esperando_lectura) to TipoAviso.ADVERTENCIA
+                !conectado -> stringResource(R.string.encuentro_sin_conexion) to TipoAviso.ADVERTENCIA
+                compartiendo && soloAproximada -> stringResource(R.string.encuentro_aproximada) to TipoAviso.NORMAL
+                else -> null
+            }
+            aviso?.let { (texto, tipo) ->
+                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                    Aviso(texto = texto.orEmpty(), tipo = tipo)
+                }
+            }
+
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 if (conMapbox) {
                     MapaMapbox(
-                        modifier = Modifier.fillMaxWidth().height(320.dp).clip(RoundedCornerShape(20.dp)),
+                        modifier = Modifier.fillMaxSize(),
                         origen = centro,
                         origenEsPosicionActual = propia != null,
                         marcadores = marcadores,
+                        trazado = rutaAlPunto?.puntos.orEmpty(),
                         encuadrarEn = encuadre,
                         mostrarOrigen = false,
                         onMarcarOrigen = { candidato = it }
                     )
                 } else {
-                    Aviso(texto = stringResource(R.string.encuentro_mapa_no_disponible), tipo = TipoAviso.ADVERTENCIA)
-                }
-            }
-            if (!conectado) item { Aviso(texto = stringResource(R.string.encuentro_sin_conexion), tipo = TipoAviso.ADVERTENCIA) }
-            mensaje?.let { item { Aviso(texto = it, tipo = TipoAviso.ERROR) } }
-
-            item {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(stringResource(R.string.encuentro_compartir), style = MaterialTheme.typography.titleSmall)
-                                Text(
-                                    stringResource(if (compartiendo) R.string.encuentro_compartiendo else R.string.encuentro_no_compartiendo),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Switch(
-                                checked = compartiendo || pendienteActivar,
-                                onCheckedChange = { if (it) activar() else detener() }
-                            )
-                        }
-                        if (compartiendo && !ubicacionActiva) {
-                            Aviso(texto = stringResource(R.string.encuentro_gps_apagado), tipo = TipoAviso.ADVERTENCIA)
-                        } else if (compartiendo && propia == null) {
-                            Aviso(texto = stringResource(R.string.encuentro_esperando_lectura), tipo = TipoAviso.ADVERTENCIA)
-                        }
-                        if (compartiendo && soloAproximada) {
-                            Aviso(texto = stringResource(R.string.encuentro_aproximada), tipo = TipoAviso.NORMAL)
-                        }
+                    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                        Aviso(texto = stringResource(R.string.encuentro_mapa_no_disponible), tipo = TipoAviso.ADVERTENCIA)
                     }
                 }
             }
 
-            item {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Filled.Flag, contentDescription = null, tint = ColorPunto)
-                            Text(stringResource(R.string.encuentro_punto), style = MaterialTheme.typography.titleSmall)
-                        }
-                        if (actual.punto != null && punto != null) {
+            HorizontalDivider()
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 260.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (candidato != null) {
+                    Text(
+                        stringResource(R.string.encuentro_candidato),
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Button(
+                            onClick = { candidato?.let(::proponer) },
+                            modifier = Modifier.weight(1f).height(48.dp)
+                        ) { Text(stringResource(R.string.encuentro_confirmar), maxLines = 1) }
+                        OutlinedButton(
+                            onClick = { candidato = null },
+                            modifier = Modifier.weight(1f).height(48.dp)
+                        ) { Text(stringResource(R.string.encuentro_cancelar), maxLines = 1) }
+                    }
+                    if (propia == null) {
+                        OutlinedButton(
+                            onClick = { candidato?.let { Ubicacion.marcarOrigen(it.latitud, it.longitud) } },
+                            modifier = Modifier.fillMaxWidth().height(48.dp)
+                        ) { Text(stringResource(R.string.encuentro_marcar_partida), maxLines = 1) }
+                    }
+                }
+
+                if (actual.punto != null && punto != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Filled.Flag, contentDescription = null, tint = ColorPunto, modifier = Modifier.size(18.dp))
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 stringResource(R.string.encuentro_punto_autor, nombreDe(actual.punto.autorId).takeIf { actual.punto.autorId != usuarioId }
                                     ?: stringResource(R.string.encuentro_tu)),
                                 style = MaterialTheme.typography.bodyMedium
                             )
-                            propia?.let {
-                                Text(
-                                    stringResource(R.string.encuentro_a_distancia, distanciaTexto(Geo.distanciaMetros(it, punto))),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                            val resumen = rutaAlPunto?.let {
+                                stringResource(R.string.encuentro_ruta_resumen, distanciaTexto(it.distanciaMetros), (it.duracionSegundos / 60).roundToInt())
+                            } ?: miPunto?.let { stringResource(R.string.encuentro_a_distancia, distanciaTexto(Geo.distanciaMetros(it, punto))) }
+                            resumen?.let {
+                                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                    if (miPunto != null) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ModoViaje.entries.forEach { modo ->
+                                FilterChip(
+                                    selected = modoRuta == modo,
+                                    onClick = { modoRuta = if (modoRuta == modo) null else modo },
+                                    label = { Text(stringResource(modo.etiqueta)) }
                                 )
                             }
-                        } else {
-                            Text(stringResource(R.string.encuentro_sin_punto), style = MaterialTheme.typography.bodyMedium)
                         }
-                        Text(
-                            stringResource(if (conMapbox) R.string.encuentro_como_elegir else R.string.encuentro_como_elegir_sin_mapa),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        if (propia != null) {
-                            OutlinedButton(onClick = { candidato = propia }, modifier = Modifier.fillMaxWidth()) {
-                                Icon(Icons.Filled.MyLocation, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Text(stringResource(R.string.encuentro_usar_mi_ubicacion), modifier = Modifier.padding(start = 8.dp))
-                            }
-                        }
-                        Button(
-                            onClick = { candidato?.let(::proponer) },
-                            enabled = candidato != null,
-                            modifier = Modifier.fillMaxWidth()
-                        ) { Text(stringResource(R.string.encuentro_nos_encontramos_aqui)) }
-                        if (candidato != null) {
-                            TextButton(onClick = { candidato = null }, modifier = Modifier.fillMaxWidth()) {
-                                Text(stringResource(R.string.encuentro_descartar_candidato))
+                    }
+                } else if (candidato == null) {
+                    Text(
+                        stringResource(if (conMapbox) R.string.encuentro_como_elegir else R.string.encuentro_como_elegir_sin_mapa),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (visibles.isNotEmpty()) {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(visibles, key = { it.uid }) { p ->
+                            val estado = LogicaEncuentro.estado(p, ahora)
+                            val distancia = miPunto?.let { Geo.distanciaMetros(it, Coordenada(p.latitud, p.longitud)) }
+                            Surface(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.widthIn(max = 220.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Surface(color = colorDe(p.uid), shape = CircleShape, modifier = Modifier.size(12.dp)) {}
+                                    Column {
+                                        Text(nombreDe(p.uid), style = MaterialTheme.typography.bodyMedium)
+                                        val textoEstado = if (estado == EstadoPosicion.EN_VIVO) stringResource(R.string.encuentro_en_vivo)
+                                            else stringResource(R.string.encuentro_desactualizada, hace(LogicaEncuentro.antiguedadSegundos(p, ahora)))
+                                        Text(
+                                            distancia?.let { stringResource(R.string.encuentro_estado_distancia, textoEstado, distanciaTexto(it)) } ?: textoEstado,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            item {
-                Text(
-                    stringResource(R.string.encuentro_quienes_comparten),
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-            if (visibles.isEmpty()) {
-                item { Aviso(texto = stringResource(R.string.encuentro_esperando), tipo = TipoAviso.NORMAL) }
-            } else {
-                items(visibles, key = { it.uid }) { p ->
-                    val estado = LogicaEncuentro.estado(p, ahora)
-                    val distancia = propia?.let { Geo.distanciaMetros(it, Coordenada(p.latitud, p.longitud)) }
-                    ListItem(
-                        leadingContent = { Surface(color = colorDe(p.uid), shape = CircleShape, modifier = Modifier.size(14.dp)) {} },
-                        headlineContent = { Text(nombreDe(p.uid)) },
-                        supportingContent = {
-                            val textoEstado = if (estado == EstadoPosicion.EN_VIVO) stringResource(R.string.encuentro_en_vivo)
-                                else stringResource(R.string.encuentro_desactualizada, hace(LogicaEncuentro.antiguedadSegundos(p, ahora)))
-                            Text(distancia?.let { "$textoEstado · ${distanciaTexto(it)}" } ?: textoEstado)
-                        },
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(onClick = { detener(); onBack() }, modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.encuentro_salir))
+                    }
+                    if (puedeFinalizar) {
+                        TextButton(onClick = { confirmarFin = true }) {
+                            Text(stringResource(R.string.encuentro_finalizar), color = MaterialTheme.colorScheme.error)
+                        }
+                    }
                 }
-            }
-
-            item {
-                OutlinedButton(onClick = { detener(); onBack() }, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.encuentro_salir))
-                }
-            }
-            if (puedeFinalizar) item {
-                TextButton(onClick = { confirmarFin = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.encuentro_finalizar), color = MaterialTheme.colorScheme.error)
-                }
-            }
-            item {
-                Text(
-                    stringResource(R.string.encuentro_privacidad),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }

@@ -9,11 +9,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.cancellation.CancellationException
 
-/**
- * Carga única del catálogo inicial (negocios y servicios de demostración) en Firestore.
- * Solo la ejecuta una cuenta ADMINISTRADOR y solo si la colección `negocios` está vacía.
- * Las reservas, chats y demás datos de ejemplo ya no se siembran: se crean usando la aplicación.
- */
 object Semilla {
     private const val ETIQUETA = "Semilla"
 

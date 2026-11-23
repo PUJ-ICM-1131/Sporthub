@@ -10,11 +10,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/**
- * Chats en `chats/{id}` y mensajes en `chats/{id}/mensajes/{id}`.
- * El chat entre dos personas tiene un identificador determinista (uids ordenados), de modo que
- * no se duplica aunque ambas lo abran a la vez. El chat de una comunidad usa el id de la comunidad.
- */
 object Mensajes {
 
     private fun uid(prefijo: String) = prefijo + java.util.UUID.randomUUID().toString()
@@ -30,7 +25,7 @@ object Mensajes {
     }
 
     internal fun cargarChats(lista: List<Chat>) {
-        // Conserva los chats creados localmente que el servidor todavía no confirmó.
+
         val pendientes = metadatos.filter { local -> lista.none { it.id == local.id } && local.id in creadosLocalmente }
         metadatos = lista + pendientes
         recomponer()
@@ -63,7 +58,6 @@ object Mensajes {
 
     fun idEntre(a: String, b: String): String = listOf(a, b).sorted().joinToString("_")
 
-    /** [persistir] solo es true al crear la comunidad; al aceptar una invitación el chat ya existe en Firestore. */
     fun crearGrupo(comunidadId: String, persistir: Boolean = true): Chat {
         _chats.value.firstOrNull { it.comunidadId == comunidadId }?.let { return it }
         val nuevo = Chat(comunidadId, comunidadId = comunidadId, mensajes = emptyList())

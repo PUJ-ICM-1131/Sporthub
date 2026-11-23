@@ -53,9 +53,9 @@ data class MarcadorMapa(
     val posicion: Coordenada,
     val resaltado: Boolean,
     val atenuado: Boolean,
-    /** Texto bajo el marcador (por ejemplo, el nombre de un participante). */
+
     val etiqueta: String? = null,
-    /** Color propio; si es nulo se usa el verde de los establecimientos. */
+
     val color: Color? = null
 )
 
@@ -118,10 +118,6 @@ fun MapaMapbox(
     }
 }
 
-/**
- * Contenido del mapa: cámara, puck del usuario cuando hay permiso (Accompanist), radio de búsqueda,
- * trazado de la ruta, marcadores y la pulsación larga del estilo estándar para marcar el origen.
- */
 @OptIn(ExperimentalPermissionsApi::class, MapboxExperimental::class)
 @Composable
 private fun ContenidoMapa(
@@ -214,19 +210,19 @@ private fun ContenidoMapa(
         }
         marcadores.forEach { marcador ->
             CircleAnnotation(point = marcador.posicion.punto(), onClick = { onSeleccionar(marcador.id); true }) {
-                circleRadius = if (marcador.resaltado) 12.0 else 9.0
+                circleRadius = if (marcador.resaltado) 16.0 else 13.0
                 circleColor = if (marcador.atenuado) ColorAtenuado else marcador.color ?: ColorMarcador
                 circleStrokeColor = Color.White
-                circleStrokeWidth = 2.0
+                circleStrokeWidth = 3.5
             }
             marcador.etiqueta?.let { texto ->
                 PointAnnotation(point = marcador.posicion.punto()) {
                     textField = texto
-                    textSize = 12.0
-                    textOffset = listOf(0.0, 1.6)
-                    textColor = Color(0xFF1E2A22)
+                    textSize = 14.0
+                    textOffset = listOf(0.0, 1.5)
+                    textColor = Color(0xFF14211A)
                     textHaloColor = Color.White
-                    textHaloWidth = 1.5
+                    textHaloWidth = 2.5
                 }
             }
         }

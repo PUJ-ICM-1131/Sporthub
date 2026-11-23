@@ -5,6 +5,7 @@ import com.sportec.sporthub.data.Condicion
 import com.sportec.sporthub.data.Escritura
 import com.sportec.sporthub.data.Mapeos
 import com.sportec.sporthub.data.Nube
+import com.sportec.sporthub.utils.LogicaReservas
 import com.sportec.sporthub.utils.Textos
 import com.sportec.sporthub.utils.formatoIntervalo
 import com.sportec.sporthub.utils.formatoPesos
@@ -16,13 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 private val ACTIVOS_POSTULANTE = setOf(EstadoPostulante.FILA, EstadoPostulante.REVISION, EstadoPostulante.PAGO)
 private val VIGENTE = setOf(EstadoTransferencia.PUBLICADA, EstadoTransferencia.TRAMITE)
 
-/**
- * Transferencias de reservas sincronizadas con Firestore.
- *
- * Cada documento lleva un número de `version`. Toda modificación se confirma en una transacción que
- * exige que la versión del servidor sea la que esta persona vio; si otra persona cambió la
- * publicación antes (por ejemplo dos interesados a la vez), la operación se rechaza en lugar de pisarla.
- */
 object Transferencias {
 
     private fun uid(prefijo: String) = prefijo + java.util.UUID.randomUUID().toString()
@@ -46,7 +40,6 @@ object Transferencias {
     private fun negocioDeReserva(reserva: Reserva?): String =
         reserva?.let { Negocios.actividadDe(it.actividadId)?.negocioId }.orEmpty()
 
-    /** Actualiza el estado local y deja escrito el documento completo con la versión siguiente. */
     private fun guardar(actualizada: Transferencia) {
         val version = (versiones[actualizada.id] ?: 0L) + 1
         versiones = versiones + (actualizada.id to version)
@@ -87,7 +80,7 @@ object Transferencias {
         versiones = versiones + (nueva.id to 0L)
         Nube.escribir(
             Escritura.Crear("transferencias/${nueva.id}", Mapeos.mapa(nueva, negocioDeReserva(reserva), 0L)),
-            // Permite que otras personas vean esta reserva mientras está publicada.
+
             Escritura.Actualizar("reservas/$reservaId", mapOf("enTransferencia" to true))
         )
         Notificaciones.evento(usuarioId, R.string.aviso_transferencia_publicada, "transfer", nueva.id)
@@ -138,8 +131,11 @@ object Transferencias {
         val reserva = validarVigencia(transferencia)
         if (usuarioId == transferencia.propietarioId) throw IllegalStateException(Textos.obtener(R.string.texto_no_puedes_tomar_tu_propia_publicacion))
         if (transferencia.postulantes.any { it.usuarioId == usuarioId && it.estado in ACTIVOS_POSTULANTE }) throw IllegalStateException(Textos.obtener(R.string.texto_ya_estas_en_esta_fila))
+        if (Reservas.tieneCruce(usuarioId, reserva.fecha, reserva.hora, reserva.duracionHoras)) {
+            throw IllegalStateException(Textos.obtener(R.string.error_cruce_transferencia))
+        }
         Nube.agrupar(condicionVersion(transferenciaId)) {
-            val nuevo = Postulante(uid("st"), usuarioId, EstadoPostulante.FILA)
+            val nuevo = Postulante(uid("st"), usuarioId, if (transferencia.postulantes.none { it.estado in ACTIVOS_POSTULANTE }) EstadoPostulante.REVISION else EstadoPostulante.FILA)
             guardar(transferencia.copy(postulantes = transferencia.postulantes + nuevo))
             avanzar(transferenciaId)
             Notificaciones.evento(usuarioId, R.string.aviso_transferencia_solicitada, "transfer", transferenciaId)
@@ -151,7 +147,38 @@ object Transferencias {
         }
     }
 
+    fun revisarVencimientos() {
+        val uid = Nube.uid() ?: return
+        val instante = Reservas.ahora()
+        _transferencias.value.filter { it.estado == EstadoTransferencia.TRAMITE }.forEach { transferencia ->
+            val reserva = Reservas.obtenerReserva(transferencia.reservaId) ?: return@forEach
+            if (uid != transferencia.propietarioId && uid != Negocios.operadorDe(negocioDeReserva(reserva))) return@forEach
+            val enPago = transferencia.postulantes.firstOrNull { it.estado == EstadoPostulante.PAGO } ?: return@forEach
+            val inicio = Reservas.inicioMillis(reserva.fecha, reserva.hora)
+            if (!LogicaReservas.turnoVencido(enPago.deadline, inicio, instante)) return@forEach
+            val siguiente = transferencia.postulantes.firstOrNull { it.id != enPago.id && it.estado == EstadoPostulante.FILA }
+            Nube.agrupar(condicionVersion(transferencia.id), silencioso = true) {
+                guardar(transferencia.copy(
+                    estado = EstadoTransferencia.PUBLICADA,
+                    postulantes = transferencia.postulantes.map { p ->
+                        when {
+                            p.id == enPago.id -> p.copy(estado = EstadoPostulante.VENCIDA, deadline = null)
+                            siguiente != null && p.id == siguiente.id -> p.copy(estado = EstadoPostulante.REVISION)
+                            else -> p
+                        }
+                    }
+                ))
+                Notificaciones.evento(enPago.usuarioId, R.string.aviso_transferencia_vencida, "transfer", transferencia.id)
+                Notificaciones.evento(transferencia.propietarioId, R.string.aviso_transferencia_vencida, "transfer", transferencia.id)
+                if (siguiente != null) {
+                    Notificaciones.evento(transferencia.propietarioId, R.string.aviso_transferencia_interesado, "transfer", transferencia.id)
+                }
+            }
+        }
+    }
+
     fun aprobar(transferenciaId: String, operadorId: String) {
+        revisarVencimientos()
         val transferencia = obtener(transferenciaId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_publicacion_ya_no_existe))
         val reserva = Reservas.obtenerReserva(transferencia.reservaId)!!
         val actividad = Negocios.actividadDe(reserva.actividadId)!!
@@ -162,6 +189,12 @@ object Transferencias {
         Nube.agrupar(condicionVersion(transferenciaId)) {
             Notificaciones.evento(candidato.usuarioId, R.string.aviso_transferencia_aprobada, "transfer", transferenciaId)
             val deadline = minOf(Reservas.ahora() + reserva.politica.payMinutes * 60_000L, Reservas.inicioMillis(reserva.fecha, reserva.hora))
+            Nube.escribir(Escritura.Crear("autorizacionesTransferencia/$transferenciaId", mapOf(
+                "compradorId" to candidato.usuarioId, "propietarioId" to transferencia.propietarioId,
+                "reservaId" to reserva.id, "negocioId" to actividad.negocioId,
+                "indice" to transferencia.postulantes.indexOf(candidato), "deadline" to deadline,
+                "monto" to reserva.precio
+            )))
             guardar(transferencia.copy(
                 estado = EstadoTransferencia.TRAMITE,
                 postulantes = transferencia.postulantes.map { p -> if (p.id == candidato.id) p.copy(estado = EstadoPostulante.PAGO, deadline = deadline) else p }
@@ -194,9 +227,15 @@ object Transferencias {
         val transferencia = obtener(transferenciaId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_publicacion_ya_no_existe))
         val postulante = transferencia.postulantes.firstOrNull { it.usuarioId == usuarioId && it.estado == EstadoPostulante.PAGO }
             ?: throw IllegalStateException(Textos.obtener(R.string.texto_no_tienes_un_turno_de_pago_vigente))
-        if (postulante.deadline != null && Reservas.ahora() >= postulante.deadline) throw IllegalStateException(Textos.obtener(R.string.texto_el_plazo_de_pago_vencio))
         val reserva = validarVigencia(transferencia)
-        // La versión protege contra una segunda finalización: solo una transacción puede completar la transferencia.
+        if (LogicaReservas.turnoVencido(postulante.deadline, Reservas.inicioMillis(reserva.fecha, reserva.hora), Reservas.ahora())) {
+            revisarVencimientos()
+            throw IllegalStateException(Textos.obtener(R.string.texto_el_plazo_de_pago_vencio))
+        }
+        if (Reservas.tieneCruce(usuarioId, reserva.fecha, reserva.hora, reserva.duracionHoras)) {
+            throw IllegalStateException(Textos.obtener(R.string.error_cruce_transferencia))
+        }
+
         return Nube.agrupar(condicionVersion(transferenciaId)) {
             val negocioId = negocioDeReserva(reserva)
             val nuevoPago = Reservas.registrarPago(usuarioId, reserva.precio, medio, id = "p_t_$transferenciaId")
@@ -206,7 +245,7 @@ object Transferencias {
                     Textos.obtener(R.string.texto_transferencia), reserva.politica.refundHours, id = "ref_t_$transferenciaId")
             }
             val reservaActualizada = Reservas.cambiarTitular(reserva.id, usuarioId, nuevoPago.id)
-            val pagoFinal = Reservas.pagos.value.first { it.id == nuevoPago.id }
+            val pagoFinal = Reservas.pagos.value.first { it.id == nuevoPago.id }.copy(transferenciaId = transferenciaId)
             Nube.escribir(Escritura.Crear("pagos/${pagoFinal.id}", Mapeos.mapa(pagoFinal, negocioId)))
             guardar(transferencia.copy(
                 estado = EstadoTransferencia.COMPLETADA,

@@ -27,6 +27,7 @@ import coil3.compose.AsyncImage
 import com.sportec.sporthub.domain.Actividad
 import com.sportec.sporthub.domain.DatosMock
 import com.sportec.sporthub.domain.TipoActividad
+import com.sportec.sporthub.ui.theme.Tinta
 
 private val FondosIlustracion = listOf(Color(0xFFBADBB4), Color(0xFFEDC8AA), Color(0xFFB6D9D0), Color(0xFFD1C4DF))
 private val CanchaEspacio = Color(0xFF417F66)
@@ -107,7 +108,7 @@ fun IlustracionActividad(actividad: Actividad, modifier: Modifier = Modifier) {
         Etiqueta(
             texto = if (esEspacio) Textos.obtener(R.string.texto_espacio_completo) else Textos.cantidad(R.plurals.clase_cupos, actividad.capacidad, actividad.capacidad),
             contenedor = Color.White.copy(alpha = 0.94f),
-            contenido = com.sportec.sporthub.ui.theme.Tinta,
+            contenido = Tinta,
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(12.dp)

@@ -1,9 +1,12 @@
 # Persona C (entrega 3): localización, mapas y encuentros
 
 Rama: `entrega3/localizacion-encuentros`, creada desde `develop` e incorporando la base de Persona A (`multusuario`).
+Integrada en `entrega3/integracion-firebase-localizacion-hardware` junto con Firebase y hardware.
 
-> Estado: compila (`./gradlew assembleDebug`) y pasan las pruebas unitarias (56, de ellas 11 nuevas en
-> `LogicaEncuentroTest`). Falta la prueba con dos dispositivos (sección 4), que requiere publicar `firestore.rules`.
+> Estado: compila (`./gradlew :app:compileDebugKotlin`) y pasan las pruebas unitarias (75, de ellas 11 en
+> `LogicaEncuentroTest`, 9 en `AccesoEncuentrosTest` y 4 en `PosicionCompartidaTest`), además de las 42
+> pruebas de `firestore.rules` (`cd tools/reglas && npm test`). Falta la prueba con dos dispositivos
+> (sección 4), que requiere publicar `firestore.rules`.
 
 ## 1. Qué se implementó
 
@@ -12,10 +15,11 @@ Rama: `entrega3/localizacion-encuentros`, creada desde `develop` e incorporando 
 | Pantalla «Encontrarnos» | `ui/screens/comun/EncontrarnosScreen.kt` | Mapa del encuentro, interruptor de compartir, marcadores con nombre, punto de reunión, estados de espera, conexión y desactualización, salir y finalizar. |
 | Reglas de la pantalla | `utils/LogicaEncuentro.kt` | Cuándo publicar la posición, estado de cada posición (en vivo / desactualizada / vencida), filtro de participantes y quién puede finalizar. Probado en `LogicaEncuentroTest`. |
 | Marcadores con etiqueta | `ui/components/MapaMapbox.kt` | `MarcadorMapa` acepta `etiqueta` y `color` (opcionales; las pantallas anteriores no cambian). |
-| Acceso | `ChatScreen.kt`, `ComunidadScreen.kt` | Icono de ubicación en la barra del chat (individual o de comunidad) y botón «Encontrarnos» en la comunidad. |
+| Acceso | `ChatScreen.kt`, `ComunidadScreen.kt`, `domain/AccesoEncuentros.kt` | Icono de ubicación en la barra del chat (individual o de comunidad) y botón «Encontrarnos» en la comunidad, visibles solo para deportistas activos que participen (probado en `AccesoEncuentrosTest`). La pantalla, `Encuentros.abrir` y las reglas repiten la comprobación. |
 | Navegación | `Rutas.kt`, `SportHubApp.kt`, `Destinos.kt` | Ruta `Encontrarnos(origenId)`: id del chat individual o de la comunidad. |
 | Aviso del punto | `DestinoNotificacion.kt` | Al proponer un punto se avisa a los demás participantes (`ruta = "meetup"`); abrir el aviso valida que la cuenta siga participando. |
-| Regla de lectura | `firestore.rules` | Se permite leer `encuentros/{id}` cuando aún no existe (`resource == null`); sin esto la primera apertura fallaba con PERMISSION_DENIED. |
+| Regla de lectura | `firestore.rules` | Se permite leer `encuentros/{id}` cuando aún no existe (`resource == null`); sin esto la primera apertura fallaba con PERMISSION_DENIED. Se permite `get` y no `list`, así que nadie puede enumerar encuentros ni posiciones. |
+| Sesiones del encuentro | `data/Encuentros.kt`, `EncontrarnosScreen.kt` | Cada apertura estrena `sesion` y las posiciones viven en `encuentros/{id}/sesiones/{sesion}/posiciones/{uid}`: al reabrir un encuentro no reaparece ninguna ubicación anterior sin volver a activar el interruptor. |
 
 El seguimiento propio y las rutas de Mapbox (permisos, precisión, ciclo de vida, recálculo al desviarse, distancia y tiempo restantes, ruta estimada sin conexión) ya estaban en `develop` desde las entregas anteriores.
 
@@ -24,12 +28,12 @@ El seguimiento propio y las rutas de Mapbox (permisos, precisión, ciclo de vida
 Se usa el contrato de `data/Encuentros.kt` sin cambios:
 
 - **Un encuentro por chat o comunidad** (`e_<origenId>`). El chat de una comunidad abre el encuentro de la comunidad, así el acceso sigue a sus miembros actuales.
-- **Consentimiento:** el interruptor empieza apagado cada vez que se abre la pantalla. Conceder el permiso de Android no activa el interruptor; si se activa el interruptor sin permiso, se pide el permiso.
+- **Consentimiento:** el interruptor empieza apagado cada vez que se abre la pantalla. Conceder el permiso de Android no activa el interruptor; si se activa el interruptor sin permiso, se pide el permiso. Mientras no se conozca la sesión del encuentro el interruptor queda deshabilitado (no hay dónde publicar).
 - **Solo con la pantalla visible:** al salir, al pasar a segundo plano (`ON_STOP`), al perder el permiso o el acceso, o cuando el encuentro finaliza, se borra la posición propia. No se reanuda sola.
 - **Frecuencia de envío:** al moverse ≥ 10 m (mínimo 3 s entre envíos) y una renovación cada 15 s aunque no haya movimiento, para seguir «en vivo» (60 s). No se envía una lectura de más de 2 min ni con el GPS apagado.
 - **Punto de reunión:** mantener presionado el mapa (o «Usar mi ubicación actual») y confirmar con «Nos encontramos aquí». Cualquier participante lo reemplaza; no depende de compartir la posición y no se borra al apagar el interruptor.
 - **Finalizar:** solo quien abrió el encuentro o el administrador de la comunidad (igual que en las reglas). Cualquiera puede iniciar uno nuevo después.
-- **Desactualizada:** la pantalla recalcula cada 5 s; pasados 60 s el marcador se atenúa y dice «desactualizada», a los 300 s desaparece.
+- **Desactualizada:** la pantalla recalcula cada 5 s; pasados 60 s el marcador se atenúa y dice «desactualizada», a los 300 s desaparece. Sin conexión se conserva la última posición conocida y envejece igual, en lugar de desaparecer de golpe.
 - **Segunda barrera:** además de las reglas, la pantalla solo dibuja posiciones de participantes actuales.
 
 ## 3. Para publicar
@@ -44,7 +48,7 @@ Cuentas `juan@demo.test` y `camila@demo.test`, con un chat entre ambas; una terc
 | ID | Cómo | Esperado |
 |---|---|---|
 | ENC-01 | Abrir el icono de ubicación en el chat. | Interruptor apagado; solo los dos participantes entran. |
-| ENC-02 | Simulador de reglas con un UID ajeno sobre `encuentros/e_<chatId>`. | Denegado. |
+| ENC-02 | Simulador de reglas con un UID ajeno sobre `encuentros/e_<chatId>`, y con el UID de un establecimiento que participe en el chat. | Denegado en los dos casos. |
 | ENC-03 | Activar en ambos (en el emulador, mover la ubicación desde *Extended controls*). | Cada uno ve el marcador con el nombre del otro moverse. |
 | ENC-04 | Compartir en un chat y abrir otro. | En el segundo el interruptor está apagado y no hay posición propia. |
 | ENC-05 | Proponer un punto con el interruptor apagado. | El otro ve el punto (y recibe un aviso); no aparece la posición de quien lo propuso. |
@@ -54,6 +58,7 @@ Cuentas `juan@demo.test` y `camila@demo.test`, con un chat entre ambas; una terc
 | ENC-09 | Salir de la comunidad durante un encuentro de comunidad. | Pierde el acceso y deja de compartir. |
 | ENC-10 | Finalizar desde quien lo abrió. | Ambos ven «Este encuentro finalizó». |
 | ENC-11 | Quitar el permiso de ubicación desde Ajustes mientras comparte. | Deja de compartir sin cierre inesperado. |
+| ENC-12 | Compartir, finalizar el encuentro y volver a abrirlo desde el otro dispositivo. | El encuentro arranca sin posiciones y con el interruptor apagado en ambos: ninguna ubicación anterior reaparece. |
 
 ## 5. Limitaciones
 

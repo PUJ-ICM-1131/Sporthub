@@ -3,38 +3,44 @@
 Este documento describe qué se implementó, cómo publicarlo en Firebase paso a paso, cómo probarlo y qué limitaciones declarar.
 No requiere el plan de pago de Firebase (no usa Storage ni Cloud Functions).
 
-> Estado: el código fue escrito y revisado sin compilarlo con el SDK de Android. Antes de integrar hay que compilar
-> (`./gradlew assembleDebug testDebugUnitTest`) y ejecutar las pruebas de la sección 4.
+> Estado: integrado en `entrega3/integracion-firebase-localizacion-hardware`. Compila
+> (`./gradlew :app:compileDebugKotlin`), pasan las 75 pruebas unitarias (`./gradlew :app:testDebugUnitTest`)
+> y las pruebas de `firestore.rules` contra el emulador (`cd tools/reglas && npm test`).
+> Falta la prueba con dos dispositivos de la sección 4, que requiere publicar las reglas.
 
 ## 1. Qué se implementó
 
 | Pieza | Archivo | Qué hace |
 |---|---|---|
-| Escritura atómica | `data/Nube.kt` | `Nube.agrupar { … }` reúne todas las escrituras de una operación y las confirma en **un lote atómico**, o en una **transacción** si lleva condiciones (`Condicion.Igual`, `Condicion.Menor`). Si falla, avisa por `Nube.errores` y resincroniza. |
+| Escritura atómica | `data/Nube.kt` | `Nube.agrupar { … }` reúne todas las escrituras de una operación y las confirma en **un lote atómico**, o en una **transacción** si lleva condiciones (`Condicion.Igual`, `Condicion.Menor`). Si falla, avisa por `Nube.errores` y resincroniza. `Nube.confirmarOperacion { … }` hace lo mismo pero **espera** la respuesta del servidor y lanza el error a quien llama: lo usan pagar una solicitud y pagar una transferencia, que no pueden mostrarse como exitosas antes de que Firestore las acepte. `Nube.ejecutar(mensaje) { … }` lanza una operación de segundo plano (subir fotografías) con su propio aviso. |
 | Conversión | `data/Mapeos.kt` | Modelo de dominio ⇄ documento de Firestore (explícito, sin reflexión). |
 | Sincronización | `data/Sincronizacion.kt` | Un listener por colección, limitado a lo que cada rol puede leer. Se inicia en `SesionViewModel.iniciar` y se detiene al cerrar sesión. |
 | Almacenes | `domain/*.kt` | Mismas funciones públicas y `StateFlow` que antes (la interfaz no cambió); ahora leen de Firestore y escriben en él. Ya no usan `DatosMock` como fuente. |
-| Fotos compartidas | `data/FotosRemotas.kt` | Comprime y sube imágenes a `fotos/{hash}` (Firestore). Los documentos guardan `fr:{hash}`, nunca rutas locales. |
-| Encuentros | `data/Encuentros.kt` | Datos y permisos de «Encontrarnos» para Persona C. |
+| Fotos compartidas | `data/FotosRemotas.kt` | Comprime y sube imágenes a `fotos/{hash}` (referencia `fr:{hash}`) o, cuando pertenecen a una reserva, a `fotosPrivadas/{hash}` (referencia `fp:{hash}`). Los documentos guardan la referencia, nunca rutas locales. |
+| Encuentros | `data/Encuentros.kt` | Datos y permisos de «Encontrarnos» para Persona C. Cada apertura estrena una `sesion`, así que al reabrir un encuentro no reaparece ninguna posición anterior. |
+| Acceso a encuentros | `domain/AccesoEncuentros.kt` | Única definición de quién entra y comparte: deportista activo que participa en ese chat (dos deportistas) o comunidad. La usan el chat, la comunidad, la pantalla, el aviso y `Encuentros.abrir`; las reglas repiten la comprobación en el servidor. |
 | Semilla | `data/Semilla.kt` | Carga única de negocios y servicios de demostración (la ejecuta el administrador). |
-| Reglas | `firestore.rules` | Acceso por rol, dueño, miembro o participante; estados válidos; cupos; encuentros. |
+| Reglas | `firestore.rules` | Acceso por rol, dueño, miembro o participante; estados válidos; cupos; encuentros; autorización de pago para cambiar el titular de una reserva. |
+| Pruebas de reglas | `tools/reglas/` | 42 pruebas sobre `firestore.rules` con el emulador de Firestore (`npm test`). No tocan el proyecto real. |
 
 ### Colecciones
 
 | Colección | Id del documento | Notas |
 |---|---|---|
-| `usuarios` | uid | Sin cambios. `Cuenta.id` ahora es **siempre el uid**. |
+| `usuarios` | uid | `Cuenta.id` es **siempre el uid**. Del propio perfil solo se pueden editar `nombre`, `telefono` y `foto`: el rol, el estado de la cuenta y el `negocioId` quedan fijos. |
 | `negocios`, `actividades` | `b1…`, `a…` | `actividades.fotos` = lista de referencias `fr:…`. |
 | `solicitudes`, `reservas`, `pagos`, `reembolsos` | ids deterministas donde importa | Llevan `negocioId` para que el establecimiento consulte y para las reglas. |
 | `ocupacion` | `{actividadId}_{fecha}_{hora}` | Contador `n` de cupos por hora; las reglas impiden que supere la capacidad. |
 | `transferencias` | uuid | Campo `version`; `postulantesUids` para consultar «en las que participo». |
+| `autorizacionesTransferencia` | id de la transferencia | Permiso que emite el establecimiento al aprobar: comprador, reserva, monto y plazo. Sin él las reglas no permiten cambiar el titular de la reserva ni completar la transferencia. |
 | `chats/{id}` y `chats/{id}/mensajes/{id}` | chat individual: `uidMenor_uidMayor`; comunidad: id de la comunidad | El id determinista evita chats duplicados. |
 | `comunidades`, `invitaciones` | invitación: `{comunidadId}_{invitadoId}` | Aceptar es una transacción. |
 | `resenas` | id de la reserva | Una sola reseña por reserva (lo garantiza el id). |
 | `notificaciones` | uuid | `usuarioId` = destinatario, `autorId` = quien origina el evento. |
 | `reportes` | uuid | Lo lee el administrador. |
-| `fotos` | hash SHA-1 del contenido | No se sobrescribe; misma foto = mismo documento. |
-| `encuentros/{e_<origenId>}` y `/posiciones/{uid}` | ver sección 5 | Contrato con Persona C. |
+| `fotos` | hash SHA-256 del contenido | No se sobrescribe; misma foto = mismo documento. Legible con sesión: fotos de servicios, comunidades y perfil. |
+| `fotosPrivadas` | hash SHA-256 del contenido y de la reserva | Foto de llegada: la sube el titular de la reserva y la leen solo ese titular y el establecimiento. |
+| `encuentros/{e_<origenId>}` y `/sesiones/{sesion}/posiciones/{uid}` | ver sección 5 | Contrato con Persona C. |
 
 ### Cómo se evitan duplicados y sobreventa
 
@@ -60,16 +66,19 @@ Si una transacción falla, la operación ya se mostró en el teléfono (actualiz
 6. **Catálogo inicial.** Inicia sesión **una vez** en la aplicación con `admin@demo.test`. Si `negocios` está vacía, la aplicación carga los 7 negocios y sus servicios. Verifica en la consola que aparecen las colecciones `negocios` (7 documentos) y `actividades`.
    Si no aparecen: revisa Logcat (filtro `Semilla`) y que las reglas se publicaron.
 7. **Cuentas de prueba.** Para la demostración con dos dispositivos usa `juan@demo.test` en uno y `camila@demo.test` en otro (o registra cuentas nuevas desde la aplicación). Ya no se siembran reservas ni chats de ejemplo: se crean usando la aplicación.
-8. **Comprobar reglas (simulador).** Firestore → Reglas → **Simulador de reglas**: simula una lectura (`get`) de `/databases/(default)/documents/encuentros/e_<idDeUnChat>` autenticado con un UID que **no** pertenezca al chat; debe salir **Denegado** (ENC-02). Repite con un UID participante: **Permitido**.
+8. **Comprobar reglas.** Lo más rápido es `cd tools/reglas && npm test` (42 pruebas en el emulador, sin tocar este proyecto). En la consola, Firestore → Reglas → **Simulador de reglas**: simula una lectura (`get`) de `/databases/(default)/documents/encuentros/e_<idDeUnChat>` autenticado con un UID que **no** pertenezca al chat; debe salir **Denegado** (ENC-02). Repite con un UID participante que sea deportista: **Permitido**. Una posición se consulta en `/encuentros/e_<idDeUnChat>/sesiones/<sesion>/posiciones/<uid>`.
 9. **Respaldo de seguridad.** Antes de la sustentación exporta o anota el estado de las colecciones por si hay que restaurar datos de demostración (consola → Firestore → Datos).
 
 ## 3. Qué cambió fuera de mis archivos
 
 Solo lo imprescindible de Persona B:
 - `MainActivity.kt`: una línea (`FotosRemotas.iniciar(this)`), junto a `FotosLocales.iniciar(this)`.
-- `res/values/strings.xml`: cuatro textos de error (`nube_*`).
+- `res/values/strings.xml`: cinco textos de error (`nube_*`).
+- `navigation/SportHubApp.kt`: un `SnackbarHost` que muestra `Nube.errores` (antes nadie consumía ese flujo).
+- `ui/screens/deportista/PagoScreen.kt` y `PagoViewModel.kt`: el pago espera la confirmación de Firestore y el botón se deshabilita mientras tanto.
+- `ui/screens/comun/ChatScreen.kt`, `ComunidadScreen.kt` y `navigation/DestinoNotificacion.kt`: el acceso a «Encontrarnos» usa `AccesoEncuentros`.
 
-No se tocó ninguna pantalla ni componente de B. La foto de perfil sigue siendo local y privada.
+La foto de perfil **ya no es solo local**: al guardar el perfil se sube como referencia compartida (`fotos/{hash}`) y se guarda en el campo `foto` del usuario, para que las demás personas la vean en chats y comunidades. Es legible por cualquier cuenta con sesión, igual que el nombre.
 
 ## 4. Pruebas con dos dispositivos (A)
 
@@ -92,7 +101,7 @@ No se tocó ninguna pantalla ni componente de B. La foto de perfil sigue siendo 
 ### Notificaciones (B)
 `notificaciones/{id}`: `usuarioId` (destinatario), `titulo`, `texto`, `ruta`, `argumento`, `leida`, `autorId`, `creadaEn`.
 `Notificaciones.notificaciones` ya expone solo las de la cuenta actual; `AvisosSistema` y la campana siguen funcionando sin cambios.
-Los avisos llegan mientras la aplicación está abierta o su proceso sigue vivo. Con la aplicación cerrada del todo harían falta FCM y Cloud Functions (plan Blaze): declarar como limitación.
+Los avisos llegan mientras la aplicación está abierta o su proceso sigue vivo. Con la aplicación cerrada del todo falta integrar FCM y un emisor confiable de notificaciones: declarar como limitación.
 
 ### Fotos (B)
 `FotosRemotas.subir(uri): String` devuelve la referencia `fr:…` y `FotosRemotas.resolver(ref): String?` una URI local lista para mostrar.
@@ -102,16 +111,18 @@ Los almacenes ya lo usan para fotos de servicios, comunidades y foto de llegada;
 ```kotlin
 val id = Encuentros.abrir(OrigenEncuentro.CHAT /* o COMUNIDAD */, origenId)   // suspend; id = "e_<origenId>"
 Encuentros.observar(id)                 // Flow<Encuentro?>: estado, punto común, creador (null = sin acceso)
-Encuentros.observarPosiciones(id)       // Flow<List<PosicionCompartida>>: solo quien comparte y sigue vigente
-Encuentros.publicarPosicion(id, lat, lng, precision)   // activar/actualizar (solo con el interruptor encendido)
-Encuentros.dejarDeCompartir(id)         // apagar interruptor o salir: borra la posición propia
+Encuentros.observarPosiciones(id, sesion, participantes)   // Flow<List<PosicionCompartida>>: un listener por participante
+Encuentros.publicarPosicion(id, sesion, lat, lng, precision)   // activar/actualizar (solo con el interruptor encendido)
+Encuentros.dejarDeCompartir(id, sesion)   // apagar interruptor o salir: borra la posición propia
 Encuentros.proponerPunto(id, lat, lng)  // «Nos encontramos aquí»
 Encuentros.finalizar(id)                // creador o administrador de la comunidad
 ```
 - `origenId` es el id del chat individual (`chat.id`) o de la comunidad (`comunidad.id`).
+- `sesion` es `Encuentro.sesion`: identifica la apertura vigente. `abrir` estrena una sesión cada vez que crea o reabre el encuentro, así que ninguna posición anterior vuelve a ser legible sin activar otra vez el interruptor. Las reglas no permiten **listar** la subcolección: por eso se pasa la lista de participantes y se escucha un documento por persona.
+- Solo entran y comparten deportistas activos que participen en ese chat o comunidad (`AccesoEncuentros`); el establecimiento que escribe en un chat no entra.
 - **Acuerdos tomados (confirmar con C):** un punto común activo por encuentro; cualquier participante puede reemplazarlo; finaliza quien creó el encuentro o el administrador de la comunidad; sin historial de desplazamiento (un documento de posición por persona).
 - **Vigencia:** `PosicionCompartida.enVivo()` = actualizada en los últimos 60 s; después se muestra como desactualizada; a los 300 s deja de mostrarse (`Encuentros.SEGUNDOS_EN_VIVO` y `SEGUNDOS_VIGENCIA`). La hora es la del servidor.
-- **Consentimiento:** el documento `posiciones/{uid}` existe solo mientras esa persona comparte; solo ella lo escribe. Al volver a la pantalla no hay documento hasta que active el interruptor otra vez.
+- **Consentimiento:** el documento `sesiones/{sesion}/posiciones/{uid}` existe solo mientras esa persona comparte; solo ella lo escribe y puede borrarlo siempre. Al volver a la pantalla no hay documento hasta que active el interruptor otra vez.
 - **Acceso:** las reglas calculan los participantes a partir de los miembros actuales del chat o de la comunidad. Una cuenta ajena no lee nada aunque conozca el id; quien deja una comunidad pierde el acceso sin que nadie borre datos. Al finalizar, las posiciones dejan de ser legibles para todos.
 - **Cierre abrupto:** al no haber borrado, la última posición queda como desactualizada y deja de mostrarse a los 300 s.
 - Mientras se comparte, publicar con el ciclo de vida de la pantalla (cada ~10–15 s, no en segundo plano).

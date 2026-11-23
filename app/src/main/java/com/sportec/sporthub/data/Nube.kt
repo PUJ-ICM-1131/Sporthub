@@ -19,35 +19,26 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.cancellation.CancellationException
 
-/** Escritura que se confirma en Firestore junto con las demás de su grupo. */
 sealed class Escritura {
-    /** Reemplaza el documento completo. */
+
     data class Crear(val ruta: String, val datos: Map<String, Any?>) : Escritura()
-    /** Crea o mezcla campos (sirve también para contadores con FieldValue.increment). */
+
     data class Mezclar(val ruta: String, val datos: Map<String, Any?>) : Escritura()
-    /** Cambia campos de un documento que ya existe. */
+
     data class Actualizar(val ruta: String, val datos: Map<String, Any?>) : Escritura()
     data class Borrar(val ruta: String) : Escritura()
 }
 
-/** Condición que debe cumplirse en el servidor para que el grupo se confirme. */
 sealed class Condicion {
     abstract val ruta: String
-    /** El campo debe valer exactamente [esperado] (null = no existe o es nulo). */
+
     data class Igual(override val ruta: String, val campo: String, val esperado: Any?) : Condicion()
-    /** El contador numérico (0 si no existe) debe ser menor que [limite]. */
+
     data class Menor(override val ruta: String, val campo: String, val limite: Long) : Condicion()
 }
 
 class ConflictoException(mensaje: String) : Exception(mensaje)
 
-/**
- * Punto único de escritura en Firestore.
- *
- * - [agrupar] reúne todas las escrituras que ocurran dentro del bloque y las confirma
- *   de forma atómica: en un lote (sin condiciones) o en una transacción (con condiciones).
- * - Si la confirmación falla, se avisa por [errores] y se resincroniza el estado local.
- */
 object Nube {
     private const val ETIQUETA = "Nube"
 
@@ -59,7 +50,7 @@ object Nube {
     private val _errores = MutableSharedFlow<String>(extraBufferCapacity = 8)
     val errores: SharedFlow<String> = _errores
 
-    private class Grupo {
+    private class Grupo(val silencioso: Boolean = false) {
         val escrituras = mutableListOf<Escritura>()
         val condiciones = mutableListOf<Condicion>()
     }
@@ -71,46 +62,75 @@ object Nube {
         if (actual != null) actual.escrituras.addAll(e) else confirmar(e.toList(), emptyList())
     }
 
-    fun <T> agrupar(vararg condiciones: Condicion, bloque: () -> T): T {
+    fun <T> agrupar(vararg condiciones: Condicion, silencioso: Boolean = false, bloque: () -> T): T {
         val externo = grupo
         if (externo != null) {
             externo.condiciones.addAll(condiciones)
             return bloque()
         }
-        val nuevo = Grupo().also { it.condiciones.addAll(condiciones) }
+        val nuevo = Grupo(silencioso).also { it.condiciones.addAll(condiciones) }
         grupo = nuevo
         val resultado = try {
             bloque()
         } finally {
             grupo = null
         }
-        confirmar(nuevo.escrituras, nuevo.condiciones)
+        confirmar(nuevo.escrituras, nuevo.condiciones, silencioso)
         return resultado
     }
 
-    private fun confirmar(escrituras: List<Escritura>, condiciones: List<Condicion>) {
-        if (escrituras.isEmpty() || uid() == null) return
+    suspend fun <T> confirmarOperacion(bloque: () -> T): T {
+        check(grupo == null)
+        check(uid() != null) { Textos.obtener(R.string.nube_sin_permiso) }
+        val nuevo = Grupo()
+        grupo = nuevo
+        val resultado = try { bloque() } finally { grupo = null }
+        try {
+            persistir(nuevo.escrituras, nuevo.condiciones)
+        } catch (e: CancellationException) {
+            Sincronizacion.reiniciar()
+            throw e
+        } catch (e: Exception) {
+            Sincronizacion.reiniciar()
+            throw IllegalStateException(traducir(e), e)
+        }
+        return resultado
+    }
+
+    private fun confirmar(escrituras: List<Escritura>, condiciones: List<Condicion>, silencioso: Boolean = false) {
+        if (escrituras.isEmpty()) return
         alcance.launch {
             try {
-                if (condiciones.isEmpty()) {
-                    val lote = db.batch()
-                    escrituras.forEach { aplicar(lote, it) }
-                    lote.commit().await()
-                } else {
-                    db.runTransaction(Transaction.Function<Void?> { tx ->
-                        condiciones.forEach { verificar(tx, it) }
-                        escrituras.forEach { aplicar(tx, it) }
-                        null
-                    }).await()
-                }
+                persistir(escrituras, condiciones)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.w(ETIQUETA, "Falló la escritura agrupada", e)
-                _errores.tryEmit(traducir(e))
+                if (!silencioso) _errores.emit(traducir(e))
                 Sincronizacion.reiniciar()
             }
         }
+    }
+
+    private suspend fun persistir(escrituras: List<Escritura>, condiciones: List<Condicion>) {
+        check(uid() != null) { Textos.obtener(R.string.nube_sin_permiso) }
+        if (escrituras.isEmpty()) return
+        if (condiciones.isEmpty()) {
+            val lote = db.batch()
+            escrituras.forEach { aplicar(lote, it) }
+            lote.commit().await()
+        } else {
+            db.runTransaction(Transaction.Function<Void?> { tx ->
+                condiciones.forEach { verificar(tx, it) }
+                escrituras.forEach { aplicar(tx, it) }
+                null
+            }).await()
+        }
+    }
+
+    fun mensajeDe(e: Exception): String {
+        if (e is IllegalStateException && !e.message.isNullOrBlank()) return e.message!!
+        return traducir(e)
     }
 
     private fun traducir(e: Exception): String {
@@ -155,6 +175,21 @@ object Nube {
             is Escritura.Mezclar -> tx.set(db.document(e.ruta), e.datos, SetOptions.merge())
             is Escritura.Actualizar -> tx.update(db.document(e.ruta), e.datos)
             is Escritura.Borrar -> tx.delete(db.document(e.ruta))
+        }
+    }
+
+    suspend fun informarError(e: Exception) {
+        _errores.emit(traducir(e))
+    }
+
+    fun ejecutar(mensajeError: Int, bloque: suspend () -> Unit) {
+        alcance.launch {
+            try { bloque() }
+            catch (e: CancellationException) { throw e }
+            catch (e: Exception) {
+                Log.w(ETIQUETA, "No se pudo completar la operacion", e)
+                _errores.emit(Textos.obtener(mensajeError))
+            }
         }
     }
 

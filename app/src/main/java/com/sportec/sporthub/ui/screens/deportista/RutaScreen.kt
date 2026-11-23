@@ -230,7 +230,6 @@ private fun DatoRuta(etiqueta: String, valor: String) {
     }
 }
 
-/** Respaldo sin Mapbox: proyecta el trazado real (o la línea recta estimada) dentro de la tarjeta. */
 @Composable
 private fun TrazadoRuta(puntos: List<Coordenada>) {
     val trazo = MaterialTheme.colorScheme.primary

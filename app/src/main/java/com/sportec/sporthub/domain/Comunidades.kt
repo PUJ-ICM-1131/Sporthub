@@ -15,10 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/**
- * Comunidades en `comunidades/{id}` e invitaciones en `invitaciones/{comunidadId_invitadoId}`.
- * Aceptar una invitación es una transacción: solo prospera si sigue PENDIENTE.
- */
 object Comunidades {
 
     private fun uid() = "g" + java.util.UUID.randomUUID().toString()
@@ -30,7 +26,7 @@ object Comunidades {
     val invitaciones = _invitaciones.asStateFlow()
 
     internal fun cargarComunidades(lista: List<Comunidad>) {
-        // La foto de la comunidad puede ser local (recién elegida) hasta que se sube.
+
         _comunidades.value = lista.map { c ->
             c.copy(fotoUri = c.fotoUri ?: FotosLocales.obtener("comunidad", c.id))
         }
@@ -78,11 +74,10 @@ object Comunidades {
     fun esMiembro(comunidadId: String, usuarioId: String): Boolean =
         comunidadDe(comunidadId)?.miembros?.contains(usuarioId) == true
 
-    /** Sube la foto elegida (si es local) y guarda solo la referencia compartida. */
     private fun subirFoto(comunidadId: String, fotoUri: String?) {
         if (fotoUri == null || FotosRemotas.esReferencia(fotoUri)) return
-        Nube.alcance.launch {
-            val ref = FotosRemotas.subirTodas(listOf(fotoUri)).firstOrNull() ?: return@launch
+        Nube.ejecutar(R.string.nube_error_foto) {
+            val ref = FotosRemotas.subir(fotoUri)
             Nube.escribir(Escritura.Actualizar("comunidades/$comunidadId", mapOf("foto" to ref)))
         }
     }

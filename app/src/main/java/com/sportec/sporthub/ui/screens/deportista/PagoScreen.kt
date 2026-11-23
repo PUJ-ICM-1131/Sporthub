@@ -76,6 +76,7 @@ fun PagoScreen(
                 }
                 Button(
                     onClick = { viewModel.pagar(usuarioId, medio, onPagoExitoso) },
+                    enabled = !estado.procesando,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(stringResource(R.string.texto_pagar))

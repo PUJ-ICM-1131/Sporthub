@@ -25,11 +25,6 @@ data class PosicionActual(
             precisionMetros > 0f && precisionMetros <= 50f
 }
 
-/**
- * Origen de distancias y rutas: la posición real del dispositivo cuando hay permiso y lectura;
- * si no la hay, el punto que la persona marca en el mapa. Mientras no exista ninguno de los dos,
- * [origenDefinido] es falso y se usa un punto de respaldo solo para ordenar listados.
- */
 object Ubicacion {
     private val _posicionActual = MutableStateFlow<PosicionActual?>(null)
     val posicionActual: StateFlow<PosicionActual?> = _posicionActual.asStateFlow()

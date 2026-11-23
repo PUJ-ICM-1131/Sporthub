@@ -71,7 +71,7 @@ object Autenticacion {
                 runCatching { usuario.delete().await() }
                 throw e
             }
-            // Con la sesión del nuevo usuario ya iniciada, se publica el negocio creado en el registro.
+
             if (negocioId != null) {
                 try {
                     Negocios.publicar(negocioId)
