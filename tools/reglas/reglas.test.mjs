@@ -42,6 +42,13 @@ function postulante(usuarioId, estado, aceptado) {
   return { id: `st_${usuarioId}`, usuarioId, estado, deadline: null, aceptadoPorPropietario: aceptado };
 }
 
+function solicitud(usuarioId, estado, deadline) {
+  return {
+    usuarioId, actividadId: 'a1', negocioId: 'b1', fecha: '2027-01-15', hora: 10, duracionHoras: 1,
+    orden: 1, estado, precio: MONTO, politica: POLITICA, deadline, creadaEn: Timestamp.now()
+  };
+}
+
 function reserva(usuarioId, enTransferencia) {
   return {
     usuarioId,
@@ -90,6 +97,10 @@ async function sembrar() {
       'encuentros/e_juan_camila/sesiones/s1/posiciones/camila',
       posicion(Timestamp.fromMillis(Date.now() - 10 * 60 * 1000))
     );
+
+    await poner('solicitudes/s_vigente', solicitud('juan', 'PAGO', Date.now() + 10 * 60 * 1000));
+    await poner('solicitudes/s_vencida', solicitud('juan', 'PAGO', Date.now() - 60 * 1000));
+    await poner('solicitudes/s_revision', solicitud('camila', 'REVISION', null));
 
     await poner('reservas/r1', reserva('juan', true));
     await poner('pagos/p1', { usuarioId: 'juan', monto: MONTO, estado: 'EXITOSO', medio: 'TARJETA', reservaId: 'r1', transferenciaId: '', negocioId: 'b1' });
@@ -283,6 +294,42 @@ describe('Perfil', () => {
 
   it('no se edita el perfil de otra persona', async () => {
     await assertFails(updateDoc(doc(como('camila'), 'usuarios/juan'), { nombre: 'Otro' }));
+  });
+});
+
+describe('Solicitudes: plazo de pago y fila', () => {
+  const vencer = (uid, id) => updateDoc(doc(como(uid), `solicitudes/${id}`), { estado: 'VENCIDA' });
+
+  it('el turno con el plazo cumplido se da por vencido', async () => {
+    await assertSucceeds(vencer('juan', 's_vencida'));
+  });
+
+  it('el establecimiento tambien cierra el turno vencido', async () => {
+    await assertSucceeds(vencer('nego', 's_vencida'));
+  });
+
+  it('un turno todavia vigente no se puede dar por vencido', async () => {
+    await assertFails(vencer('juan', 's_vigente'));
+  });
+
+  it('una cuenta ajena no toca la solicitud', async () => {
+    await assertFails(vencer('otro', 's_vigente'));
+  });
+
+  it('el pago dentro del plazo confirma la solicitud', async () => {
+    await assertSucceeds(updateDoc(doc(como('juan'), 'solicitudes/s_vigente'), { estado: 'ATENDIDA' }));
+  });
+
+  it('pasado el plazo ya no se confirma el pago', async () => {
+    await assertFails(updateDoc(doc(como('juan'), 'solicitudes/s_vencida'), { estado: 'ATENDIDA' }));
+  });
+
+  it('el establecimiento marca incompatible una solicitud en revision', async () => {
+    await assertSucceeds(updateDoc(doc(como('nego'), 'solicitudes/s_revision'), { estado: 'INCOMPATIBLE' }));
+  });
+
+  it('el deportista no marca su propia solicitud como incompatible', async () => {
+    await assertFails(updateDoc(doc(como('camila'), 'solicitudes/s_revision'), { estado: 'INCOMPATIBLE' }));
   });
 });
 

@@ -87,7 +87,13 @@ service cloud.firestore {
         || (resource.data.usuarioId == yo() && resource.data.estado in ['FILA', 'REVISION', 'PAGO']
           && request.resource.data.estado == 'RETIRADA')
         || (resource.data.usuarioId == yo() && resource.data.estado == 'PAGO'
-          && request.resource.data.estado == 'ATENDIDA')
+          && request.resource.data.estado == 'ATENDIDA'
+          && resource.data.get('deadline', 0) > request.time.toMillis())
+        || ((resource.data.usuarioId == yo() || esOperadorDe(resource.data.negocioId))
+          && resource.data.estado == 'PAGO' && request.resource.data.estado == 'VENCIDA'
+          && resource.data.get('deadline', 0) <= request.time.toMillis())
+        || (esOperadorDe(resource.data.negocioId) && resource.data.estado == 'REVISION'
+          && request.resource.data.estado == 'INCOMPATIBLE')
       );
       allow delete: if false;
     }

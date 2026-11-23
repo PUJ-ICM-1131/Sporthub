@@ -50,7 +50,7 @@ object Nube {
     private val _errores = MutableSharedFlow<String>(extraBufferCapacity = 8)
     val errores: SharedFlow<String> = _errores
 
-    private class Grupo {
+    private class Grupo(val silencioso: Boolean = false) {
         val escrituras = mutableListOf<Escritura>()
         val condiciones = mutableListOf<Condicion>()
     }
@@ -62,20 +62,20 @@ object Nube {
         if (actual != null) actual.escrituras.addAll(e) else confirmar(e.toList(), emptyList())
     }
 
-    fun <T> agrupar(vararg condiciones: Condicion, bloque: () -> T): T {
+    fun <T> agrupar(vararg condiciones: Condicion, silencioso: Boolean = false, bloque: () -> T): T {
         val externo = grupo
         if (externo != null) {
             externo.condiciones.addAll(condiciones)
             return bloque()
         }
-        val nuevo = Grupo().also { it.condiciones.addAll(condiciones) }
+        val nuevo = Grupo(silencioso).also { it.condiciones.addAll(condiciones) }
         grupo = nuevo
         val resultado = try {
             bloque()
         } finally {
             grupo = null
         }
-        confirmar(nuevo.escrituras, nuevo.condiciones)
+        confirmar(nuevo.escrituras, nuevo.condiciones, silencioso)
         return resultado
     }
 
@@ -97,7 +97,7 @@ object Nube {
         return resultado
     }
 
-    private fun confirmar(escrituras: List<Escritura>, condiciones: List<Condicion>) {
+    private fun confirmar(escrituras: List<Escritura>, condiciones: List<Condicion>, silencioso: Boolean = false) {
         if (escrituras.isEmpty()) return
         alcance.launch {
             try {
@@ -106,7 +106,7 @@ object Nube {
                 throw e
             } catch (e: Exception) {
                 Log.w(ETIQUETA, "Falló la escritura agrupada", e)
-                _errores.emit(traducir(e))
+                if (!silencioso) _errores.emit(traducir(e))
                 Sincronizacion.reiniciar()
             }
         }
