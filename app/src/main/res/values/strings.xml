@@ -610,6 +610,9 @@
     <string name="perfil_estado_negocio">Estado</string>
     <string name="perfil_nombre_contacto">Nombre</string>
     <string name="error_horario_servicio">La hora de apertura debe ser anterior a la de cierre.</string>
+    <string name="error_cruce_horario">Ya tienes una reserva o un turno de pago en ese horario. Elige otro.</string>
+    <string name="error_cruce_transferencia">Esa reserva se cruza con un horario que ya tienes.</string>
+    <string name="error_solicitud_incompatible">El horario de esta persona se cruza con otra reserva suya. Se avisó y la solicitud quedó como incompatible.</string>
     <string name="servicio_bloque_datos">Datos del servicio</string>
     <string name="servicio_bloque_horario">Horario y capacidad</string>
     <string name="servicio_bloque_condiciones">Condiciones</string>
@@ -698,6 +701,11 @@
     <string name="aviso_transferencia_completa">La transferencia de reserva se completó.</string>
     <string name="aviso_transferencia_retirada">La publicación de transferencia fue retirada.</string>
     <string name="aviso_mensaje_nuevo">Tienes un mensaje nuevo en SportHub.</string>
+    <string name="aviso_turno_vencido">Tu plazo de pago terminó y el cupo quedó libre.</string>
+    <string name="aviso_turno_vencido_negocio">Un turno de pago venció y el cupo quedó libre.</string>
+    <string name="aviso_siguiente_en_fila">Hay una solicitud esperando tu aceptación para ese horario.</string>
+    <string name="aviso_solicitud_incompatible">Tu solicitud no se pudo aceptar: el horario se cruza con otra reserva tuya.</string>
+    <string name="aviso_transferencia_vencida">El plazo para pagar la transferencia terminó.</string>
     <string name="camara_permiso_denegado">Para tomar una fotografía permite el acceso a la cámara. Puedes cambiarlo en Ajustes o elegir una imagen de la galería.</string>
     <string name="camara_abrir_ajustes">Abrir Ajustes</string>
     <string name="notificaciones_sin_leer">Notificaciones sin leer</string>

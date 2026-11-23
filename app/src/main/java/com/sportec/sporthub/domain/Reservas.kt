@@ -7,16 +7,15 @@ import com.sportec.sporthub.data.Escritura
 import com.sportec.sporthub.data.FotosRemotas
 import com.sportec.sporthub.data.Mapeos
 import com.sportec.sporthub.data.Nube
+import com.sportec.sporthub.utils.Intervalo
+import com.sportec.sporthub.utils.LogicaReservas
 import com.sportec.sporthub.utils.Textos
 
-import java.time.LocalDate
-import java.time.ZoneId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-private val ZONA = ZoneId.of("America/Bogota")
 private val ACTIVAS = setOf(EstadoSolicitud.FILA, EstadoSolicitud.REVISION, EstadoSolicitud.PAGO)
 
 private const val ORIGEN_ORDEN_MS = 1_767_225_600_000L
@@ -58,15 +57,35 @@ object Reservas {
 
     fun ahora(): Long = System.currentTimeMillis()
 
-    fun inicioMillis(fecha: String, hora: Int): Long =
-        LocalDate.parse(fecha).atTime(hora, 0).atZone(ZONA).toInstant().toEpochMilli()
+    fun inicioMillis(fecha: String, hora: Int): Long = LogicaReservas.inicioMillis(fecha, hora)
 
     fun finMillis(fecha: String, hora: Int, duracionHoras: Int): Long =
-        inicioMillis(fecha, hora) + duracionHoras * 3_600_000L
+        LogicaReservas.finMillis(fecha, hora, duracionHoras)
 
     private fun solapan(fecha: String, hora: Int, duracion: Int, fecha2: String, hora2: Int, duracion2: Int): Boolean =
-        inicioMillis(fecha, hora) < finMillis(fecha2, hora2, duracion2) &&
-            inicioMillis(fecha2, hora2) < finMillis(fecha, hora, duracion)
+        LogicaReservas.seCruzan(Intervalo(fecha, hora, duracion), Intervalo(fecha2, hora2, duracion2))
+
+    private fun compromisosDe(usuarioId: String, exceptoSolicitudId: String?, exceptoReservaId: String?): List<Intervalo> {
+        val deReservas = _reservas.value
+            .filter { it.usuarioId == usuarioId && it.estado == EstadoReserva.CONFIRMADA && it.id != exceptoReservaId }
+            .map { Intervalo(it.fecha, it.hora, it.duracionHoras) }
+        val deTurnos = _solicitudes.value
+            .filter { it.usuarioId == usuarioId && it.estado == EstadoSolicitud.PAGO && it.id != exceptoSolicitudId }
+            .map { Intervalo(it.fecha, it.hora, it.duracionHoras) }
+        return deReservas + deTurnos
+    }
+
+    fun tieneCruce(
+        usuarioId: String,
+        fecha: String,
+        hora: Int,
+        duracionHoras: Int,
+        exceptoSolicitudId: String? = null,
+        exceptoReservaId: String? = null
+    ): Boolean = LogicaReservas.hayCruce(
+        compromisosDe(usuarioId, exceptoSolicitudId, exceptoReservaId),
+        Intervalo(fecha, hora, duracionHoras)
+    )
 
     private fun claveOcupacion(actividadId: String, fecha: String, hora: Int) = "${actividadId}_${fecha}_$hora"
 
@@ -118,6 +137,9 @@ object Reservas {
         if (_solicitudes.value.any { it.usuarioId == usuarioId && it.estado in ACTIVAS && it.actividadId == actividadId && it.fecha == fecha && it.hora == hora }) {
             throw IllegalStateException(Textos.obtener(R.string.texto_ya_tienes_una_solicitud_para_este_horario_consulta_mis))
         }
+        if (tieneCruce(usuarioId, fecha, hora, duracion)) {
+            throw IllegalStateException(Textos.obtener(R.string.error_cruce_horario))
+        }
         val nueva = Solicitud(
             id = uid("s"),
             usuarioId = usuarioId,
@@ -164,17 +186,27 @@ object Reservas {
     }
 
     fun aprobarSolicitud(id: String, operadorId: String): Solicitud {
+        revisarVencimientos()
         val solicitud = obtenerSolicitud(id) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_solicitud_ya_no_existe))
         val actividad = Negocios.actividadDe(solicitud.actividadId)!!
         if (solicitud.estado != EstadoSolicitud.REVISION) {
             throw IllegalStateException(Textos.obtener(R.string.texto_esta_solicitud_ya_no_esta_en_revision))
+        }
+        if (ahora() >= inicioMillis(solicitud.fecha, solicitud.hora)) {
+            throw IllegalStateException(Textos.obtener(R.string.texto_este_horario_ya_inicio))
+        }
+        if (tieneCruce(solicitud.usuarioId, solicitud.fecha, solicitud.hora, solicitud.duracionHoras, exceptoSolicitudId = id)) {
+            marcarIncompatible(solicitud)
+            throw IllegalStateException(Textos.obtener(R.string.error_solicitud_incompatible))
         }
         val condiciones = listOf(Condicion.Igual("solicitudes/$id", "estado", EstadoSolicitud.REVISION.name)) +
             condicionesDeCupo(actividad, solicitud.fecha, solicitud.hora, solicitud.duracionHoras)
         return Nube.agrupar(*condiciones.toTypedArray()) {
             val actualizada = solicitud.copy(
                 estado = EstadoSolicitud.PAGO,
-                deadline = minOf(ahora() + solicitud.politica.payMinutes * 60_000L, inicioMillis(solicitud.fecha, solicitud.hora))
+                deadline = LogicaReservas.limiteDePago(
+                    ahora(), solicitud.politica.payMinutes, inicioMillis(solicitud.fecha, solicitud.hora)
+                )
             )
             _solicitudes.value = _solicitudes.value.map { if (it.id == id) actualizada else it }
             Nube.escribir(Escritura.Actualizar("solicitudes/$id",
@@ -183,6 +215,55 @@ object Reservas {
             Notificaciones.evento(solicitud.usuarioId, R.string.aviso_solicitud_aprobada, "request", id)
             actualizada
         }
+    }
+
+    fun revisarVencimientos() {
+        if (Nube.uid() == null) return
+        val instante = ahora()
+        _solicitudes.value
+            .filter {
+                it.estado == EstadoSolicitud.PAGO &&
+                    LogicaReservas.turnoVencido(it.deadline, inicioMillis(it.fecha, it.hora), instante)
+            }
+            .forEach { vencer(it) }
+    }
+
+    private fun vencer(solicitud: Solicitud) {
+        val actividad = Negocios.actividadDe(solicitud.actividadId) ?: return
+        Nube.agrupar(Condicion.Igual("solicitudes/${solicitud.id}", "estado", EstadoSolicitud.PAGO.name), silencioso = true) {
+            _solicitudes.value = _solicitudes.value.map {
+                if (it.id == solicitud.id) it.copy(estado = EstadoSolicitud.VENCIDA) else it
+            }
+            Nube.escribir(Escritura.Actualizar("solicitudes/${solicitud.id}",
+                mapOf("estado" to EstadoSolicitud.VENCIDA.name)))
+            ajustarOcupacion(actividad.id, solicitud.fecha, solicitud.hora, solicitud.duracionHoras, -1)
+            Notificaciones.evento(solicitud.usuarioId, R.string.aviso_turno_vencido, "request", solicitud.id)
+            Notificaciones.evento(Negocios.operadorDe(actividad.negocioId), R.string.aviso_turno_vencido_negocio)
+            proponerSiguiente(solicitud)
+        }
+    }
+
+    private fun marcarIncompatible(solicitud: Solicitud) {
+        Nube.agrupar(Condicion.Igual("solicitudes/${solicitud.id}", "estado", EstadoSolicitud.REVISION.name), silencioso = true) {
+            _solicitudes.value = _solicitudes.value.map {
+                if (it.id == solicitud.id) it.copy(estado = EstadoSolicitud.INCOMPATIBLE) else it
+            }
+            Nube.escribir(Escritura.Actualizar("solicitudes/${solicitud.id}",
+                mapOf("estado" to EstadoSolicitud.INCOMPATIBLE.name)))
+            Notificaciones.evento(solicitud.usuarioId, R.string.aviso_solicitud_incompatible, "request", solicitud.id)
+            proponerSiguiente(solicitud)
+        }
+    }
+
+    private fun proponerSiguiente(anterior: Solicitud) {
+        val siguiente = _solicitudes.value
+            .filter {
+                it.id != anterior.id && it.actividadId == anterior.actividadId &&
+                    it.fecha == anterior.fecha && it.hora == anterior.hora &&
+                    it.estado == EstadoSolicitud.REVISION
+            }
+            .minByOrNull { it.orden } ?: return
+        Notificaciones.evento(Negocios.operadorDe(negocioDe(anterior.actividadId)), R.string.aviso_siguiente_en_fila)
     }
 
     fun rechazarSolicitud(id: String, motivo: String, operadorId: String) =
@@ -267,6 +348,13 @@ object Reservas {
         val solicitud = obtenerSolicitud(id) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_solicitud_ya_no_existe))
         if (solicitud.usuarioId != usuarioId || solicitud.estado != EstadoSolicitud.PAGO) {
             throw IllegalStateException(Textos.obtener(R.string.texto_no_hay_un_turno_de_pago_vigente))
+        }
+        if (LogicaReservas.turnoVencido(solicitud.deadline, inicioMillis(solicitud.fecha, solicitud.hora), ahora())) {
+            vencer(solicitud)
+            throw IllegalStateException(Textos.obtener(R.string.texto_el_plazo_de_pago_vencio))
+        }
+        if (tieneCruce(usuarioId, solicitud.fecha, solicitud.hora, solicitud.duracionHoras, exceptoSolicitudId = id)) {
+            throw IllegalStateException(Textos.obtener(R.string.error_cruce_horario))
         }
 
         return Nube.agrupar(Condicion.Igual("solicitudes/$id", "estado", EstadoSolicitud.PAGO.name)) {

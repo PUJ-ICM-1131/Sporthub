@@ -38,6 +38,7 @@ import com.sportec.sporthub.domain.Negocios
 import com.sportec.sporthub.domain.Notificaciones as NotificacionesDominio
 import com.sportec.sporthub.ui.components.AvisosSistema
 import com.sportec.sporthub.ui.components.PermisoNotificacionesAlEntrar
+import com.sportec.sporthub.ui.components.RevisionDeTurnos
 import com.sportec.sporthub.ui.screens.comun.EncontrarnosScreen
 import com.sportec.sporthub.utils.EntradaNotificacion
 import com.sportec.sporthub.ui.SesionViewModel
@@ -109,6 +110,7 @@ fun SportHubApp(
     val restaurando by sesionViewModel.restaurando.collectAsState()
     PermisoNotificacionesAlEntrar(cuenta?.id)
     AvisosSistema(cuenta?.id)
+    RevisionDeTurnos(cuenta?.id)
     val backStack = rememberNavBackStack(Bienvenida)
     val actividad = LocalActivity.current
     val avisosNube = remember { SnackbarHostState() }

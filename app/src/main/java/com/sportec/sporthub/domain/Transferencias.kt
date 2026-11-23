@@ -5,6 +5,7 @@ import com.sportec.sporthub.data.Condicion
 import com.sportec.sporthub.data.Escritura
 import com.sportec.sporthub.data.Mapeos
 import com.sportec.sporthub.data.Nube
+import com.sportec.sporthub.utils.LogicaReservas
 import com.sportec.sporthub.utils.Textos
 import com.sportec.sporthub.utils.formatoIntervalo
 import com.sportec.sporthub.utils.formatoPesos
@@ -130,6 +131,9 @@ object Transferencias {
         val reserva = validarVigencia(transferencia)
         if (usuarioId == transferencia.propietarioId) throw IllegalStateException(Textos.obtener(R.string.texto_no_puedes_tomar_tu_propia_publicacion))
         if (transferencia.postulantes.any { it.usuarioId == usuarioId && it.estado in ACTIVOS_POSTULANTE }) throw IllegalStateException(Textos.obtener(R.string.texto_ya_estas_en_esta_fila))
+        if (Reservas.tieneCruce(usuarioId, reserva.fecha, reserva.hora, reserva.duracionHoras)) {
+            throw IllegalStateException(Textos.obtener(R.string.error_cruce_transferencia))
+        }
         Nube.agrupar(condicionVersion(transferenciaId)) {
             val nuevo = Postulante(uid("st"), usuarioId, if (transferencia.postulantes.none { it.estado in ACTIVOS_POSTULANTE }) EstadoPostulante.REVISION else EstadoPostulante.FILA)
             guardar(transferencia.copy(postulantes = transferencia.postulantes + nuevo))
@@ -143,7 +147,38 @@ object Transferencias {
         }
     }
 
+    fun revisarVencimientos() {
+        val uid = Nube.uid() ?: return
+        val instante = Reservas.ahora()
+        _transferencias.value.filter { it.estado == EstadoTransferencia.TRAMITE }.forEach { transferencia ->
+            val reserva = Reservas.obtenerReserva(transferencia.reservaId) ?: return@forEach
+            if (uid != transferencia.propietarioId && uid != Negocios.operadorDe(negocioDeReserva(reserva))) return@forEach
+            val enPago = transferencia.postulantes.firstOrNull { it.estado == EstadoPostulante.PAGO } ?: return@forEach
+            val inicio = Reservas.inicioMillis(reserva.fecha, reserva.hora)
+            if (!LogicaReservas.turnoVencido(enPago.deadline, inicio, instante)) return@forEach
+            val siguiente = transferencia.postulantes.firstOrNull { it.id != enPago.id && it.estado == EstadoPostulante.FILA }
+            Nube.agrupar(condicionVersion(transferencia.id), silencioso = true) {
+                guardar(transferencia.copy(
+                    estado = EstadoTransferencia.PUBLICADA,
+                    postulantes = transferencia.postulantes.map { p ->
+                        when {
+                            p.id == enPago.id -> p.copy(estado = EstadoPostulante.VENCIDA, deadline = null)
+                            siguiente != null && p.id == siguiente.id -> p.copy(estado = EstadoPostulante.REVISION)
+                            else -> p
+                        }
+                    }
+                ))
+                Notificaciones.evento(enPago.usuarioId, R.string.aviso_transferencia_vencida, "transfer", transferencia.id)
+                Notificaciones.evento(transferencia.propietarioId, R.string.aviso_transferencia_vencida, "transfer", transferencia.id)
+                if (siguiente != null) {
+                    Notificaciones.evento(transferencia.propietarioId, R.string.aviso_transferencia_interesado, "transfer", transferencia.id)
+                }
+            }
+        }
+    }
+
     fun aprobar(transferenciaId: String, operadorId: String) {
+        revisarVencimientos()
         val transferencia = obtener(transferenciaId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_publicacion_ya_no_existe))
         val reserva = Reservas.obtenerReserva(transferencia.reservaId)!!
         val actividad = Negocios.actividadDe(reserva.actividadId)!!
@@ -192,8 +227,14 @@ object Transferencias {
         val transferencia = obtener(transferenciaId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_la_publicacion_ya_no_existe))
         val postulante = transferencia.postulantes.firstOrNull { it.usuarioId == usuarioId && it.estado == EstadoPostulante.PAGO }
             ?: throw IllegalStateException(Textos.obtener(R.string.texto_no_tienes_un_turno_de_pago_vigente))
-        if (postulante.deadline != null && Reservas.ahora() >= postulante.deadline) throw IllegalStateException(Textos.obtener(R.string.texto_el_plazo_de_pago_vencio))
         val reserva = validarVigencia(transferencia)
+        if (LogicaReservas.turnoVencido(postulante.deadline, Reservas.inicioMillis(reserva.fecha, reserva.hora), Reservas.ahora())) {
+            revisarVencimientos()
+            throw IllegalStateException(Textos.obtener(R.string.texto_el_plazo_de_pago_vencio))
+        }
+        if (Reservas.tieneCruce(usuarioId, reserva.fecha, reserva.hora, reserva.duracionHoras)) {
+            throw IllegalStateException(Textos.obtener(R.string.error_cruce_transferencia))
+        }
 
         return Nube.agrupar(condicionVersion(transferenciaId)) {
             val negocioId = negocioDeReserva(reserva)
