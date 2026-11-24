@@ -821,4 +821,7 @@
     <string name="encuentro_personas_visibles">%1$d persona(s) compartiendo ahora.</string>
     <string name="encuentro_titulo_con">Encontrarnos · %1$s</string>
     <string name="encuentro_confirmar">Confirmar</string>
+    <string name="aviso_negocio_aprobado">El administrador aprobó tu establecimiento. Ya puedes publicar servicios.</string>
+    <string name="aviso_negocio_rechazado">El administrador rechazó tu establecimiento. Revisa los datos y vuelve a enviarlo a revisión.</string>
+    <string name="aviso_negocio_en_revision">Un establecimiento envió su registro a revisión.</string>
 </resources>
