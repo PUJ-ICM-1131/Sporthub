@@ -47,8 +47,9 @@ service cloud.firestore {
         || (esOperadorDe(id)
             && cambia(['estado', 'descripcion', 'contacto', 'direccion', 'cambioPendiente'])
             && (request.resource.data.estado == resource.data.estado
+                // Reenviar a revisión: solo el administrador puede pasar un negocio a VALIDADO.
                 || (resource.data.estado in ['PENDIENTE', 'RECHAZADO']
-                    && request.resource.data.estado in ['PENDIENTE', 'VALIDADO'])));
+                    && request.resource.data.estado == 'PENDIENTE')));
       allow delete: if false;
     }
 

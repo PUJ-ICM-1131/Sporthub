@@ -83,10 +83,17 @@ object Negocios {
 
     fun solicitarValidacion(negocioId: String, operadorId: String): Negocio {
         val negocio = negocioDe(negocioId) ?: throw IllegalArgumentException(Textos.obtener(R.string.texto_el_negocio_no_existe))
-        val nuevoEstado = if (negocio.nombre.isNotBlank() && negocio.nit.isNotBlank()) EstadoNegocio.VALIDADO else EstadoNegocio.PENDIENTE
-        val actualizado = negocio.copy(estado = nuevoEstado)
+        if (negocio.nombre.isBlank() || negocio.nit.isBlank()) {
+            throw IllegalArgumentException(Textos.obtener(R.string.texto_verifica_que_el_nombre_y_el_nit_esten_completos))
+        }
+        if (negocio.estado == EstadoNegocio.VALIDADO) return negocio
+        // Solo el administrador valida: reenviar a revisión deja el negocio pendiente y le avisa.
+        val actualizado = negocio.copy(estado = EstadoNegocio.PENDIENTE)
         _negocios.value = _negocios.value.map { if (it.id == negocioId) actualizado else it }
-        Nube.escribir(Escritura.Actualizar("negocios/$negocioId", mapOf("estado" to nuevoEstado.name)))
+        Nube.escribir(Escritura.Actualizar("negocios/$negocioId", mapOf("estado" to EstadoNegocio.PENDIENTE.name)))
+        Cuentas.todas().filter { it.rol == Rol.ADMINISTRADOR && it.activa }.forEach {
+            Notificaciones.evento(it.id, R.string.aviso_negocio_en_revision)
+        }
         return actualizado
     }
 
@@ -96,6 +103,7 @@ object Negocios {
         val actualizado = negocio.copy(estado = if (aprobado) EstadoNegocio.VALIDADO else EstadoNegocio.RECHAZADO)
         _negocios.value = _negocios.value.map { if (it.id == negocioId) actualizado else it }
         Nube.escribir(Escritura.Actualizar("negocios/$negocioId", mapOf("estado" to actualizado.estado.name)))
+        Notificaciones.evento(operadorDe(negocioId), if (aprobado) R.string.aviso_negocio_aprobado else R.string.aviso_negocio_rechazado)
         return actualizado
     }
 
