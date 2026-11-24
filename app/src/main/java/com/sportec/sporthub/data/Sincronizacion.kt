@@ -15,10 +15,12 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.launch
 
 object Sincronizacion {
     private const val ETIQUETA = "Sincronizacion"
+    private const val REINTENTOS_MENSAJES = 6L
 
     private var padre: CoroutineScope? = null
     private var cuenta: Cuenta? = null
@@ -185,6 +187,17 @@ object Sincronizacion {
                         .orderBy("creadoEn").snapshots()
                         .map { s -> s.documents.mapNotNull(Mapeos::mensaje) }
                         .onEach { Mensajes.cargarMensajes(id, it) }
+                        // Un chat recién creado (p. ej. al crear una comunidad) llega primero desde la caché
+                        // local; si la escucha empieza antes de que el servidor confirme el chat, las reglas
+                        // la rechazan y no se volvía a intentar. Se reintenta con espera creciente.
+                        .retryWhen { causa, intento ->
+                            val reintentar = intento < REINTENTOS_MENSAJES
+                            if (reintentar) {
+                                Log.i(ETIQUETA, "Reintentando la escucha de mensajes de $id (${intento + 1})", causa)
+                                delay(1_500L * (intento + 1))
+                            }
+                            reintentar
+                        }
                         .catch { Log.w(ETIQUETA, "Falló la escucha de mensajes de $id", it) }
                         .launchIn(ambito)
                 }

@@ -147,6 +147,27 @@ Cerrar la app en ambos, reabrir: reservas, chat, transferencia y reembolso sigue
 
 Hacer todo el guion una vez sin grabar y anotar aquí lo que falle. Puntos de riesgo: la primera apertura de «Encontrarnos» con las reglas publicadas; que los avisos del sistema aparezcan con el permiso concedido; el plazo de pago de la solicitud; que el servicio con capacidad 1 permita la transferencia.
 
+### Resultados del ensayo (23 nov, emulador 1, cuenta de deportista)
+
+| Prueba | Resultado |
+|---|---|
+| Ubicación del emulador | ✅ `geo fix` 4.6280, -74.0640 → el GPS del dispositivo reporta 4.628000, -74.063998; la app la usa como «Tu posición actual». |
+| Mapa Mapbox | ✅ Carga con establecimientos, radio de búsqueda y punto azul. |
+| Ruta REST a Verde Yoga | ✅ Ruta por calles: 4.4 km, 50 min a pie. |
+| Movimiento simulado (~1 km al norte) | ✅ Distancia restante 4.4 → 3.1 km; tiempo 50 → 35 min. |
+| Desvío ~400 m al este | ✅ La distancia se ajusta (3.1 → 3.4 km). |
+| Sin conexión (modo avión, cambiar a carro) | ✅ «Estimación en línea recta; no hay una ruta por calles disponible». Sin cierres. |
+| Brújula (magnetómetro virtual) | ✅ La flecha gira; muestra orientación y rumbo. ⚠️ Si la última lectura GPS tiene > 30 s dice «Sin ubicación fiable»: **repetir `geo fix` justo antes de abrir la brújula**. |
+| Permiso de notificaciones al entrar (E2) | ✅ Android lo pide al iniciar sesión. |
+| Invitación a comunidad (Diego → Juan) | ✅ Llega en vivo a la campana de Juan; al aceptar, Diego recibe la notificación del sistema «… aceptó unirse». |
+| Chat de comunidad en vivo | ❌→✅ **Fallo encontrado y corregido:** quien crea la comunidad no recibía en vivo los mensajes de ese chat hasta reiniciar la app (la escucha empezaba antes de que el chat existiera en el servidor, Firestore la rechazaba y no se reintentaba). Corregido en `data/Sincronizacion.kt` con reintentos; verificado con una comunidad nueva. |
+| Notificación de mensaje nuevo | ✅ «Tienes un mensaje nuevo en SportHub» como notificación del sistema. |
+| Encontrarnos entre los dos | ✅ Interruptor apagado al entrar; diálogo de permiso preciso/aproximado al activarlo; cada uno ve al otro con nombre, «En vivo» y distancia; al mover E1, E2 lo ve acercarse (3.6 km → 718 m). |
+| Punto de reunión | ✅ Pulsación larga → Confirmar → el otro ve «Propuesto por …» y recibe la notificación del sistema. |
+| Dejar de compartir | ✅ El marcador desaparece en el otro emulador; el punto se mantiene. |
+| No hay botón para iniciar un chat individual | ⚠️ «Nuevo chat» y «Contactos» existen pero ninguna pantalla lleva a ellas. Los chats individuales nacen de una transferencia; para la demo de «Encontrarnos» usar una comunidad o el chat de la transferencia. |
+| Transferencia, reserva y establecimiento | Pendiente: requiere iniciar sesión como establecimiento. |
+
 ## 8. Limitaciones a declarar en el video
 
 Pagos y reembolsos simulados · notificaciones locales sin FCM · sin foto ni ubicación del negocio en el registro · sin rutas alternativas · Mapbox en lugar de Google Maps · ubicación compartida solo con la pantalla abierta.
